@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词本</title>
+    <link rel="stylesheet" href="wordbook.css">
+</head>
+<body>
+    <div class="container">
+        <header class="wordbook-header">
+            <div class="wordbook-logo" style="width: 100px; height: 125px; background-color: #e9ecef; border-radius: 8px; flex-shrink: 0;"></div>
+            <div class="wordbook-info">
+                <h1>收藏的单词</h1>
+                <p>单词数：49</p>
+                <button class="btn btn-export">导出PDF</button>
+            </div>
+        </header>
+
+        <nav class="sort-options">
+            <button class="btn-sort active">时间顺序</button>
+            <button class="btn-sort">时间逆序</button>
+            <button class="btn-sort">字母顺序</button>
+            <button class="btn-sort">字母逆序</button>
+        </nav>
+
+        <main class="word-list">
+            <div class="word-item">
+                <div class="word-row">
+                    <h2 class="word-title">drove</h2>
+                    <div class="icon star-icon" style="width: 20px; height: 20px; background-color: #e9ecef;"></div>
+                </div>
+                <div class="word-row">
+                    <p class="word-translation">（drive 的过去式），开车，驱赶，迫使，畜群，人群</p>
+                    <a href="word-detail.html" class="details-link">详情 ></a>
+                </div>
+            </div>
+            <div class="word-item">
+                <div class="word-row">
+                    <h2 class="word-title">pave</h2>
+                    <div class="icon star-icon" style="width: 20px; height: 20px; background-color: #e9ecef;"></div>
+                </div>
+                <div class="word-row">
+                    <p class="word-translation">铺设</p>
+                    <a href="word-detail.html" class="details-link">详情 ></a>
+                </div>
+            </div>
+            <div class="word-item">
+                <div class="word-row">
+                    <h2 class="word-title">circuit</h2>
+                    <div class="icon star-icon" style="width: 20px; height: 20px; background-color: #e9ecef;"></div>
+                </div>
+                <div class="word-row">
+                    <p class="word-translation">电路；环路</p>
+                    <a href="word-detail.html" class="details-link">详情 ></a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

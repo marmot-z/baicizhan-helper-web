@@ -1,0 +1,103 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Summary Card */
+.summary-card {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-card h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+}
+
+.stats {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.stats span {
+    margin: 0 1rem;
+}
+
+.stats strong {
+    color: #ffc107;
+}
+
+.motivation {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Word List Card */
+.word-list-card {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: left;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e7e7e7;
+}
+
+.word-item:last-child {
+    border-bottom: none;
+}
+
+.word-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+}
+
+.word-info p {
+    margin: 0;
+    color: #6c757d;
+}
+
+.status-incorrect {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-correct {
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Footer */
+.end-footer {
+    margin-top: 2rem;
+}
+
+.btn-home {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 0;
+    width: 100%;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+}

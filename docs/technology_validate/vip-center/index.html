@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会员中心</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 公告横幅 -->
+        <div class="announcement-banner">
+            <p>🎉 限时优惠！年度会员享超值折扣，立即升级！</p>
+        </div>
+
+        <!-- 会员购买 -->
+        <section class="membership-plans">
+            <div class="plan-card">
+                <h3>月度会员</h3>
+                <p class="validity">30天有效</p>
+                <div class="price">
+                    <span class="current-price">￥10</span>
+                    <span class="original-price">￥12</span>
+                    <span class="discount">17% OFF</span>
+                </div>
+                <button class="btn-buy">立即购买</button>
+            </div>
+            <div class="plan-card recommended">
+                <h3>季度会员</h3>
+                <p class="validity">90天有效</p>
+                <div class="price">
+                    <span class="current-price">￥25</span>
+                    <span class="original-price">￥36</span>
+                    <span class="discount">31% OFF</span>
+                </div>
+                <button class="btn-buy">立即购买</button>
+            </div>
+            <div class="plan-card">
+                <h3>年度会员</h3>
+                <p class="validity">365天有效</p>
+                <div class="price">
+                    <span class="current-price">￥98</span>
+                    <span class="original-price">￥144</span>
+                    <span class="discount">32% OFF</span>
+                </div>
+                <button class="btn-buy">立即购买</button>
+            </div>
+        </section>
+
+        <!-- 购买记录 -->
+        <section class="purchase-history">
+            <h2>我的购买记录</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>会员类型</th>
+                        <th>支付金额</th>
+                        <th>付款时间</th>
+                        <th>生效时间</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>123456789</td>
+                        <td>季度会员</td>
+                        <td>￥25.00</td>
+                        <td>2024-08-01 10:30</td>
+                        <td>2024-08-01 10:31</td>
+                        <td class="status-completed">已完成</td>
+                    </tr>
+                    <tr>
+                        <td>987654321</td>
+                        <td>月度会员</td>
+                        <td>￥10.00</td>
+                        <td>2024-07-01 15:00</td>
+                        <td>2024-07-01 15:01</td>
+                        <td class="status-expired">已过期</td>
+                    </tr>
+                    <!-- More rows as needed -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- 售后群悬浮图标 -->
+    <a href="#" class="fab-support">
+        <div class="icon-placeholder" style="width: 32px; height: 32px; background-color: #fff;"></div>
+    </a>
+</body>
+</html>

@@ -1,0 +1,143 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+h2 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e7e7e7;
+    padding-bottom: 0.5rem;
+}
+
+.icon {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Word Info */
+.word-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.pronunciation {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.translation {
+    margin: 0.25rem 0;
+}
+
+/* Word Form */
+.word-form span {
+    background-color: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+/* Sentence */
+.sentence {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+.sentence p {
+    margin: 0;
+}
+
+/* Definition Item */
+.definition-item {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e7e7e7;
+}
+.definition-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.pos {
+    font-size: 1rem;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+}
+
+/* Phrase Item */
+.phrase-item {
+    font-size: 1.1rem;
+}
+.phrase-item p {
+    margin: 0;
+}
+
+/* Related Words */
+.related-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.related-words a {
+    text-decoration: none;
+    color: #007bff;
+    font-size: 1.1rem;
+}
+
+/* English Definition */
+.english-definition .pos {
+    font-weight: bold;
+}
+.english-definition ol {
+    padding-left: 1.5rem;
+    margin: 0;
+}
+.english-definition li {
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+    .card {
+        padding: 1rem;
+    }
+    h1 {
+        font-size: 2rem;
+    }
+}

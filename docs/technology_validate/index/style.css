@@ -1,0 +1,149 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #fff;
+    border-bottom: 1px solid #e7e7e7;
+    padding: 1rem 0;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.navbar nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+}
+
+.navbar nav ul li {
+    margin-left: 20px;
+}
+
+/* Hero Section */
+.hero {
+    padding: 4rem 0;
+    background-color: #fff;
+}
+
+.hero-container {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.hero-text {
+    flex: 1;
+    text-align: left;
+}
+
+.hero-image {
+    flex: 1;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.download-buttons {
+    margin-bottom: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-chrome {
+    background-color: #4285F4;
+}
+
+.btn-edge {
+    background-color: #0078D7;
+}
+
+.btn-offline {
+    background-color: #6c757d;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    color: #fff;
+    text-decoration: none;
+}
+
+.screenshot-placeholder {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    width: 100%;
+}
+
+/* Features Section */
+.features {
+    padding: 4rem 0;
+}
+
+.feature {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.feature h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.feature p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    background-color: #343a40;
+    color: #fff;
+}

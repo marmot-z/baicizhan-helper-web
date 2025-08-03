@@ -1,0 +1,95 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: #f8f9fa;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Header */
+.study-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+/* Study Card */
+.study-card {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.word-image {
+    margin-bottom: 1.5rem;
+}
+
+.word {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0 0 0.5rem 0;
+}
+
+.pronunciation {
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+.pronunciation span {
+    margin: 0 0.5rem;
+}
+
+/* Options Grid */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.option {
+    background-color: #f8f9fa;
+    border: 1px solid #e7e7e7;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    min-height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.option:hover {
+    background-color: #e9ecef;
+}
+
+.option.incorrect {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+    position: relative;
+}
+
+.option.incorrect::after {
+    content: '×';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #721c24;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
