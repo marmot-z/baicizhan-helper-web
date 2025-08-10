@@ -8,12 +8,8 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
-  setUser: (user: User) => void;
-  setLoading: (loading: boolean) => void;
-  refreshToken: () => Promise<void>;
   getUserInfo: () => Promise<void>;
 }
 
@@ -23,10 +19,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: false,
 
       login: async (credentials: LoginRequest) => {
-        set({ isLoading: true });
         try {
           const token = await authService.login(credentials);
           
@@ -40,7 +34,6 @@ export const useAuthStore = create<AuthState>()(
               user: userInfo,
               token: token,
               isAuthenticated: true,
-              isLoading: false,
             });
           } catch (userError) {
             // 如果获取用户信息失败，仍然保持登录状态，但用户信息为空
@@ -48,11 +41,9 @@ export const useAuthStore = create<AuthState>()(
               user: null,
               token: token,
               isAuthenticated: true,
-              isLoading: false,
             });
           }
         } catch (error) {
-          set({ isLoading: false });
           throw error;
         }
       },
@@ -76,31 +67,6 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user: User) => {
         set({ user });
-      },
-
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
-
-      refreshToken: async () => {
-        try {
-          const response = await authService.refreshToken();
-          
-          // 更新本地存储的token
-          TokenManager.setToken(response.token);
-          
-          set({ token: response.token });
-        } catch (error) {
-          // Token刷新失败，清除认证状态和本地存储
-          TokenManager.clearTokens();
-          
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
-          throw error;
-        }
       },
 
       getUserInfo: async () => {
