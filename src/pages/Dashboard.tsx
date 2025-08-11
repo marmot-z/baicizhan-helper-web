@@ -277,25 +277,27 @@ export default function Dashboard() {
               gap: '1rem',
               justifyContent: 'center'
             }}>
-              <button className="btn btn-study" style={{
+              <button className="btn btn-study" disabled style={{
                 padding: '10px 20px',
                 borderRadius: '5px',
                 color: '#fff',
                 fontWeight: 'bold',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: 'not-allowed',
                 fontSize: '1rem',
-                backgroundColor: '#007bff'
+                backgroundColor: '#007bff',
+                opacity: 0.5
               }}>学习</button>
-              <button className="btn btn-review" style={{
+              <button className="btn btn-review" disabled style={{
                 padding: '10px 20px',
                 borderRadius: '5px',
                 color: '#fff',
                 fontWeight: 'bold',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: 'not-allowed',
                 fontSize: '1rem',
-                backgroundColor: '#28a745'
+                backgroundColor: '#28a745',
+                opacity: 0.5
               }}>复习</button>
             </div>
           </div>

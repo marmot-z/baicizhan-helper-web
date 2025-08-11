@@ -147,25 +147,27 @@ const WordBook: React.FC = () => {
               gap: '5px',
               alignSelf: 'flex-start'
             }}>
-              <button style={{
+              <button disabled style={{
                 backgroundColor: '#007bff',
                 color: '#fff',
                 padding: '8px 16px',
                 fontSize: '0.9rem',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: 'not-allowed',
                 fontWeight: 'bold',
-                borderRadius: '5px'
+                borderRadius: '5px',
+                opacity: 0.5
               }}>学习</button>
-              <button style={{
+              <button disabled style={{
                 backgroundColor: '#007bff',
                 color: '#fff',
                 padding: '8px 16px',
                 fontSize: '0.9rem',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: 'not-allowed',
                 fontWeight: 'bold',
-                borderRadius: '5px'
+                borderRadius: '5px',
+                opacity: 0.5
               }}>导出PDF</button>
             </div>
           </div>
