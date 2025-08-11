@@ -312,16 +312,23 @@ export default function Dashboard() {
             gap: '1.5rem'
           }}>
             {userBooks.map((book) => (
-              <div key={book.user_book_id} className="word-book-item" style={{
-                backgroundColor: '#fff',
-                padding: '1.5rem',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                cursor: 'pointer'
-              }}>
+              <Link 
+                key={book.user_book_id} 
+                to={`/wordbook/${book.user_book_id}`}
+                className="word-book-item" 
+                style={{
+                  backgroundColor: '#fff',
+                  padding: '1.5rem',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer'
+                }}
+              >
                 {book.cover ? (
                   <img 
                     src={book.cover} 
@@ -351,7 +358,7 @@ export default function Dashboard() {
                     color: '#6c757d'
                   }}>共 {book.word_num} 词</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>

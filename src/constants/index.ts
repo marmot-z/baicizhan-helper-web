@@ -4,7 +4,7 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
-  WORD_BOOK: '/word-book',
+  WORD_BOOK: '/wordbook/:id',
   STUDY_PLAN: '/study-plan',
   STUDY_CALENDAR: '/study-calendar',
 } as const;
