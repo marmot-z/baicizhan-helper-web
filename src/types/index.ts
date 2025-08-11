@@ -128,3 +128,22 @@ export interface SelectOption {
 }
 
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+// 日历学习内容相关类型
+export interface CalendarDailyWord {
+  topic_id: number;
+  word: string;
+  mean: string;
+  accent: string;
+  audio_url: string;
+  word_level_id: number;
+}
+
+export interface CalendarDailyInfo {
+  state: number;
+  hint: string;
+  daily_wod_count: number;
+  words: CalendarDailyWord[];
+  resign_state: number;
+  resign_message: string;
+}

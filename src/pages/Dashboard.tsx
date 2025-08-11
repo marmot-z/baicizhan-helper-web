@@ -126,7 +126,7 @@ export default function Dashboard() {
                       zIndex: 1,
                       borderRadius: '5px'
                     }}>
-                      <a href="#" style={{
+                      <Link to="/study-calendar" style={{
                         color: 'black',
                         padding: '12px 16px',
                         textDecoration: 'none',
@@ -135,7 +135,7 @@ export default function Dashboard() {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</a>
+                      }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</Link>
                       <a href="#" style={{
                         color: 'black',
                         padding: '12px 16px',
