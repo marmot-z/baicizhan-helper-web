@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faVolumeUp, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
-import type { UserBookItem } from '../types';
+import type { UserBookItem, UserBookWordDetail } from '../types';
 
 const WordBook: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +11,7 @@ const WordBook: React.FC = () => {
   const [bookTitle, setBookTitle] = useState('收藏的单词');
   const [wordCount, setWordCount] = useState(49);
   const [currentBook, setCurrentBook] = useState<UserBookItem | null>(null);
+  const [words, setWords] = useState<UserBookWordDetail[]>([]);
 
   const sortOptions = ['时间顺序', '时间逆序', '字母顺序', '字母逆序'];
 
@@ -25,6 +28,10 @@ const WordBook: React.FC = () => {
             setCurrentBook(book);
             setBookTitle(book.book_name);
             setWordCount(book.word_num);
+            
+            // 获取单词本中的单词列表
+            const wordsData = await bookService.getBookWords(book.user_book_id);
+            setWords(wordsData);
           } else {
             console.error('未找到对应的单词本');
           }
@@ -37,23 +44,25 @@ const WordBook: React.FC = () => {
     fetchBookInfo();
   }, [id]);
 
-  const words = [
-    {
-      id: 1,
-      word: 'drove',
-      translation: '（drive 的过去式），开车，驱赶，迫使，畜群，人群'
-    },
-    {
-      id: 2,
-      word: 'pave',
-      translation: '铺设'
-    },
-    {
-      id: 3,
-      word: 'circuit',
-      translation: '电路；环路'
+  // 排序逻辑
+  const sortedWords = React.useMemo(() => {
+    const wordsCopy = [...words];
+    
+    switch (activeSort) {
+      case '时间顺序':
+        return wordsCopy.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      case '时间逆序':
+        return wordsCopy.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      case '字母顺序':
+        return wordsCopy.sort((a, b) => a.word.localeCompare(b.word));
+      case '字母逆序':
+        return wordsCopy.sort((a, b) => b.word.localeCompare(a.word));
+      default:
+        return wordsCopy;
     }
-  ];
+  }, [words, activeSort]);
+
+
 
   return (
     <div style={{
@@ -174,12 +183,12 @@ const WordBook: React.FC = () => {
           borderRadius: '8px',
           overflow: 'hidden'
         }}>
-          {words.map((wordItem, index) => (
+          {sortedWords.map((wordItem, index) => (
             <div
-              key={wordItem.id}
+              key={wordItem.topic_id}
               style={{
                 padding: '1.5rem',
-                borderBottom: index === words.length - 1 ? 'none' : '1px solid #e7e7e7'
+                borderBottom: index === sortedWords.length - 1 ? 'none' : '1px solid #e7e7e7'
               }}
             >
               <div style={{
@@ -192,12 +201,24 @@ const WordBook: React.FC = () => {
                   fontSize: '1.5rem',
                   margin: 0
                 }}>{wordItem.word}</h2>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#e9ecef',
-                  flexShrink: 0
-                }}></div>
+                <FontAwesomeIcon 
+                  icon={faVolumeUp} 
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    color: '#6c757d',
+                    flexShrink: 0,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (wordItem.audio_uk) {
+                      const audio = new Audio(wordItem.audio_uk);
+                      audio.play().catch(error => {
+                        console.error('音频播放失败:', error);
+                      });
+                    }
+                  }}
+                />
               </div>
               <div style={{
                 display: 'flex',
@@ -212,7 +233,7 @@ const WordBook: React.FC = () => {
                   textOverflow: 'ellipsis',
                   flexGrow: 1,
                   marginRight: '1rem'
-                }}>{wordItem.translation}</p>
+                }}>{wordItem.mean}</p>
                 <a
                   href="#"
                   style={{

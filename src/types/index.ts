@@ -82,6 +82,17 @@ export interface UserBooksResponse {
   user_books: UserBookItem[];
 }
 
+// 单词本中的单词详情
+export interface UserBookWordDetail {
+  topic_id: number;
+  book_id: number;
+  created_at: number;
+  word: string;
+  mean: string;
+  audio_us: string;
+  audio_uk: string;
+}
+
 // API响应类型
 export interface ApiResponse<T> {
   success: boolean;
