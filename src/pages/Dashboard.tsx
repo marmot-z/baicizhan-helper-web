@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
+import type { UserBindInfo } from '../types';
+import dogAvatar from '../assets/dog-avatar.jpg';
+import iconLogo from '../assets/icon.png';
 
 export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const { user } = useAuthStore();
+
+  // 获取用户昵称，优先选择微信用户，否则取第一个
+  const getUserNickname = (): string => {
+    if (!user || user.length === 0) return 'guest';
+    
+    const weixinUser = user.find((u: UserBindInfo) => u.provider === 'weixin');
+    if (weixinUser) return weixinUser.nickname;
+    
+    return user[0].nickname || 'guest';
+  };
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -33,10 +47,15 @@ export default function Dashboard() {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div className="logo" style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold'
-          }}>Logo</div>
+          <img 
+            src={iconLogo} 
+            alt="Logo" 
+            className="logo" 
+            style={{
+              height: '2rem',
+              width: 'auto'
+            }} 
+          />
           <nav>
             <ul style={{
               margin: 0,
@@ -58,18 +77,22 @@ export default function Dashboard() {
                      const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
                      if (dropdown) dropdown.style.display = 'none';
                    }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#e9ecef',
-                      borderRadius: '50%',
-                      display: 'inline-block',
-                      verticalAlign: 'middle'
-                    }}></div>
+                    <img 
+                      src={dogAvatar} 
+                      alt="用户头像" 
+                      style={{
+                        width: '60px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        display: 'inline-block',
+                        verticalAlign: 'middle',
+                        objectFit: 'cover'
+                      }} 
+                    />
                     <span style={{
                       verticalAlign: 'middle',
                       marginLeft: '8px'
-                    }}>zhxw</span>
+                    }}>{getUserNickname()}</span>
                     <div className="dropdown-content" style={{
                       display: 'none',
                       position: 'absolute',
