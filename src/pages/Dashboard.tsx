@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useStudyStore } from '../stores/studyStore';
-import type { UserBindInfo } from '../types';
+import { bookService } from '../services/bookService';
+import type { UserBindInfo, UserBookItem } from '../types';
 import dogAvatar from '../assets/dog-avatar.jpg';
 import iconLogo from '../assets/icon.png';
 
 export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const { user } = useAuthStore();
   const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
 
@@ -23,6 +25,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchStudyData();
+    
+    // 获取用户单词本信息
+    const fetchUserBooks = async () => {
+      try {
+        const books = await bookService.getBooks();
+        setUserBooks(books);
+      } catch (error) {
+        console.error('Failed to fetch user books:', error);
+      }
+    };
+    
+    fetchUserBooks();
   }, [fetchStudyData]);
 
   React.useEffect(() => {
@@ -297,58 +311,48 @@ export default function Dashboard() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
             gap: '1.5rem'
           }}>
-            <div className="word-book-item" style={{
-              backgroundColor: '#fff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '60px',
-                height: '80px',
-                backgroundColor: '#e9ecef',
-                borderRadius: '4px'
-              }}></div>
-              <div className="word-book-details">
-                <h3 style={{
-                  margin: '0 0 0.5rem 0',
-                  fontSize: '1.1rem'
-                }}>雅思核心词汇</h3>
-                <p style={{
-                  margin: 0,
-                  color: '#6c757d'
-                }}>共 3272 词</p>
+            {userBooks.map((book) => (
+              <div key={book.user_book_id} className="word-book-item" style={{
+                backgroundColor: '#fff',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                cursor: 'pointer'
+              }}>
+                {book.cover ? (
+                  <img 
+                    src={book.cover} 
+                    alt={book.book_name}
+                    style={{
+                      width: '60px',
+                      height: '80px',
+                      borderRadius: '4px',
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '60px',
+                    height: '80px',
+                    backgroundColor: '#e9ecef',
+                    borderRadius: '4px'
+                  }}></div>
+                )}
+                <div className="word-book-details">
+                  <h3 style={{
+                    margin: '0 0 0.5rem 0',
+                    fontSize: '1.1rem'
+                  }}>{book.book_name}</h3>
+                  <p style={{
+                    margin: 0,
+                    color: '#6c757d'
+                  }}>共 {book.word_num} 词</p>
+                </div>
               </div>
-            </div>
-            <div className="word-book-item" style={{
-              backgroundColor: '#fff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '60px',
-                height: '80px',
-                backgroundColor: '#e9ecef',
-                borderRadius: '4px'
-              }}></div>
-              <div className="word-book-details">
-                <h3 style={{
-                  margin: '0 0 0.5rem 0',
-                  fontSize: '1.1rem'
-                }}>我的收藏</h3>
-                <p style={{
-                  margin: 0,
-                  color: '#6c757d'
-                }}>共 150 词</p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
       </main>

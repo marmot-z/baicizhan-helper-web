@@ -68,6 +68,20 @@ export interface BooksInfoResponse {
   books_info: UserBookBasicInfo[];
 }
 
+// 用户单词本项目
+export interface UserBookItem {
+  user_book_id: number;
+  book_name: string;
+  word_num: number;
+  cover: string;
+  updated_at: number;
+}
+
+// 用户单词本响应
+export interface UserBooksResponse {
+  user_books: UserBookItem[];
+}
+
 // API响应类型
 export interface ApiResponse<T> {
   success: boolean;
