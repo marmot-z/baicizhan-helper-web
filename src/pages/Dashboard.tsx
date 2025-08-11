@@ -47,9 +47,7 @@ export default function Dashboard() {
             }}>
               <li style={{ marginLeft: '20px' }}>
                 {/* 根据登录状态显示不同内容 */}
-                {true ? ( // 这里应该替换为实际的登录状态检查
-                  <a href="/login">登录</a>
-                ) : (
+                {
                   <div className="user-profile" style={{
                      position: 'relative',
                      cursor: 'pointer'
@@ -114,7 +112,7 @@ export default function Dashboard() {
                       }}>退出</a>
                     </div>
                   </div>
-                )}
+                }
               </li>
             </ul>
           </nav>
