@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
 import { useStudyStore } from '../stores/studyStore';
 import { bookService } from '../services/bookService';
 import type { UserBindInfo, UserBookItem } from '../types';
-import dogAvatar from '../assets/dog-avatar.jpg';
 import iconLogo from '../assets/icon.png';
 
 export default function Dashboard() {
@@ -98,16 +99,17 @@ export default function Dashboard() {
                      const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
                      if (dropdown) dropdown.style.display = 'none';
                    }}>
-                    <img 
-                      src={dogAvatar} 
-                      alt="用户头像" 
+                    <FontAwesomeIcon 
+                      icon={faUser} 
                       style={{
-                        width: '60px',
-                        height: '40px',
+                        width: '20px',
+                        height: '20px',
                         borderRadius: '50%',
                         display: 'inline-block',
                         verticalAlign: 'middle',
-                        objectFit: 'cover'
+                        backgroundColor: '#f0f0f0',
+                        padding: '10px',
+                        color: '#666'
                       }} 
                     />
                     <span style={{
@@ -133,7 +135,7 @@ export default function Dashboard() {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}>我的日历</a>
+                      }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</a>
                       <a href="#" style={{
                         color: 'black',
                         padding: '12px 16px',
@@ -143,7 +145,7 @@ export default function Dashboard() {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}>会员中心</a>
+                      }}><FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />会员中心</a>
                       <a href="#" style={{
                         color: 'black',
                         padding: '12px 16px',
@@ -153,7 +155,7 @@ export default function Dashboard() {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}>退出</a>
+                      }}><FontAwesomeIcon icon={faArrowRightFromBracket} style={{ marginRight: '8px' }} />退出</a>
                     </div>
                   </div>
                 }
