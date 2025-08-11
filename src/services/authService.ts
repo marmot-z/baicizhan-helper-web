@@ -1,5 +1,5 @@
 import { ApiService } from './api';
-import type { LoginRequest, LoginResponse, User, SendSmsRequest, SendSmsResponse } from '../types';
+import type { LoginRequest, SendSmsResponse, UserBindInfo } from '../types';
 
 export const authService = {
   // 发送短信验证码
@@ -9,20 +9,15 @@ export const authService = {
   },
 
   // 用户登录
-  async login(data: LoginRequest): Promise<LoginResponse> {
+  async login(data: LoginRequest): Promise<string> {
     const { phoneNum, smsVerifyCode } = data;
-    const response = await ApiService.post<LoginResponse>(`/login/${phoneNum}/${smsVerifyCode}`);
+    const response = await ApiService.post<string>(`/login/${phoneNum}/${smsVerifyCode}`);
     return response.data;
   },
 
   // 获取用户信息
-  async getUserInfo(): Promise<User> {
-    const response = await ApiService.get<User>('/auth/me');
+  async getUserInfo(): Promise<UserBindInfo[]> {
+    const response = await ApiService.get<UserBindInfo[]>('/userInfo');
     return response.data;
-  },
-
-  // 用户登出
-  async logout(): Promise<void> {
-    await ApiService.post('/auth/logout');
   },
 };

@@ -1,11 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, LoginRequest } from '../types';
+import type { UserBindInfo, LoginRequest } from '../types';
 import { authService } from '../services/authService';
-import { TokenManager } from '../utils/tokenManager';
 
 interface AuthState {
-  user: User | null;
+  user: UserBindInfo[] | null;
   token: string | null;
   isAuthenticated: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
@@ -22,10 +21,7 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials: LoginRequest) => {
         try {
-          const token = await authService.login(credentials);
-          
-          // 存储token到localStorage
-          TokenManager.setToken(token);
+          const token = await authService.login(credentials);                
           
           // 登录成功后获取用户信息
           try {
@@ -49,24 +45,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        try {
-          await authService.logout();
-        } catch (error) {
-          console.error('Logout error:', error);
-        } finally {
-          // 清除本地存储的token
-          TokenManager.clearTokens();
-          
-          set({
+        set({
             user: null,
             token: null,
             isAuthenticated: false,
           });
-        }
-      },
-
-      setUser: (user: User) => {
-        set({ user });
       },
 
       getUserInfo: async () => {

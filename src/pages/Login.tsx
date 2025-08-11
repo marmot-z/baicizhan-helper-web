@@ -82,7 +82,7 @@ const Login: React.FC = () => {
       setIsLoading(true);
       
       // 使用authService的sendSmsVerifyCode方法
-      const result = await authService.sendSmsVerifyCode(phone);
+      await authService.sendSmsVerifyCode(phone);
       
       // 发送成功，开始倒计时
       alert('验证码发送成功');

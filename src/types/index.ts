@@ -1,22 +1,3 @@
-// 用户相关类型
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  avatar?: string;
-  nickname?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// 认证相关类型
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-}
-
 export interface LoginRequest {
   phoneNum: string;
   smsVerifyCode: string;
@@ -31,9 +12,6 @@ export interface SendSmsRequest {
 export interface SendSmsResponse {
   verifyCode: string;
 }
-
-// 登录响应直接返回token字符串
-export type LoginResponse = string;
 
 // 学习相关类型
 export interface Word {
@@ -73,6 +51,18 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   code?: number;
+}
+
+// 用户绑定信息类型
+export interface UserBindInfo {
+  nickname: string;
+  openid: string;
+  provider: string;
+  setNickname: boolean;
+  setOpenid: boolean;
+  setProvider: boolean;
+  setUnionid: boolean;
+  unionid: string;
 }
 
 export interface PaginatedResponse<T> {

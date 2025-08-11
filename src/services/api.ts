@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { ApiResponse } from '../types';
-import { TokenManager } from '../utils/tokenManager';
+import { useAuthStore } from '../stores/authStore';
 
 // API基础配置
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -19,7 +19,7 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // 按照技术设计文档要求，添加access_token字段
-    const token = TokenManager.getToken();
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.access_token = token;
     }
@@ -39,30 +39,14 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     
     // 处理401错误（token过期）
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (error.response?.status === 401) {
+      // 调用authStore的logout方法清理状态
+      const authState = useAuthStore.getState();
+      authState.logout();
       
-      try {
-        // 尝试刷新token
-        const refreshToken = TokenManager.getRefreshToken();
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken
-          });
-          
-          const newToken = response.data.token;
-          TokenManager.setToken(newToken);
-          
-          // 重新发送原始请求
-           originalRequest.headers.access_token = newToken;
-           return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        // 刷新失败，清除token并跳转到登录页
-        TokenManager.clearTokens();
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
+      // 跳转到登录页面
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
     
     // 其他错误处理
