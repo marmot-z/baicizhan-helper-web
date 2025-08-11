@@ -45,6 +45,29 @@ export interface StudyRecord {
   accuracy: number; // 百分比
 }
 
+export interface SelectBookPlanInfo {
+  book_id: number;
+  learned_words_count: number;
+  group_id: number;
+  daily_plan_count: number;
+  review_plan_count: number;
+}
+
+export interface UserBookBasicInfo {
+  id: number;
+  name: string;
+  total_words_count: number;
+  is_word_course: boolean;
+  group_count: number;
+  book_flag: number;
+  img: string;
+  desc: string;
+}
+
+export interface BooksInfoResponse {
+  books_info: UserBookBasicInfo[];
+}
+
 // API响应类型
 export interface ApiResponse<T> {
   success: boolean;

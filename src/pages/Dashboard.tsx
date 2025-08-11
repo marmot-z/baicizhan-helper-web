@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useStudyStore } from '../stores/studyStore';
 import type { UserBindInfo } from '../types';
 import dogAvatar from '../assets/dog-avatar.jpg';
 import iconLogo from '../assets/icon.png';
@@ -7,6 +9,7 @@ import iconLogo from '../assets/icon.png';
 export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { user } = useAuthStore();
+  const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
 
   // 获取用户昵称，优先选择微信用户，否则取第一个
   const getUserNickname = (): string => {
@@ -17,6 +20,10 @@ export default function Dashboard() {
     
     return user[0].nickname || 'guest';
   };
+
+  useEffect(() => {
+    fetchStudyData();
+  }, [fetchStudyData]);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -165,34 +172,37 @@ export default function Dashboard() {
             alignItems: 'center',
             gap: '1rem'
           }}>
-            <div style={{
-              width: '120px',
-              height: '150px',
-              backgroundColor: '#e9ecef',
-              borderRadius: '4px'
-            }}></div>
+            {currentBook?.img ? (
+              <img 
+                src={currentBook.img} 
+                alt={currentBook.name || '单词书封面'}
+                style={{
+                  width: '140px',
+                  borderRadius: '4px',
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '120px',
+                height: '150px',
+                backgroundColor: '#e9ecef',
+                borderRadius: '4px'
+              }}></div>
+            )}
             <div className="book-details">
               <h2 style={{
                 fontSize: '1.2rem',
                 margin: '0 0 0.5rem 0'
-              }}>雅思核心 <a href="#" style={{
-                 fontSize: '0.9rem',
-                 fontWeight: 'normal',
-                 color: '#007bff',
-                 textDecoration: 'none'
-               }} onMouseEnter={(e) => {
-                 (e.target as HTMLElement).style.textDecoration = 'underline';
-               }} onMouseLeave={(e) => {
-                 (e.target as HTMLElement).style.textDecoration = 'none';
-               }}>修改 &gt;</a></h2>
+              }}>{currentBook?.name || '雅思核心'}</h2>
               <p style={{
                 margin: 0,
                 color: '#6c757d'
-              }}>2 / 3272</p>
+              }}>{studyPlan?.learned_words_count} / {currentBook?.total_words_count}</p>
               <span style={{
                 fontSize: '0.9rem',
                 color: '#6c757d'
-              }}>剩余 327 天</span>
+              }}>剩余 {currentBook && studyPlan ? Math.ceil((currentBook.total_words_count - studyPlan.learned_words_count) / (studyPlan.daily_plan_count || 1)) : 327} 天</span>
             </div>
           </div>
           <div className="today-plan" style={{
@@ -227,7 +237,7 @@ export default function Dashboard() {
                   fontSize: '1rem',
                   fontWeight: 'normal',
                   color: '#6c757d'
-                }}>/ 10</span></p>
+                }}>/ {studyPlan?.daily_plan_count}</span></p>
               </div>
               <div className="stat">
                 <p style={{
@@ -243,7 +253,7 @@ export default function Dashboard() {
                   fontSize: '1rem',
                   fontWeight: 'normal',
                   color: '#6c757d'
-                }}>/ 2</span></p>
+                }}>/ {studyPlan?.review_plan_count}</span></p>
               </div>
             </div>
             <div className="plan-actions" style={{
