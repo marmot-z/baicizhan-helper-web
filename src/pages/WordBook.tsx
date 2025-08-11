@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVolumeUp, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
+import { useWordBookStore } from '../stores/wordBookStore';
 import type { UserBookItem, UserBookWordDetail } from '../types';
 
 const WordBook: React.FC = () => {
@@ -12,6 +13,8 @@ const WordBook: React.FC = () => {
   const [wordCount, setWordCount] = useState(49);
   const [currentBook, setCurrentBook] = useState<UserBookItem | null>(null);
   const [words, setWords] = useState<UserBookWordDetail[]>([]);
+  
+  const { getWordBook, setWordBook, clearExpiredData } = useWordBookStore();
 
   const sortOptions = ['时间顺序', '时间逆序', '字母顺序', '字母逆序'];
 
@@ -21,6 +24,13 @@ const WordBook: React.FC = () => {
       if (id) {
         try {
           console.log('当前单词本ID:', id);
+          
+          // 清理过期数据
+          clearExpiredData();
+          
+          // 先尝试从缓存获取单词数据
+          const cachedWords = getWordBook(id);
+          
           const books = await bookService.getBooks();
           const book = books.find(book => book.user_book_id.toString() === id);
           
@@ -29,9 +39,19 @@ const WordBook: React.FC = () => {
             setBookTitle(book.book_name);
             setWordCount(book.word_num);
             
-            // 获取单词本中的单词列表
-            const wordsData = await bookService.getBookWords(book.user_book_id);
-            setWords(wordsData);
+            if (cachedWords) {
+              // 使用缓存数据
+              console.log('使用缓存的单词数据');
+              setWords(cachedWords);
+            } else {
+              // 从API获取单词列表并缓存
+              console.log('从API获取单词数据');
+              const wordsData = await bookService.getBookWords(book.user_book_id);
+              setWords(wordsData);
+              
+              // 缓存数据
+               setWordBook(id, wordsData);
+            }
           } else {
             console.error('未找到对应的单词本');
           }
