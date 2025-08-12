@@ -1,9 +1,65 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faVolumeUp, faStar } from '@fortawesome/free-solid-svg-icons';
+import { bookService } from '../services/bookService';
+import type { TopicResourceV2 } from '../types';
 
 const WordDetail: React.FC = () => {
   const { word } = useParams<{ word: string }>();
-  const currentWord = word || 'drove';
+  const [wordData, setWordData] = useState<TopicResourceV2 | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWordDetail = async () => {
+      if (!word) return;
+      
+      try {
+        setLoading(true);
+        const topicId = parseInt(word);
+        const data = await bookService.getWordDetail(topicId, true, false, true);
+        setWordData(data);
+      } catch (err) {
+        setError('获取单词详情失败');
+        console.error('Error fetching word detail:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWordDetail();
+  }, [word]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f9fa' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !wordData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f9fa' }}>
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error || '单词数据不存在'}</p>
+          <button 
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            返回
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { dict } = wordData;
+  const { word_basic_info, chn_means } = dict;
   
   // 响应式样式
   const containerStyle = {
@@ -33,15 +89,77 @@ const WordDetail: React.FC = () => {
         {/* 单词信息 */}
         <section className="bg-white" style={cardStyle}>
           <div className="flex justify-between items-center mb-2">
-            <h1 style={h1Style}>{currentWord}</h1>
-            <div className="inline-block align-middle" style={{ width: '24px', height: '24px', backgroundColor: '#e9ecef' }}></div>
+            <h1 style={h1Style}>{word_basic_info.word}</h1>
+            <FontAwesomeIcon 
+                icon={faStar} 
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  color: '#007bff',
+                  flexShrink: 0,
+                  cursor: 'pointer'
+                }}
+                title="收藏/取消收藏"
+              />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: '#6c757d', marginBottom: '1rem' }}>
-            <span>/droʊv/</span>
-            <div className="inline-block align-middle" style={{ width: '20px', height: '20px', backgroundColor: '#e9ecef' }}></div>
+            {word_basic_info.accent_uk && <span>英 {word_basic_info.accent_uk}</span>}                      
+            {word_basic_info.accent_uk_audio_uri && (
+               <FontAwesomeIcon 
+                 icon={faVolumeUp} 
+                 style={{
+                   width: '20px',
+                   height: '20px',
+                   flexShrink: 0,
+                   cursor: 'pointer'
+                 }}
+                 onClick={() => {
+                   const audio = new Audio("https://7n.bczcdn.com" + word_basic_info.accent_uk_audio_uri);
+                   audio.play().catch(error => {
+                     console.error('音频播放失败:', error);
+                   });
+                 }}
+                 title="播放英式发音"
+               />
+             )}
+             {word_basic_info.accent_usa && <span>美 {word_basic_info.accent_usa}</span>}
+             {word_basic_info.accent_usa_audio_uri && (
+               <FontAwesomeIcon 
+                 icon={faVolumeUp} 
+                 style={{
+                   width: '20px',
+                   height: '20px',
+                   flexShrink: 0,
+                   cursor: 'pointer'
+                 }}
+                 onClick={() => {
+                   const audio = new Audio("https://7n.bczcdn.com" + word_basic_info.accent_usa_audio_uri);
+                   audio.play().catch(error => {
+                     console.error('音频播放失败:', error);
+                   });
+                 }}
+                 title="播放美式发音"
+               />
+             )}
           </div>
-          <p style={{ margin: '0.25rem 0' }}>v. 开车 (drive的过去式)；驱赶；迫使</p>
-          <p style={{ margin: '0.25rem 0' }}>n. 畜群；人群</p>
+          {(() => {
+            // 按照 mean_type 对中文释义进行分组
+            const groupedMeans = chn_means.reduce((groups, mean) => {
+              const type = mean.mean_type || '其他';
+              if (!groups[type]) {
+                groups[type] = [];
+              }
+              groups[type].push(mean);
+              return groups;
+            }, {} as Record<string, typeof chn_means>);
+
+            // 按分组展示释义
+            return Object.entries(groupedMeans).map(([meanType, means]) => (
+              <p key={meanType} style={{ margin: '0.25rem 0' }}>
+                <strong>{meanType}</strong> {means.map(mean => mean.mean).join('; ')}
+              </p>
+            ));
+          })()}
         </section>
 
         {/* 单词变形 */}
@@ -53,33 +171,118 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 图文例句 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>图文例句</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem' }}>
-            <p style={{ margin: '0' }}>He <strong>drove</strong> his wife home.</p>
-            <div className="inline-block align-middle" style={{ width: '20px', height: '20px', backgroundColor: '#e9ecef' }}></div>
-          </div>
-          <p style={{ margin: '0.25rem 0' }}>他和妻子开车回家。</p>
-          <div style={{ height: '150px', backgroundColor: '#e9ecef', borderRadius: '8px', marginTop: '1rem' }}></div>
-        </section>
+        {wordData.dict.sentences.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>图文例句</h2>
+            {(() => {
+              const sentence = wordData.dict.sentences[0];
+              return (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem' }}>
+                    <p style={{ margin: '0' }}>
+                      {sentence.highlight_phrase ? (
+                        sentence.sentence.split(sentence.highlight_phrase).map((part, i) => (
+                          i === 0 ? (
+                            <span key={i}>{part}<strong>{sentence.highlight_phrase}</strong></span>
+                          ) : (
+                            <span key={i}>{part}</span>
+                          )
+                        ))
+                      ) : (
+                        sentence.sentence
+                      )}
+                    </p>
+                    {sentence.audio_uri && (
+                      <FontAwesomeIcon 
+                        icon={faVolumeUp} 
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          flexShrink: 0,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
+                          audio.play().catch(error => {
+                            console.error('音频播放失败:', error);
+                          });
+                        }}
+                        title="播放例句发音"
+                      />
+                    )}
+                  </div>
+                  <p style={{ margin: '0.25rem 0' }}>{sentence.sentence_trans}</p>
+                  {sentence.img_uri && (
+                      <img 
+                        src={"https://7n.bczcdn.com" + sentence.img_uri} 
+                        alt="例句配图" 
+                        style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain' }}
+                      />                    
+                  )}
+                </div>
+              );
+            })()}
+          </section>
+        )}
 
         {/* 详细释义 */}
         <section className="bg-white" style={cardStyle}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>详细释义</h2>
-          <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e7e7e7' }}>
-            <p style={{ fontSize: '1rem', color: '#333', margin: '0 0 0.5rem 0' }}><strong>v.</strong> 开车 (drive的过去式)</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem' }}>
-              <p style={{ margin: '0' }}>He <strong>drove</strong> his car through the gates at full pelt.</p>
-              <div className="inline-block align-middle" style={{ width: '20px', height: '20px', backgroundColor: '#e9ecef' }}></div>
-            </div>
-            <p style={{ margin: '0.25rem 0' }}>他驾车飞速通过大门。</p>
-          </div>
-          <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e7e7e7' }}>
-            <p style={{ fontSize: '1rem', color: '#333', margin: '0 0 0.5rem 0' }}><strong>v.</strong> 驱赶</p>
-          </div>
-          <div style={{ marginBottom: '0', paddingBottom: '0' }}>
-            <p style={{ fontSize: '1rem', color: '#333', margin: '0 0 0.5rem 0' }}><strong>n.</strong> 畜群</p>
-          </div>
+          {wordData.dict.chn_means.map((meaning, index) => {
+            // 获取除第一个元素外的例句，并筛选出匹配当前释义的例句
+            const matchingSentences = wordData.dict.sentences.slice(1).filter(sentence => sentence.chn_mean_id === meaning.id);
+            const isLastItem = index === wordData.dict.chn_means.length - 1;
+            
+            return (
+              <div key={meaning.id} style={{ 
+                marginBottom: isLastItem ? '0' : '1rem', 
+                paddingBottom: isLastItem ? '0' : '1rem', 
+                borderBottom: isLastItem ? 'none' : '1px solid #e7e7e7' 
+              }}>
+                <p style={{ fontSize: '1rem', color: '#333', margin: '0 0 0.5rem 0' }}>
+                  {meaning.mean_type && <strong>{meaning.mean_type}</strong>} {meaning.mean}
+                </p>
+                {matchingSentences.map((sentence, sentenceIndex) => (
+                  <div key={sentence.id} style={{ marginBottom: sentenceIndex < matchingSentences.length - 1 ? '1rem' : '0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem' }}>
+                      <p style={{ margin: '0' }}>
+                        {sentence.highlight_phrase ? (
+                          sentence.sentence.split(sentence.highlight_phrase).map((part, i) => (
+                            i === 0 ? (
+                              <span key={i}>{part}<strong>{sentence.highlight_phrase}</strong></span>
+                            ) : (
+                              <span key={i}>{part}</span>
+                            )
+                          ))
+                        ) : (
+                          sentence.sentence
+                        )}
+                      </p>
+                      {sentence.audio_uri && (
+                        <FontAwesomeIcon 
+                          icon={faVolumeUp} 
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            flexShrink: 0,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
+                            audio.play().catch(error => {
+                              console.error('音频播放失败:', error);
+                            });
+                          }}
+                          title="播放例句发音"
+                        />
+                      )}
+                    </div>
+                    <p style={{ margin: '0.25rem 0' }}>{sentence.sentence_trans}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </section>
 
         {/* 短语 */}
@@ -92,25 +295,32 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 近义词 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>近义词</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>group</a>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>horde</a>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>throng</a>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>crowd</a>
-          </div>
-        </section>
+        {wordData.dict.synonyms.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>近义词</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+              {wordData.dict.synonyms.map((synonym, index) => (
+                <a key={synonym.syn_ant_id || index} href={`/word-detail/${synonym.syn_ant_topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
+                  {synonym.syn_ant}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 形近词 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>形近词</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>drill</a>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>dream</a>
-            <a href="#" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>droop</a>
-          </div>
-        </section>
+        {wordData.similar_words && wordData.similar_words.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>形近词</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+              {wordData.similar_words.map((similarWord, index) => (
+                <a key={similarWord.topic_id || index} href={`/word-detail/${similarWord.topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
+                  {similarWord.word}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 词根词缀 */}
         <section className="bg-white" style={cardStyle}>
@@ -119,16 +329,38 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 英文释义 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>英文释义</h2>
-          <div>
-            <p style={{ fontWeight: 'bold', margin: '0' }}>v.</p>
-            <ol style={{ paddingLeft: '1.5rem', margin: '0' }}>
-              <li style={{ marginBottom: '0.5rem' }}>to operate a vehicle so that it goes in a particular direction; to take sb somewhere in a car, taxi, etc.</li>
-              <li style={{ marginBottom: '0.5rem' }}>to force somebody to act in a particular way</li>
-            </ol>
-          </div>
-        </section>
+        {wordData.dict.en_means && wordData.dict.en_means.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>英文释义</h2>
+            <div>
+              {(() => {
+                // 按照 mean_type 对英文释义进行分组
+                const groupedMeans = wordData.dict.en_means.reduce((groups, mean) => {
+                  const type = mean.mean_type || 'other';
+                  if (!groups[type]) {
+                    groups[type] = [];
+                  }
+                  groups[type].push(mean);
+                  return groups;
+                }, {} as Record<string, typeof wordData.dict.en_means>);
+
+                // 按分组展示释义
+                return Object.entries(groupedMeans).map(([meanType, means]) => (
+                  <div key={meanType} style={{ marginBottom: '1rem' }}>
+                    <p style={{ fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>{meanType}</p>
+                    <ol style={{ paddingLeft: '1.5rem', margin: '0' }}>
+                      {means.map((mean, index) => (
+                        <li key={mean.id || index} style={{ marginBottom: '0.5rem' }}>
+                          {mean.mean}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ));
+              })()}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

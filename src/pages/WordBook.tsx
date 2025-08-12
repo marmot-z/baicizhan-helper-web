@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVolumeUp, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
@@ -8,6 +8,7 @@ import type { UserBookItem, UserBookWordDetail } from '../types';
 
 const WordBook: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [activeSort, setActiveSort] = useState('时间顺序');
   const [bookTitle, setBookTitle] = useState('收藏的单词');
   const [wordCount, setWordCount] = useState(49);
@@ -261,9 +262,13 @@ const WordBook: React.FC = () => {
                   style={{
                     color: '#007bff',
                     textDecoration: 'none',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    cursor: 'pointer'
                   }}
-                  onClick={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(`/word-detail/${wordItem.topic_id}`);
+                  }}
                 >
                   详情 &gt;
                 </a>
