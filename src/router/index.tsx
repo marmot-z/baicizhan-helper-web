@@ -7,6 +7,7 @@ import {
   WordBook,
   StudyPlan,
   StudyCalendar,
+  WordDetail,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 
@@ -53,6 +54,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <StudyCalendar />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.WORD_DETAIL,
+    element: (
+      <ProtectedRoute>
+        <WordDetail />
       </ProtectedRoute>
     ),
   },

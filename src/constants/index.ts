@@ -7,6 +7,7 @@ export const ROUTES = {
   WORD_BOOK: '/wordbook/:id',
   STUDY_PLAN: '/study-plan',
   STUDY_CALENDAR: '/study-calendar',
+  WORD_DETAIL: '/word-detail/:word',
 } as const;
 
 // API端点常量
