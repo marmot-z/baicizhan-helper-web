@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
 import { useWordBookStore } from '../stores/wordBookStore';
 import type { UserBookItem, UserBookWordDetail } from '../types';
@@ -138,11 +138,11 @@ const WordBook: React.FC = () => {
             <h1 style={{
               fontSize: '1.5rem',
               margin: 0
-            }}>{currentBook?.book_name}</h1>
+            }}>{bookTitle}</h1>
             <p style={{
               margin: 0,
               color: '#6c757d'
-            }}>单词数：{currentBook?.word_num}</p>
+            }}>单词数：{wordCount}</p>
             <div style={{
               display: 'flex',
               gap: '5px',

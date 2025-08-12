@@ -18,9 +18,9 @@ export default function LoginForm({ onSubmit, loading: externalLoading = false, 
   const [countdown, setCountdown] = useState(0);
   const [sendingCode, setSendingCode] = useState(false);
   
-  const { login, isLoading } = useAuthStore();
+  const { login } = useAuthStore();
   
-  const loading = externalLoading || isLoading;
+  const loading = externalLoading;
   const error = externalError || localError;
 
   // 倒计时逻辑

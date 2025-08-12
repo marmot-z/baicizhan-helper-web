@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react'; // React 17+ 不需要显式导入
 import { Link } from 'react-router-dom';
 import collectWordGif from '../assets/collect-word-min.gif';
 

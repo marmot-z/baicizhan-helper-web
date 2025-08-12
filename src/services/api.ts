@@ -36,7 +36,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
+    // const originalRequest = error.config; // 暂时未使用
     
     // 处理401错误（token过期）
     if (error.response?.status === 401) {
