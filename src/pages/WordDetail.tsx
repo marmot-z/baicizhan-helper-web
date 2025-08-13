@@ -300,7 +300,7 @@ const WordDetail: React.FC = () => {
             <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>近义词</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
               {wordData.dict.synonyms.map((synonym, index) => (
-                <a key={synonym.syn_ant_id || index} href={`/word-detail/${synonym.syn_ant_topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
+                <a key={synonym.syn_ant_id || index} href={`/page/word-detail/${synonym.syn_ant_topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
                   {synonym.syn_ant}
                 </a>
               ))}
@@ -314,7 +314,7 @@ const WordDetail: React.FC = () => {
             <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>形近词</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
               {wordData.similar_words.map((similarWord, index) => (
-                <a key={similarWord.topic_id || index} href={`/word-detail/${similarWord.topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
+                <a key={similarWord.topic_id || index} href={`/page/word-detail/${similarWord.topic_id}`} style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.1rem' }}>
                   {similarWord.word}
                 </a>
               ))}

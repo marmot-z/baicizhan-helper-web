@@ -26,3 +26,4 @@ dist-ssr
 .env*
 .vercel
 docs/api.json
+*.zip

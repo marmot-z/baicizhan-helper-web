@@ -43,7 +43,7 @@ export default function Home() {
                     onMouseLeave={(e) => (e.target as HTMLElement).style.textDecoration = 'none'}>使用介绍</a>
               </li>
               <li style={{ marginLeft: '20px' }}>
-                <Link to="/login" style={{
+                <Link to="/page/login" style={{
                   textDecoration: 'none',
                   color: '#007bff'
                 }} onMouseEnter={(e) => (e.target as HTMLElement).style.textDecoration = 'underline'}

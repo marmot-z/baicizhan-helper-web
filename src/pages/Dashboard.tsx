@@ -126,7 +126,7 @@ export default function Dashboard() {
                       zIndex: 1,
                       borderRadius: '5px'
                     }}>
-                      <Link to="/study-calendar" style={{
+                      <Link to="/page/study-calendar" style={{
                         color: 'black',
                         padding: '12px 16px',
                         textDecoration: 'none',
@@ -318,7 +318,7 @@ export default function Dashboard() {
             {userBooks.map((book) => (
               <Link 
                 key={book.user_book_id} 
-                to={`/wordbook/${book.user_book_id}`}
+                to={`/page/wordbook/${book.user_book_id}`}
                 className="word-book-item" 
                 style={{
                   backgroundColor: '#fff',

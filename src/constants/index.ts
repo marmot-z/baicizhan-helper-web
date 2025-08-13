@@ -1,13 +1,13 @@
 // 路由常量
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
-  DASHBOARD: '/dashboard',
-  PROFILE: '/profile',
-  WORD_BOOK: '/wordbook/:id',
-  STUDY_PLAN: '/study-plan',
-  STUDY_CALENDAR: '/study-calendar',
-  WORD_DETAIL: '/word-detail/:word',
+  LOGIN: '/page/login',
+  DASHBOARD: '/page/dashboard',
+  PROFILE: '/page/profile',
+  WORD_BOOK: '/page/wordbook/:id',
+  STUDY_PLAN: '/page/study-plan',
+  STUDY_CALENDAR: '/page/study-calendar',
+  WORD_DETAIL: '/page/word-detail/:word',
 } as const;
 
 // API端点常量

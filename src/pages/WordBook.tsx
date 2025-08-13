@@ -267,7 +267,7 @@ const WordBook: React.FC = () => {
                   }}
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate(`/word-detail/${wordItem.topic_id}`);
+                    navigate(`/page/word-detail/${wordItem.topic_id}`);
                   }}
                 >
                   详情 &gt;
