@@ -34,31 +34,40 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    return response;
-  },
-  async (error) => {
-    // const originalRequest = error.config; // 暂时未使用
-    
-    // 处理401错误（token过期）
-    if (error.response?.status === 401) {
-      // 调用authStore的logout方法清理状态
+    // 检查响应数据中的 code 字段
+    if (response.data?.code === 401) {
+      // 处理401错误（token过期）
       const authState = useAuthStore.getState();
       authState.logout();
       
       // 跳转到登录页面
-      window.location.href = '/login';
-      return Promise.reject(error);
+      window.location.href = '/page/login';
+      return Promise.reject(new Error('Token expired'));
     }
     
-    // 其他错误处理
-    if (error.response?.status === 403) {
+    if (response.data?.code === 403) {
+      // 处理403错误（权限不足）
       console.error('Forbidden access');
-      // 使用 setTimeout 确保在 React 上下文中调用 toast
-      setTimeout(() => {
-        toast.error('您当前还不是会员，前往购买');
-      }, 0);
+      
+      // 防抖机制：5秒内只显示一次toast
+      const now = Date.now();
+      const lastToastTime = (window as any).__lastToastTime || 0;
+      
+      if (now - lastToastTime > 5000) {
+        (window as any).__lastToastTime = now;
+        // 使用 setTimeout 确保在 React 上下文中调用 toast
+        setTimeout(() => {
+          toast.error('权限不足，请开通会员');
+        }, 0);
+      }
+      
+      return Promise.reject(new Error(response.data?.message || 'Forbidden access'));
     }
     
+    return response;
+  },
+  async (error) => {
+    // 处理网络错误或其他HTTP错误
     return Promise.reject(error);
   }
 );
