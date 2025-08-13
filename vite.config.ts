@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:18033',
+        target: 'http://www.baicizhan-helper.cn',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
