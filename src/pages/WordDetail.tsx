@@ -403,13 +403,19 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 短语 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>短语</h2>
-          <div style={{ fontSize: '1.1rem' }}>
-            <p style={{ margin: '0' }}>drive someone crazy</p>
-            <p style={{ margin: '0.25rem 0' }}>把某人逼疯</p>
-          </div>
-        </section>
+        {wordData.dict.short_phrases && wordData.dict.short_phrases.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>短语</h2>
+            <div>
+              {wordData.dict.short_phrases.map((phrase, index) => (
+                <div key={phrase.id || index} style={{ fontSize: '1.1rem', marginBottom: index < wordData.dict.short_phrases.length - 1 ? '1rem' : '0' }}>
+                  <p style={{ margin: '0' }}>{phrase.short_phrase}</p>
+                  <p style={{ margin: '0.25rem 0', color: '#666' }}>{phrase.short_phrase_trans}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 近义词 */}
         {wordData.dict.synonyms.length > 0 && (
@@ -440,10 +446,12 @@ const WordDetail: React.FC = () => {
         )}
 
         {/* 词根词缀 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>词根词缀</h2>
-          <p style={{ margin: '0' }}>drive {'->'} drove (不规则动词过去式)</p>
-        </section>
+        {wordData.dict.word_basic_info.etyma && wordData.dict.word_basic_info.etyma.trim() !== '' && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>词根词缀</h2>
+            <p style={{ margin: '0' }}>{wordData.dict.word_basic_info.etyma}</p>
+          </section>
+        )}
 
         {/* 英文释义 */}
         {wordData.dict.en_means && wordData.dict.en_means.length > 0 && (
