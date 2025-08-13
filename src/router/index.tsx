@@ -4,10 +4,11 @@ import {
   Home,
   Login,
   Dashboard,
-  WordBook,
   StudyPlan,
   StudyCalendar,
+  WordBook,
   WordDetail,
+  VipCenter,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 
@@ -58,13 +59,21 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: ROUTES.WORD_DETAIL,
-    element: (
-      <ProtectedRoute>
-        <WordDetail />
-      </ProtectedRoute>
-    ),
-  },
+          path: ROUTES.WORD_DETAIL,
+          element: (
+            <ProtectedRoute>
+              <WordDetail />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: ROUTES.VIP_CENTER,
+          element: (
+            <ProtectedRoute>
+              <VipCenter />
+            </ProtectedRoute>
+          ),
+        },
   {
     path: '*',
     element: <Navigate to={ROUTES.HOME} replace />,

@@ -8,6 +8,7 @@ export const ROUTES = {
   STUDY_PLAN: '/page/study-plan',
   STUDY_CALENDAR: '/page/study-calendar',
   WORD_DETAIL: '/page/word-detail/:word',
+  VIP_CENTER: '/page/vip-center',
 } as const;
 
 // API端点常量

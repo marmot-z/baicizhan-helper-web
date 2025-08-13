@@ -129,6 +129,20 @@ export interface SelectOption {
 
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
+// 商品信息DTO
+export interface GoodsDTO {
+  /** 商品id */
+  id: number;
+  /** 商品名称 */
+  name: string;
+  /** 商品价格，单位：分 */
+  price: number;
+  /** 实际价格，单位：分 */
+  realPrice: number;
+  /** 生效天数 */
+  effectDays: number;
+}
+
 // 日历学习内容相关类型
 export interface CalendarDailyWord {
   topic_id: number;
