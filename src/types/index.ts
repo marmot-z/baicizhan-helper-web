@@ -131,16 +131,48 @@ export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 // 商品信息DTO
 export interface GoodsDTO {
-  /** 商品id */
+  /** 商品ID */
   id: number;
   /** 商品名称 */
   name: string;
-  /** 商品价格，单位：分 */
+  /** 原价（分） */
   price: number;
-  /** 实际价格，单位：分 */
+  /** 实际价格（分） */
   realPrice: number;
-  /** 生效天数 */
+  /** 有效天数 */
   effectDays: number;
+}
+
+export interface OrderInfoDTO {
+  /** 订单号 */
+  orderNo: string;
+  /** 商品名称 */
+  goodsName: string;
+  /** 用户名称 */
+  username: string;
+  /** 用户id */
+  userId: number;
+  /** 订单状态 */
+  state: number;
+  /** 付款金额 */
+  amount: number;
+  /** 付款时间 */
+  payTime: string;
+  /** 订单开始生效时间 */
+  startTime: string;
+  /** 订单结束生效时间 */
+  endTime: string;
+  /** 订单生效时间 */
+  effectTime: string;
+}
+
+export interface OrderInfoResponse {
+  /** 总数 */
+  total: number;
+  /** 未过滤总数 */
+  totalNotFiltered: number;
+  /** 订单列表 */
+  rows: OrderInfoDTO[];
 }
 
 // 日历学习内容相关类型

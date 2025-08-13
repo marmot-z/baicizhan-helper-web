@@ -1,5 +1,5 @@
 import { ApiService } from './api';
-import type { GoodsDTO } from '../types';
+import type { GoodsDTO, OrderInfoResponse } from '../types';
 
 /**
  * VIP服务相关API
@@ -11,6 +11,15 @@ export class VipService {
    */
   static async getGoods(): Promise<GoodsDTO[]> {
     const response = await ApiService.get<GoodsDTO[]>('/goodsList');
+    return response.data;
+  }
+
+  /**
+   * 获取订单信息
+   * @returns Promise<OrderInfoResponse> 订单信息响应
+   */
+  static async getOrders(): Promise<OrderInfoResponse> {
+    const response = await ApiService.get<OrderInfoResponse>('/orderInfo');
     return response.data;
   }
 }
