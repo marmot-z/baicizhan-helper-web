@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { ApiResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
+import toast from 'react-hot-toast';
 
 // API基础配置
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -52,6 +53,10 @@ apiClient.interceptors.response.use(
     // 其他错误处理
     if (error.response?.status === 403) {
       console.error('Forbidden access');
+      // 使用 setTimeout 确保在 React 上下文中调用 toast
+      setTimeout(() => {
+        toast.error('您当前还不是会员，前往购买');
+      }, 0);
     }
     
     return Promise.reject(error);

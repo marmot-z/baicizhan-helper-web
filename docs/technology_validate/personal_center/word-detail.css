@@ -141,3 +141,65 @@ h2 {
         font-size: 2rem;
     }
 }
+
+/* Word Forms List */
+.word-forms-list {
+    position: relative;
+    padding-left: 20px;
+}
+
+.word-forms-list::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background-color: #e0e0e0;
+}
+
+.form-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.form-item::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    width: 10px;
+    height: 1px;
+    background-color: #e0e0e0;
+}
+
+.form-item.is-base {
+    margin-left: 0px;
+}
+
+.form-item.is-base::before {
+    display: none;
+}
+
+.form-item.is-base .form-word::before {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background-color: #4a90e2;
+    border-radius: 50%;
+}
+
+.form-type {
+    color: #888;
+    margin-right: 10px;
+}
+
+.form-word {
+    font-weight: bold;
+}

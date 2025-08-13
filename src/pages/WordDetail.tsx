@@ -163,12 +163,129 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 单词变形 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>单词变形</h2>
-          <div>
-            <span style={{ backgroundColor: '#e9ecef', padding: '4px 8px', borderRadius: '4px', fontSize: '0.9rem' }}>drive 的过去式</span>
-          </div>
-        </section>
+        {(() => {
+          const variantInfo = wordData.dict.variant_info;
+          
+          // 检查 variantInfo 是否存在
+          if (!variantInfo) {
+            return null;
+          }
+          
+          const variantFields = [
+            { key: 'noun', label: '名词' },
+            { key: 'verb', label: '动词' },
+            { key: 'adj', label: '形容词' },
+            { key: 'pl', label: '复数' },
+            { key: 'adv', label: '副词' },
+            { key: 'ing', label: '现在分词' },
+            { key: 'done', label: '过去分词' },
+            { key: 'past', label: '过去式' },
+            { key: 'third', label: '第三人称单数' },
+            { key: 'er', label: '比较级' },
+            { key: 'est', label: '最高级' },
+            { key: 'prep', label: '介词' },
+            { key: 'conn', label: '连词' }
+          ];
+          
+          // 过滤出有值的变形
+          const availableVariants = variantFields.filter(field => 
+            variantInfo[field.key as keyof typeof variantInfo] && 
+            variantInfo[field.key as keyof typeof variantInfo] !== ''
+          );
+          
+          if (availableVariants.length === 0) {
+            return null;
+          }
+          
+          return (
+            <section className="bg-white" style={cardStyle}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>单词变形</h2>
+              <div style={{
+                position: 'relative',
+                paddingLeft: '20px'
+              }}>
+                {/* 垂直线 */}
+                <div style={{
+                  content: '',
+                  position: 'absolute',
+                  left: '5px',
+                  top: '10px',
+                  bottom: '10px',
+                  width: '1px',
+                  backgroundColor: '#e0e0e0'
+                }}></div>
+                
+                {/* 基础词形 */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                  position: 'relative',
+                  marginLeft: '0px'
+                }}>
+                  <span style={{
+                    fontWeight: 'bold',
+                    position: 'relative'
+                  }}>
+                    {/* 蓝色圆点 */}
+                    <span style={{
+                      content: '',
+                      position: 'absolute',
+                      left: '-18px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '8px',
+                      height: '8px',
+                      backgroundColor: '#4a90e2',
+                      borderRadius: '50%',
+                      display: 'block'
+                    }}></span>
+                    {wordData.dict.word_basic_info.word}
+                  </span>
+                </div>
+                
+                {/* 动态渲染变形 */}
+                {availableVariants.map((variant, index) => {
+                  const word = variantInfo[variant.key as keyof typeof variantInfo] as string;
+                  const topicId = variantInfo[`${variant.key}_topic_id` as keyof typeof variantInfo] as number;
+                  
+                  return (
+                    <div key={variant.key} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: '10px',
+                      position: 'relative'
+                    }}>
+                      {/* 水平线 */}
+                      <span style={{
+                        content: '',
+                        position: 'absolute',
+                        left: '-15px',
+                        top: '50%',
+                        width: '10px',
+                        height: '1px',
+                        backgroundColor: '#e0e0e0',
+                        display: 'block'
+                      }}></span>
+                      <span style={{ color: '#888', marginRight: '10px' }}>{variant.label}</span>
+                      {topicId ? (
+                        <a href={`/word-detail/${topicId}`} style={{ 
+                          fontSize: '1.1em', 
+                          textDecoration: 'none', 
+                          color: '#007bff' 
+                        }}>
+                          {word}
+                        </a>
+                      ) : (
+                        <span style={{ fontWeight: 'bold' }}>{word}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 图文例句 */}
         {wordData.dict.sentences.length > 0 && (
@@ -286,13 +403,19 @@ const WordDetail: React.FC = () => {
         </section>
 
         {/* 短语 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>短语</h2>
-          <div style={{ fontSize: '1.1rem' }}>
-            <p style={{ margin: '0' }}>drive someone crazy</p>
-            <p style={{ margin: '0.25rem 0' }}>把某人逼疯</p>
-          </div>
-        </section>
+        {wordData.dict.short_phrases && wordData.dict.short_phrases.length > 0 && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>短语</h2>
+            <div>
+              {wordData.dict.short_phrases.map((phrase, index) => (
+                <div key={phrase.id || index} style={{ fontSize: '1.1rem', marginBottom: index < wordData.dict.short_phrases.length - 1 ? '1rem' : '0' }}>
+                  <p style={{ margin: '0' }}>{phrase.short_phrase}</p>
+                  <p style={{ margin: '0.25rem 0', color: '#666' }}>{phrase.short_phrase_trans}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 近义词 */}
         {wordData.dict.synonyms.length > 0 && (
@@ -323,10 +446,12 @@ const WordDetail: React.FC = () => {
         )}
 
         {/* 词根词缀 */}
-        <section className="bg-white" style={cardStyle}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>词根词缀</h2>
-          <p style={{ margin: '0' }}>drive {'->'} drove (不规则动词过去式)</p>
-        </section>
+        {wordData.dict.word_basic_info.etyma && wordData.dict.word_basic_info.etyma.trim() !== '' && (
+          <section className="bg-white" style={cardStyle}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>词根词缀</h2>
+            <p style={{ margin: '0' }}>{wordData.dict.word_basic_info.etyma}</p>
+          </section>
+        )}
 
         {/* 英文释义 */}
         {wordData.dict.en_means && wordData.dict.en_means.length > 0 && (
