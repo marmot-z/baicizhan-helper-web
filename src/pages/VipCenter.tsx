@@ -8,6 +8,7 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { VipService } from '../services/vipService';
+import { toast } from 'react-hot-toast';
 import type { GoodsDTO, OrderInfoDTO } from '../types';
 
 const VipCenter: React.FC = () => {
@@ -15,6 +16,7 @@ const VipCenter: React.FC = () => {
   const [orders, setOrders] = useState<OrderInfoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [trialLoading, setTrialLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +119,20 @@ const VipCenter: React.FC = () => {
     [columnHelper]
   );
 
+  // 处理试用申请
+  const handleTrialClick = async () => {
+    try {
+      setTrialLoading(true);
+      await VipService.applyTrial();
+      toast.success('申请试用成功');
+    } catch (error) {
+      console.error('申请试用失败:', error);
+      toast.error(error instanceof Error ? error.message : '申请试用失败，请稍后重试');
+    } finally {
+      setTrialLoading(false);
+    }
+  };
+
   const table = useReactTable({
     data: orders,
     columns,
@@ -134,8 +150,23 @@ const VipCenter: React.FC = () => {
     <div className="min-h-screen bg-gray-50 text-gray-800" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', lineHeight: '1.6' }}>
       <div className="mx-auto p-5" style={{ maxWidth: '1100px' }}>
         {/* 公告横幅 */}
-        <div className="text-white text-center font-bold" style={{ backgroundColor: '#007bff', padding: '0.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
-          <p className="m-0">🎉 限时优惠！年度会员享超值折扣，立即升级！</p>
+        <div className="text-white text-center font-bold" style={{ backgroundColor: 'rgb(77 156 240)', padding: '0.5rem', borderRadius: '8px', margin: '2rem 0', color: 'white', fontWeight: 'bolder', fontSize: '1.2rem' }}>
+          <p className="m-0">🎁 还不是会员？立即申请 30 天免费试用，先体验再决定! 
+            <button 
+              onClick={handleTrialClick}
+              disabled={trialLoading}
+              style={{   
+                borderRadius: '5px',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: trialLoading ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                opacity: trialLoading ? 0.6 : 1
+              }}
+            >
+              {trialLoading ? '申请中...' : '👋 立即试用 30 天'}
+            </button>
+        </p>
         </div>
 
         {/* 会员购买 */}

@@ -22,6 +22,15 @@ export class VipService {
     const response = await ApiService.get<OrderInfoResponse>('/orderInfo');
     return response.data;
   }
+
+  /**
+   * 申请试用
+   * @returns Promise<string> 订单号
+   */
+  static async applyTrial(): Promise<string> {
+    const response = await ApiService.post<string>('/createTrialOrder');
+    return response.data;
+  }
 }
 
 export default VipService;

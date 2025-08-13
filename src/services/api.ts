@@ -64,6 +64,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(new Error(response.data?.message || 'Forbidden access'));
     }
     
+    if (response.data?.code === 500) {
+      // 处理500错误（服务器内部错误）
+      return Promise.reject(new Error(response.data?.message));
+    }
+    
     return response;
   },
   async (error) => {
