@@ -136,7 +136,7 @@ export default function Dashboard() {
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
                       }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</Link>
-                      <a href="#" style={{
+                      <a href="/page/vip-center" style={{
                         color: 'black',
                         padding: '12px 16px',
                         textDecoration: 'none',

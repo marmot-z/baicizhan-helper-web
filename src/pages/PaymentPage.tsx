@@ -1,0 +1,110 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { VipService } from '../services/vipService';
+import type { LTWxpayResponseDTO } from '../types';
+
+const PaymentPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const orderNo = searchParams.get('orderNo');
+
+  useEffect(() => {
+    if (!orderNo) {
+      setError('订单号不能为空');
+      setLoading(false);
+      return;
+    }
+
+    const generateQrCode = async () => {
+      try {
+        setLoading(true);
+        const response: LTWxpayResponseDTO = await VipService.generateWxpayQrCode(orderNo);
+        
+        if (response.code === 0) {
+          setQrCodeUrl(response.data.QRcode_url);
+        } else {
+          setError(response.msg || '生成支付二维码失败');
+        }
+      } catch (err) {
+        setError('网络错误，请稍后重试');
+        console.error('生成支付二维码失败:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    generateQrCode();
+  }, [orderNo]);
+
+  const handleGoBack = () => {
+    navigate('/page/vip-center');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12" style={{ backgroundColor: 'black' }}>
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
+            <div className="bg-white rounded-lg shadow-md">
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-center mb-6 text-gray-800" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
+                  订单支付
+                </h3>
+                
+                <div className="text-center">
+                  {loading && (
+                    <div className="flex flex-col items-center space-y-4" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="text-gray-600">正在生成支付二维码...</p>
+                    </div>
+                  )}
+                  
+                  {error && (
+                    <div className="flex flex-col items-center space-y-4" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
+                      <div className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="font-medium">支付失败</p>
+                        <p className="text-sm mt-1">{error}</p>
+                      </div>
+                      <button
+                        onClick={handleGoBack}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        返回VIP中心
+                      </button>
+                    </div>
+                  )}
+                  
+                  {qrCodeUrl && !loading && !error && (
+                    <div className="flex flex-col items-center space-y-6">
+                      <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                        <img
+                          src={qrCodeUrl}
+                          alt="支付二维码"
+                          className="w-64 h-64 object-contain"
+                        />
+                      </div>
+                      
+                      <div className="text-center space-y-2">
+                        <p className="text-lg font-medium text-gray-800" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
+                          请使用微信扫码支付
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          订单号: {orderNo}
+                        </p>
+                      </div>                      
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentPage;

@@ -7,16 +7,19 @@ import {
   createColumnHelper,
   flexRender,
 } from '@tanstack/react-table';
+import { useNavigate } from 'react-router-dom';
 import { VipService } from '../services/vipService';
 import { toast } from 'react-hot-toast';
 import type { GoodsDTO, OrderInfoDTO } from '../types';
 
 const VipCenter: React.FC = () => {
+  const navigate = useNavigate();
   const [goods, setGoods] = useState<GoodsDTO[]>([]);
   const [orders, setOrders] = useState<OrderInfoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [trialLoading, setTrialLoading] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,7 +93,7 @@ const VipCenter: React.FC = () => {
                <span>
                  待支付{' '}
                  <a 
-                   href={`/page/pay?orderNo=${row.orderNo}`} 
+                   href={`/page/payment?orderNo=${row.orderNo}`} 
                    target="_blank" 
                    rel="noopener noreferrer"
                    className="text-blue-600 hover:text-blue-800 underline"
@@ -130,6 +133,21 @@ const VipCenter: React.FC = () => {
       toast.error(error instanceof Error ? error.message : '申请试用失败，请稍后重试');
     } finally {
       setTrialLoading(false);
+    }
+  };
+
+  // 处理立即购买
+  const handlePurchaseClick = async (goodsId: number) => {
+    try {
+      setPurchaseLoading(goodsId);
+      const orderNo = await VipService.createOrder(goodsId);
+      // 跳转到支付页面
+      navigate(`/page/payment?orderNo=${orderNo}`);
+    } catch (error) {
+      console.error('创建订单失败:', error);
+      toast.error('下单失败，请稍候重试');
+    } finally {
+      setPurchaseLoading(null);
     }
   };
 
@@ -197,8 +215,31 @@ const VipCenter: React.FC = () => {
                        </>
                      )}
                   </div>
-                  <button className="text-white w-full border-none rounded font-bold cursor-pointer transition-colors duration-300" style={{ backgroundColor: '#007bff', padding: '12px 0', fontSize: '1.1rem', borderRadius: '5px', color: 'white', fontWeight: 'bolder' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0056b3'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#007bff'}>
-                    立即购买
+                  <button 
+                    className="text-white w-full border-none rounded font-bold cursor-pointer transition-colors duration-300" 
+                    style={{ 
+                      backgroundColor: purchaseLoading === item.id ? '#6c757d' : '#007bff', 
+                      padding: '12px 0', 
+                      fontSize: '1.1rem', 
+                      borderRadius: '5px', 
+                      color: 'white', 
+                      fontWeight: 'bolder',
+                      cursor: purchaseLoading === item.id ? 'not-allowed' : 'pointer'
+                    }} 
+                    onMouseEnter={(e) => {
+                      if (purchaseLoading !== item.id) {
+                        e.currentTarget.style.backgroundColor = '#0056b3';
+                      }
+                    }} 
+                    onMouseLeave={(e) => {
+                      if (purchaseLoading !== item.id) {
+                        e.currentTarget.style.backgroundColor = '#007bff';
+                      }
+                    }}
+                    onClick={() => handlePurchaseClick(item.id)}
+                    disabled={purchaseLoading === item.id}
+                  >
+                    {purchaseLoading === item.id ? '下单中...' : '立即购买'}
                   </button>
                 </div>
               );

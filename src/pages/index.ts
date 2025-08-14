@@ -7,3 +7,4 @@ export { default as StudyCalendar } from './StudyCalendar';
 export { default as WordBook } from './WordBook';
 export { default as WordDetail } from './WordDetail';
 export { default as VipCenter } from './VipCenter';
+export { default as PaymentPage } from './PaymentPage';

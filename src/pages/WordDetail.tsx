@@ -269,7 +269,7 @@ const WordDetail: React.FC = () => {
                       }}></span>
                       <span style={{ color: '#888', marginRight: '10px' }}>{variant.label}</span>
                       {topicId ? (
-                        <a href={`/word-detail/${topicId}`} style={{ 
+                        <a href={`/page/word-detail/${topicId}`} style={{ 
                           fontSize: '1.1em', 
                           textDecoration: 'none', 
                           color: '#007bff' 

@@ -336,3 +336,20 @@ export interface TopicResourceV2 {
   media: WordMedia;
   similar_words: SimilarWord[];
 }
+
+// 微信支付相关类型
+export interface LTWxpayResponseData {
+  /** 微信原生支付链接，此URL用于生成支付二维码，然后提供给用户扫码支付。 */
+  code_url: string;
+  /** 生成的二维码链接地址 */
+  QRcode_url: string;
+}
+
+export interface LTWxpayResponseDTO {
+  /** 返回状态，枚举值：0：成功，1：失败 */
+  code: number;
+  msg: string;
+  /** 唯一请求ID */
+  request_id: string;
+  data: LTWxpayResponseData;
+}
