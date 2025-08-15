@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { VipService } from '../services/vipService';
+import { toast } from 'react-hot-toast';
 import type { LTWxpayResponseDTO } from '../types';
 
 const PaymentPage: React.FC = () => {
@@ -9,7 +10,13 @@ const PaymentPage: React.FC = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const orderNo = searchParams.get('orderNo');
+  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
+  
+  const POLLING_INTERVAL = 3000; // 3秒轮询间隔
+  const MAX_POLLING_TIME = 10 * 60 * 1000; // 10分钟超时
 
   useEffect(() => {
     if (!orderNo) {
@@ -25,6 +32,8 @@ const PaymentPage: React.FC = () => {
         
         if (response.code === 0) {
           setQrCodeUrl(response.data.QRcode_url);
+          // 开始轮询订单状态
+          startPolling();
         } else {
           setError(response.msg || '生成支付二维码失败');
         }
@@ -38,6 +47,59 @@ const PaymentPage: React.FC = () => {
 
     generateQrCode();
   }, [orderNo]);
+
+  // 开始轮询订单状态
+  const startPolling = () => {
+    startTimeRef.current = Date.now();
+    pollingTimerRef.current = setInterval(checkOrderState, POLLING_INTERVAL);
+  };
+
+  // 检查订单状态
+  const checkOrderState = async () => {
+    if (!orderNo) return;
+    
+    // 检查是否超时
+    if (Date.now() - startTimeRef.current >= MAX_POLLING_TIME) {
+      clearInterval(pollingTimerRef.current!);
+      toast.error('支付超时，页面即将关闭');
+      setTimeout(() => {
+        window.close();
+      }, 3000);
+      return;
+    }
+
+    try {
+      const state = await VipService.getOrderState(orderNo);
+      
+      if (state === 2) {
+        // 支付成功
+        clearInterval(pollingTimerRef.current!);
+        setPaymentSuccess(true);
+        toast.success('支付成功！页面将在3秒后关闭');
+        setTimeout(() => {
+          window.close();
+        }, 3000);
+      } else if (state === 1) {
+        // 超时未支付
+        clearInterval(pollingTimerRef.current!);
+        toast.error('订单超时未支付，页面即将关闭');
+        setTimeout(() => {
+          window.close();
+        }, 3000);
+      }
+    } catch (err) {
+      console.error('获取订单状态失败:', err);
+    }
+  };
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (pollingTimerRef.current) {
+        clearInterval(pollingTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleGoBack = () => {
     navigate('/page/vip-center');
@@ -79,22 +141,35 @@ const PaymentPage: React.FC = () => {
                   
                   {qrCodeUrl && !loading && !error && (
                     <div className="flex flex-col items-center space-y-6">
-                      <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                        <img
-                          src={qrCodeUrl}
-                          alt="支付二维码"
-                          className="w-64 h-64 object-contain"
-                        />
-                      </div>
-                      
-                      <div className="text-center space-y-2">
-                        <p className="text-lg font-medium text-gray-800" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
-                          请使用微信扫码支付
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          订单号: {orderNo}
-                        </p>
-                      </div>                      
+                      {paymentSuccess ? (
+                        <div className="text-center space-y-4">
+                          <div className="text-green-600 text-6xl mb-4">✓</div>
+                          <p className="text-xl font-semibold text-green-600">支付成功！</p>
+                          <p className="text-sm text-gray-600">页面将在3秒后自动关闭</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                            <img
+                              src={qrCodeUrl}
+                              alt="支付二维码"
+                              className="w-64 h-64 object-contain"
+                            />
+                          </div>
+                          
+                          <div className="text-center space-y-2">
+                            <p className="text-lg font-medium text-gray-800" style={{color: 'white',fontWeight: 'bolder',fontSize: '1.2em',}}>
+                              请使用微信扫码支付
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              订单号: {orderNo}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              正在监听支付状态...
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
