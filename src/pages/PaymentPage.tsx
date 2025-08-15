@@ -61,10 +61,10 @@ const PaymentPage: React.FC = () => {
     // 检查是否超时
     if (Date.now() - startTimeRef.current >= MAX_POLLING_TIME) {
       clearInterval(pollingTimerRef.current!);
-      toast.error('支付超时，页面即将关闭');
-      setTimeout(() => {
-        window.close();
-      }, 3000);
+       toast.error('支付超时，页面即将关闭');
+       setTimeout(() => {
+         window.history.back();
+       }, 3000);
       return;
     }
 
@@ -77,15 +77,15 @@ const PaymentPage: React.FC = () => {
         setPaymentSuccess(true);
         toast.success('支付成功！页面将在3秒后关闭');
         setTimeout(() => {
-          window.close();
+          window.history.back();
         }, 3000);
       } else if (state === 1) {
         // 超时未支付
         clearInterval(pollingTimerRef.current!);
-        toast.error('订单超时未支付，页面即将关闭');
-        setTimeout(() => {
-          window.close();
-        }, 3000);
+         toast.error('订单超时未支付，页面即将关闭');
+         setTimeout(() => {
+           window.history.back();
+         }, 3000);
       }
     } catch (err) {
       console.error('获取订单状态失败:', err);

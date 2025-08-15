@@ -245,7 +245,7 @@ const WordDetail: React.FC = () => {
                 </div>
                 
                 {/* 动态渲染变形 */}
-                {availableVariants.map((variant, index) => {
+                {availableVariants.map((variant) => {
                   const word = variantInfo[variant.key as keyof typeof variantInfo] as string;
                   const topicId = variantInfo[`${variant.key}_topic_id` as keyof typeof variantInfo] as number;
                   
