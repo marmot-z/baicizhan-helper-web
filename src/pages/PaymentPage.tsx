@@ -61,10 +61,8 @@ const PaymentPage: React.FC = () => {
     // 检查是否超时
     if (Date.now() - startTimeRef.current >= MAX_POLLING_TIME) {
       clearInterval(pollingTimerRef.current!);
-       toast.error('支付超时，页面即将关闭');
-       setTimeout(() => {
-         window.history.back();
-       }, 3000);
+      toast.error('支付超时，页面即将关闭');
+      window.close();
       return;
     }
 
@@ -75,17 +73,13 @@ const PaymentPage: React.FC = () => {
         // 支付成功
         clearInterval(pollingTimerRef.current!);
         setPaymentSuccess(true);
-        toast.success('支付成功！页面将在3秒后关闭');
-        setTimeout(() => {
-          window.history.back();
-        }, 3000);
+        toast.success('支付成功！');
+        window.close();
       } else if (state === 1) {
         // 超时未支付
         clearInterval(pollingTimerRef.current!);
          toast.error('订单超时未支付，页面即将关闭');
-         setTimeout(() => {
-           window.history.back();
-         }, 3000);
+         window.close();
       }
     } catch (err) {
       console.error('获取订单状态失败:', err);
@@ -100,10 +94,6 @@ const PaymentPage: React.FC = () => {
       }
     };
   }, []);
-
-  const handleGoBack = () => {
-    navigate('/page/vip-center');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12" style={{ backgroundColor: 'black' }}>
@@ -126,16 +116,10 @@ const PaymentPage: React.FC = () => {
                   
                   {error && (
                     <div className="flex flex-col items-center space-y-4" style={{color: 'white',fontSize: '1.2em',fontWeight: 'bolder'}}>
-                      <div className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="">
                         <p className="font-medium">支付失败</p>
                         <p className="text-sm mt-1">{error}</p>
                       </div>
-                      <button
-                        onClick={handleGoBack}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        返回VIP中心
-                      </button>
                     </div>
                   )}
                   

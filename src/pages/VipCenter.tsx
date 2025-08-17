@@ -142,7 +142,7 @@ const VipCenter: React.FC = () => {
       setPurchaseLoading(goodsId);
       const orderNo = await VipService.createOrder(goodsId);
       // 跳转到支付页面
-      navigate(`/page/payment?orderNo=${orderNo}`);
+      window.open(`/page/payment?orderNo=${orderNo}`, '_blank');
     } catch (error) {
       console.error('创建订单失败:', error);
       toast.error('下单失败，请稍候重试');
