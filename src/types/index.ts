@@ -337,6 +337,14 @@ export interface TopicResourceV2 {
   similar_words: SimilarWord[];
 }
 
+// 搜索单词结果类型
+export interface SearchWordResultV2 {
+  word: string;
+  topic_id: number;
+  mean_cn: string;
+  accent: string;
+}
+
 // 微信支付相关类型
 export interface LTWxpayResponseData {
   /** 微信原生支付链接，此URL用于生成支付二维码，然后提供给用户扫码支付。 */

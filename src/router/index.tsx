@@ -4,6 +4,7 @@ import {
   Home,
   Login,
   Dashboard,
+  Search,
   StudyPlan,
   StudyCalendar,
   WordBook,
@@ -32,6 +33,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Dashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.SEARCH,
+    element: (
+      <ProtectedRoute>
+        <Search />
       </ProtectedRoute>
     ),
   },

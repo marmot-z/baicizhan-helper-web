@@ -1,0 +1,90 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    line-height: 1.6;
+    background-color: #fff;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+/* Search Header */
+.search-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-radius: 20px;
+    padding: 8px 12px;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    padding: 0 8px;
+}
+
+.search-input:focus {
+    outline: none;
+}
+
+.icon {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+.btn-cancel {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #333;
+    cursor: pointer;
+}
+
+/* Search Results */
+.search-results {
+    margin-top: 1rem;
+}
+
+.result-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.result-item:last-child {
+    border-bottom: none;
+}
+
+.word-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0 0 0.25rem 0;
+}
+
+.pronunciation {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: normal;
+    margin-left: 0.5rem;
+}
+
+.word-definition {
+    margin: 0;
+    color: #555;
+    font-size: 0.95rem;
+}

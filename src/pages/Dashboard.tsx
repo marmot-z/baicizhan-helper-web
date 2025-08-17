@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
 import { useStudyStore } from '../stores/studyStore';
 import { bookService } from '../services/bookService';
 import type { UserBindInfo, UserBookItem } from '../types';
+import { ROUTES } from '../constants';
 import iconLogo from '../assets/icon.png';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuthStore();
   const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
 
@@ -22,6 +25,21 @@ export default function Dashboard() {
     if (weixinUser) return weixinUser.nickname;
     
     return user[0].nickname || 'guest';
+  };
+
+  // 处理搜索功能
+  const handleSearch = () => {
+    const searchPath = searchQuery.trim() 
+      ? `${ROUTES.SEARCH}?q=${encodeURIComponent(searchQuery.trim())}`
+      : ROUTES.SEARCH;
+    navigate(searchPath);
+  };
+
+  // 处理回车键
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   useEffect(() => {
@@ -165,6 +183,26 @@ export default function Dashboard() {
         </div>
       </header>
 
+      <div style={{textAlign: 'center',marginTop: '1rem'}}>
+          <input 
+            type="search" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleKeyPress}
+            style={{
+              width: '50%',
+              maxWidth: '400px',
+              padding: '0.8rem 1.5rem',
+              fontSize: '1rem',
+              border: '1px solid #ced4da',
+              borderRadius: '50px',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+              transition: 'border-color 0.2s, box-shadow 0.2s'
+            }} 
+            placeholder="输入需要查询的单词" 
+          />            
+      </div>
+
       <main className="container" style={{
         maxWidth: '960px',
         margin: '0 auto',
@@ -173,7 +211,7 @@ export default function Dashboard() {
         <section className="study-review" style={{
            backgroundColor: '#fff',
            padding: '2rem',
-           marginTop: '2rem',
+           marginTop: '1rem',
            borderRadius: '8px',
            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
            display: 'flex',

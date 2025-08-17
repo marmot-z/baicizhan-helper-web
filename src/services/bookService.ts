@@ -1,5 +1,5 @@
 import { ApiService } from './api';
-import type { UserBookItem, UserBooksResponse, UserBookWordDetail, TopicResourceV2 } from '../types';
+import type { UserBookItem, UserBooksResponse, UserBookWordDetail, TopicResourceV2, SearchWordResultV2 } from '../types';
 
 export const bookService = {
   // 获取用户所有单词本信息
@@ -39,6 +39,12 @@ export const bookService = {
   // 取消收藏单词
   async cancelCollectWord(bookId: number, topicId: number): Promise<boolean> {
     const response = await ApiService.delete<boolean>(`/book/${bookId}/word/${topicId}`);
+    return response.data;
+  },
+
+  // 搜索单词
+  async searchWord(word: string): Promise<SearchWordResultV2[]> {
+    const response = await ApiService.get<SearchWordResultV2[]>(`/search/word/${encodeURIComponent(word)}`);
     return response.data;
   },
 };
