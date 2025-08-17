@@ -7,19 +7,20 @@ import {
   createColumnHelper,
   flexRender,
 } from '@tanstack/react-table';
-import { useNavigate } from 'react-router-dom';
 import { VipService } from '../services/vipService';
 import { toast } from 'react-hot-toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faQrcode } from '@fortawesome/free-solid-svg-icons';
 import type { GoodsDTO, OrderInfoDTO } from '../types';
 
 const VipCenter: React.FC = () => {
-  const navigate = useNavigate();
   const [goods, setGoods] = useState<GoodsDTO[]>([]);
   const [orders, setOrders] = useState<OrderInfoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [trialLoading, setTrialLoading] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState<number | null>(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -150,6 +151,8 @@ const VipCenter: React.FC = () => {
       setPurchaseLoading(null);
     }
   };
+
+
 
   const table = useReactTable({
     data: orders,
@@ -387,25 +390,40 @@ const VipCenter: React.FC = () => {
       {/* 售后群悬浮图标 */}
       <a 
         href="#" 
-        className="fixed flex justify-center items-center rounded-full no-underline transition-colors duration-300"
+        className="fixed flex justify-center items-center no-underline transition-colors duration-300"
         style={{ 
-          bottom: '30px', 
-          right: '30px', 
-          backgroundColor: '#28a745', 
+          top: '40%', 
+          right: '20px', 
+          position: 'fixed',
           color: 'white', 
-          width: '60px', 
-          height: '60px', 
+          width: '90px', 
+          height: '80px', 
+          borderRadius: '5px',
           boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
           textDecoration: 'none'
         }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#218838'}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
+        onClick={(e) => {
+          e.preventDefault();
+          window.open('http://www.baicizhan-helper.cn/qrcode', '_blank');
+        }}
       >
-        <div 
-          className="bg-white" 
-          style={{ width: '32px', height: '32px' }}
-        ></div>
+        <div>
+          <div 
+            className="bg-white flex items-center justify-center">
+            <FontAwesomeIcon 
+              icon={faQrcode} 
+              style={{
+                width: '30px',
+                height: '30px',
+                color: '#666'
+              }} 
+            />
+          </div>
+          <span className="text-xs text-gray-500" style={{ color: '#666'}}>加入售后群</span>
+        </div>
       </a>
+
+
     </div>
   );
 };
