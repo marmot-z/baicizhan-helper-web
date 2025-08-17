@@ -29,4 +29,16 @@ export const bookService = {
     const response = await ApiService.get<TopicResourceV2>(`/word/${topicId}?${params.toString()}`);
     return response.data;
   },
+
+  // 收藏单词
+  async collectWord(bookId: number, topicId: number): Promise<boolean> {
+    const response = await ApiService.put<boolean>(`/book/${bookId}/word/${topicId}`);
+    return response.data;
+  },
+
+  // 取消收藏单词
+  async cancelCollectWord(bookId: number, topicId: number): Promise<boolean> {
+    const response = await ApiService.delete<boolean>(`/book/${bookId}/word/${topicId}`);
+    return response.data;
+  },
 };

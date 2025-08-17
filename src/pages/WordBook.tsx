@@ -29,9 +29,7 @@ const WordBook: React.FC = () => {
           // 清理过期数据
           clearExpiredData();
           
-          // 先尝试从缓存获取单词数据
-          const cachedWords = getWordBook(id);
-          
+          // 首先获取单词本信息，得到最新的单词数量
           const books = await bookService.getBooks();
           const book = books.find(book => book.user_book_id.toString() === id);
           
@@ -40,18 +38,22 @@ const WordBook: React.FC = () => {
             setBookTitle(book.book_name);
             setWordCount(book.word_num);
             
-            if (cachedWords) {
-              // 使用缓存数据
+            // 尝试从缓存获取单词数据
+            const cachedWords = getWordBook(id);
+            
+            // 检查缓存的单词数量是否与最新单词数量匹配
+            if (cachedWords && cachedWords.length === book.word_num) {
+              // 缓存数据有效，使用缓存数据
               console.log('使用缓存的单词数据');
               setWords(cachedWords);
             } else {
-              // 从API获取单词列表并缓存
-              console.log('从API获取单词数据');
+              // 缓存数据无效或数量不匹配，从API重新获取单词列表
+              console.log('缓存数据过期或数量不匹配，从API获取最新单词数据');
               const wordsData = await bookService.getBookWords(book.user_book_id);
               setWords(wordsData);
               
-              // 缓存数据
-               setWordBook(id, wordsData);
+              // 更新缓存数据
+              setWordBook(id, wordsData);
             }
           } else {
             console.error('未找到对应的单词本');
