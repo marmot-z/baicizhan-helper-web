@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UserBindInfo, LoginRequest } from '../types';
 import { authService } from '../services/authService';
+import { useStudyStore } from './studyStore'
+import { useWordBookStore } from './wordBookStore';
 
 interface AuthState {
   user: UserBindInfo[] | null;
@@ -10,6 +12,7 @@ interface AuthState {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   getUserInfo: () => Promise<void>;
+  checkAndGetUserInfo: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -45,11 +48,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        // 清理 authStore 的本地用户信息
         set({
             user: null,
             token: null,
             isAuthenticated: false,
           });
+        
+        // 清理 studyStore 的本地学习信息
+        useStudyStore.getState().clearStudyData();
+        
+        // 清理 wordBookStore 的本地单词本、单词信息        
+        useWordBookStore.getState().clearAllData();      
       },
 
       getUserInfo: async () => {
@@ -59,6 +69,19 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Get user info error:', error);
           throw error;
+        }
+      },
+
+      checkAndGetUserInfo: async () => {
+        const currentState = useAuthStore.getState();
+        if (currentState.user === null && currentState.isAuthenticated) {
+          try {
+            const userInfo = await authService.getUserInfo();
+            set({ user: userInfo });
+          } catch (error) {
+            console.error('Auto get user info error:', error);
+            // 如果获取用户信息失败，可以选择不抛出错误，保持静默
+          }
         }
       },
     }),

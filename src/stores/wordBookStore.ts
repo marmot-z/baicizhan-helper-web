@@ -12,6 +12,7 @@ interface WordBookState {
   setWordBook: (bookId: string, words: UserBookWordDetail[]) => void;
   getWordBook: (bookId: string) => UserBookWordDetail[] | null;
   clearExpiredData: () => void;
+  clearAllData: () => void;
 }
 
 const EXPIRY_TIME = 12 * 60 * 60 * 1000; // 半天（12小时）
@@ -68,6 +69,10 @@ export const useWordBookStore = create<WordBookState>()(
         });
         
         set({ wordBooks: newWordBooks });
+      },
+
+      clearAllData: () => {
+        set({ wordBooks: {} });
       },
     }),
     {

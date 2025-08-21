@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuthStore();
+  const { user, logout, checkAndGetUserInfo } = useAuthStore();
   const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
 
   // 获取用户昵称，优先选择微信用户，否则取第一个
@@ -43,6 +43,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // 检查并获取用户信息
+    checkAndGetUserInfo();
+    
     fetchStudyData();
     
     // 获取用户单词本信息
@@ -56,7 +59,7 @@ export default function Dashboard() {
     };
     
     fetchUserBooks();
-  }, [fetchStudyData]);
+  }, [fetchStudyData, checkAndGetUserInfo]);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -173,6 +176,9 @@ export default function Dashboard() {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                      }} onClick={(e) => {
+                        e.preventDefault();
+                        logout();
                       }}><FontAwesomeIcon icon={faArrowRightFromBracket} style={{ marginRight: '8px' }} />退出</a>
                     </div>
                   </div>
