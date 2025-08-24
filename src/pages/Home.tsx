@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserBindInfo } from '../types';
 import collectWordGif from '../assets/collect-word-min.gif';
+import iconImg from '../assets/icon.png';
+import searchImg from '../assets/search.png';
+import collectImg from '../assets/collect.png';
+import studyImg from '../assets/study.png';
+import ankiImg from '../assets/anki.png';
 
 export default function Home() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   // 获取用户昵称，优先选择微信用户，否则取第一个
   const getUserNickname = (): string => {
@@ -39,7 +44,7 @@ export default function Home() {
           alignItems: 'center'
         }}>
           <img 
-            src="/src/assets/icon.png" 
+            src={iconImg} 
             alt="Logo" 
             style={{
               width: '30px',
@@ -260,7 +265,7 @@ export default function Home() {
                 flex: '1'
               }}>
                 <img 
-                  src="/src/assets/search.png" 
+                  src={searchImg} 
                   alt="搜索单词功能截图" 
                   style={{
                     width: '100%',
@@ -295,7 +300,7 @@ export default function Home() {
                 flex: '1'
               }}>
                 <img 
-                  src="/src/assets/collect.png" 
+                  src={collectImg} 
                   alt="搜索单词功能截图" 
                   style={{
                     width: '100%',
@@ -329,13 +334,16 @@ export default function Home() {
               <div className="feature-image" style={{
                 flex: '1'
               }}>
-                <div className="screenshot-placeholder" style={{
-                  backgroundColor: '#e9ecef',
-                  border: '1px solid #ced4da',
-                  borderRadius: '8px',
-                  width: '100%',
-                  height: '300px'
-                }}></div>
+                <img 
+                  src={ankiImg} 
+                  alt="搜索单词功能截图" 
+                  style={{
+                    width: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #ced4da'
+                  }} 
+                  />
               </div>
             </div>
             <div className="feature" style={{
@@ -362,7 +370,7 @@ export default function Home() {
                 flex: '1'
               }}>
                 <img 
-                  src="/src/assets/study.png" 
+                  src={studyImg} 
                   alt="搜索单词功能截图" 
                   style={{
                     width: '100%',

@@ -96,8 +96,10 @@ export default function Dashboard() {
             className="logo" 
             style={{
               height: '2rem',
-              width: 'auto'
+              width: 'auto',
+              cursor: 'pointer'
             }} 
+            onClick={() => navigate(ROUTES.HOME)}
           />
           <nav>
             <ul style={{

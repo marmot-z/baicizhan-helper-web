@@ -249,6 +249,11 @@ const VipCenter: React.FC = () => {
             })
           )}
         </section>
+        
+        {/* 订单生效提示 */}
+        <div className="text-left" style={{ marginBottom: '2rem' }}>
+          <p style={{ fontSize: '0.9rem', color: '#6c757d', margin: 0 }}>提示：订单付款后5分钟内生效</p>
+        </div>
 
         {/* 购买记录 */}
         <section className="">
