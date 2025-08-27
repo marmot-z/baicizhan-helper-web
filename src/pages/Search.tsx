@@ -6,6 +6,14 @@ import { bookService } from '../services/bookService';
 import type { SearchWordResultV2 } from '../types';
 import { ROUTES } from '../constants';
 
+// 添加搜索结果项的聚焦样式
+const searchResultStyles = `
+  .search-result-item:focus {
+    border-bottom: 2px solid #03A9F4 !important;
+    outline: none;
+  }
+`;
+
 const Search: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,16 +25,8 @@ const Search: React.FC = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
-    setIsLoading(true);
-    try {
-      const results = await bookService.searchWord(searchQuery.trim());
-      setSearchResults(results);
-    } catch (error) {
-      console.error('搜索失败:', error);
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
+    // 更新URL，同步搜索关键词到URL参数
+    navigate(ROUTES.SEARCH + `?q=${encodeURIComponent(searchQuery.trim())}`);
   };
   
   // 处理回车键
@@ -67,6 +67,7 @@ const Search: React.FC = () => {
       backgroundColor: '#fff',
       color: '#333'
     }}>
+      <style dangerouslySetInnerHTML={{ __html: searchResultStyles }} />
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
@@ -131,13 +132,17 @@ const Search: React.FC = () => {
             searchResults.map((result, index) => (
               <div 
                 key={result.topic_id} 
+                tabIndex={0}
                 onClick={() => navigate(ROUTES.WORD_DETAIL.replace(':word', result.topic_id.toString()))}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(ROUTES.WORD_DETAIL.replace(':word', result.topic_id.toString()))}
                 style={{
                   padding: '1rem 0',
                   borderBottom: index === searchResults.length - 1 ? 'none' : '1px solid #f0f0f0',
                   cursor: 'pointer',
-                  transition: 'box-shadow 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  outline: 'none'
                 }}
+                className="search-result-item"
               >
                 <h2 style={{
                   fontSize: '1.2rem',
