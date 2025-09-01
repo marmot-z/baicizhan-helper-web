@@ -114,7 +114,7 @@ export default function Home() {
               <h1 style={{
                 fontSize: '2.5rem',
                 marginBottom: '1.5rem'
-              }}>浏览器翻译插件：简短介绍</h1>
+              }}>在浏览器上使用百词斩</h1>
               <div className="download-buttons" style={{
                 marginBottom: '2rem'
               }}>
