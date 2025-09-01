@@ -534,7 +534,7 @@ const WordDetail: React.FC = () => {
         })()}
 
         {/* 图文例句 */}
-        {wordData.dict.sentences.length > 0 && (
+        {wordData.dict?.sentences?.length > 0 && (
           <section className="bg-white" style={cardStyle}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>图文例句</h2>
             {(() => {
@@ -664,7 +664,7 @@ const WordDetail: React.FC = () => {
         )}
 
         {/* 近义词 */}
-        {wordData.dict.synonyms.length > 0 && (
+        {wordData.dict?.synonyms?.length > 0 && (
           <section className="bg-white" style={cardStyle}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0', marginBottom: '1rem', borderBottom: '1px solid #e7e7e7', paddingBottom: '0.5rem' }}>近义词</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
