@@ -361,3 +361,10 @@ export interface LTWxpayResponseDTO {
   request_id: string;
   data: LTWxpayResponseData;
 }
+
+export interface UserRoadMapElementV2 {
+  topic_id: number;
+  word_level_id: number;
+  tag_id: number;
+  options: number[];
+}

@@ -12,7 +12,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 480px;
+    max-width: 800px;
     padding: 20px;
     box-sizing: border-box;
 }
@@ -20,8 +20,9 @@ body {
 /* Header */
 .study-header {
     text-align: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     color: #6c757d;
+    font-size: 1.1rem;
 }
 
 /* Study Card */
@@ -31,31 +32,52 @@ body {
     padding: 2rem;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
 }
 
 .word-image {
+    height: 300px;
+    background-color: #e9ecef;
+    border-radius: 8px;
     margin-bottom: 1.5rem;
+    background-size: cover;
+    background-position: center;
 }
 
 .word {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: bold;
     margin: 0 0 0.5rem 0;
 }
 
 .pronunciation {
     color: #6c757d;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
 }
 
 .pronunciation span {
     margin: 0 0.5rem;
 }
 
-/* Options Grid */
+.sentence {
+    font-size: 1.2rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.translation {
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+/* Options Footer */
+.options-footer {
+    padding: 0 1rem;
+}
+
 .options-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
 }
 
@@ -63,33 +85,37 @@ body {
     background-color: #f8f9fa;
     border: 1px solid #e7e7e7;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 1.2rem;
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s;
-    min-height: 60px;
+    min-height: 70px;
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
 }
 
 .option:hover {
     background-color: #e9ecef;
+    border-color: #ced4da;
 }
 
-.option.incorrect {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-    position: relative;
-}
+/* Responsive */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
 
-.option.incorrect::after {
-    content: '×';
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    color: #721c24;
-    font-size: 1.5rem;
-    font-weight: bold;
+    .study-card {
+        padding: 1.5rem;
+    }
+
+    .word {
+        font-size: 2.5rem;
+    }
+
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
 }

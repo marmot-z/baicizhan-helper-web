@@ -7,6 +7,7 @@ import {
   Search,
   StudyPlan,
   StudyCalendar,
+  StudyFront,
   WordBook,
   WordDetail,
   VipCenter,
@@ -65,6 +66,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <StudyCalendar />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.STUDY_FRONT,
+    element: (
+      <ProtectedRoute>
+        <StudyFront />
       </ProtectedRoute>
     ),
   },
