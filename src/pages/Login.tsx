@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
 import { ROUTES } from '../constants';
@@ -34,17 +35,17 @@ const Login: React.FC = () => {
     e.preventDefault();
     
     if (!phone || !code) {
-      alert('请填写手机号码和验证码');
+      toast.error('请填写手机号码和验证码');
       return;
     }
     
     if (phone.length !== 11 || !/^1[3-9]\d{9}$/.test(phone)) {
-      alert('请输入正确的11位手机号码');
+      toast.error('请输入正确的11位手机号码');
       return;
     }
     
     if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-      alert('请输入6位数字验证码');
+      toast.error('请输入6位数字验证码');
       return;
     }
 
@@ -53,13 +54,13 @@ const Login: React.FC = () => {
       // 使用authStore的login方法
       await login({ phoneNum: phone, smsVerifyCode: code });
       
-      alert('登录成功');
+      toast.success('登录成功');
       
       // 跳转到首页或dashboard
       navigate(ROUTES.DASHBOARD);
     } catch (error) {
       console.error('登录失败:', error);
-      alert('登录失败，请检查手机号码和验证码');
+      toast.error('登录失败，请检查手机号码和验证码');
     } finally {
       setLoginLoading(false);
     }
@@ -69,7 +70,7 @@ const Login: React.FC = () => {
     // 验证手机号码格式
     const phoneRegex = /^1[3-9]\d{9}$/;
     if (!phoneRegex.test(phone)) {
-      alert('请输入正确的11位手机号码');
+      toast.error('请输入正确的11位手机号码');
       return;
     }
 
@@ -85,7 +86,7 @@ const Login: React.FC = () => {
       await authService.sendSmsVerifyCode(phone);
       
       // 发送成功，开始倒计时
-      alert('验证码发送成功');
+      toast.success('验证码发送成功');
       setCountdown(60);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -98,7 +99,7 @@ const Login: React.FC = () => {
       }, 1000);
     } catch (error) {
       console.error('发送验证码错误:', error);
-      alert('网络错误，请检查网络连接后重试');
+      toast.error('网络错误，请检查网络连接后重试');
     } finally {
       setIsLoading(false);
     }
