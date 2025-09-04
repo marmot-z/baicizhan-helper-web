@@ -1,0 +1,435 @@
+/* StudyFront 组件样式 */
+
+.container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  background-color: #f8f9fa;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.studyFrontContainer {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.studyFrontCard {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.imageContainer {
+  height: 300px;
+  background-color: #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  background-size: cover;
+  background-position: center;
+}
+
+.studyFrontWord {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+}
+
+.pronunciationContainer {
+  color: #6c757d;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.pronunciationSpan {
+  margin: 0 0.5rem;
+}
+
+.pronunciationSpan {
+  margin: 0 0.5rem;
+}
+
+.volumeIcon {
+  width: 20px;
+  height: 20px;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  color: rgb(65, 84, 98);
+}
+
+.sentenceContainer {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.sentence {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.translation {
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+.footer {
+  padding: 0 1rem;
+}
+
+.studyFrontOptions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.optionButton {
+  background-color: #f8f9fa;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  padding: 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+  min-height: 107px;
+  align-items: center;
+  text-align: center;
+}
+
+/* 背面内容样式 */
+.backContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.section {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.wordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.wordTitle {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.starIcon {
+  width: 24px;
+  height: 24px;
+  color: #ccc;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pronunciationInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.pronunciationIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.meaningParagraph {
+  margin: 0.25rem 0;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e7e7e7;
+  padding-bottom: 0.5rem;
+}
+
+.sentenceDisplay {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.sentenceText {
+  margin: 0;
+}
+
+.sentenceTranslation {
+  margin: 0.25rem 0;
+}
+
+.sentenceImage {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.tabContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tabButton {
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border: 1px solid #ced4da;
+}
+
+.tabButtonActive {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.tabButtonInactive {
+  background-color: #e9ecef;
+  color: inherit;
+}
+
+.contentItem {
+  margin-bottom: 0.5rem;
+}
+
+.contentText {
+  margin: 0;
+}
+
+.contentSubtext {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.footerContainer {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.nextButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 0;
+  width: 100%;
+  max-width: 400px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* 句子相关样式 */
+.sentenceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.sentenceImage {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.sentenceTranslation {
+  margin: 0.25rem 0;
+  color: #666;
+}
+
+/* 词组相关样式 */
+.phraseItem {
+  margin-bottom: 0.5rem;
+}
+
+.phraseText {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.phraseTranslation {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* 单词变形样式 */
+.variantItem {
+  margin-bottom: 0.5rem;
+}
+
+.variantText {
+  margin: 0;
+}
+
+/* 释义相关样式 */
+.meaningItem {
+  margin-bottom: 0.5rem;
+}
+
+.meaningText {
+  margin: 0;
+}
+
+.meaningContent {
+  line-height: 1.6;
+}
+
+.partOfSpeech {
+  font-weight: bold;
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+/* 近义词样式 */
+.synonymItem {
+  margin-bottom: 0.5rem;
+}
+
+.synonymText {
+  margin: 0;
+}
+
+/* 形近词样式 */
+.similarWordItem {
+  margin-bottom: 0.5rem;
+}
+
+.similarWordText {
+  margin: 0;
+}
+
+/* 背面内容样式 */
+.wordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.backWordTitle {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.starIcon {
+  width: 24px;
+  height: 24px;
+  color: #ccc;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.tabContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tabButton {
+  background-color: #e9ecef;
+  color: inherit;
+  border: 1px solid #ced4da;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.tabButtonActive {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.backFooter {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.nextButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 0;
+  width: 100%;
+  max-width: 400px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.nextButton:hover {
+  background-color: #0056b3;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .studyFrontContainer {
+    padding: 15px;
+  }
+  
+  .studyFrontCard {
+    padding: 1.5rem;
+  }
+  
+  .studyFrontWord {
+    font-size: 2.5rem;
+  }
+  
+  .backWordTitle {
+    font-size: 2rem;
+  }
+  
+  .optionButton {
+    padding: 0.8rem;
+    font-size: 1rem;
+  }
+}

@@ -20,9 +20,9 @@ export class ProcessIterator {
   constructor(words: UserRoadMapElementV2[]) {
     // 初始化三个环节的迭代器，每个环节使用相同的单词数组
     this.iterators = [
-      // new WordIterator('recognition', words), // recognition
-      // new WordIterator('understanding', words), // understanding
-      new WordIterator('mastery', words)  // mastery
+      new WordIterator('recognition', words),
+      new WordIterator('understanding', words),
+      new WordIterator('mastery', words) 
     ];    
     this.currentIteratorIndex = 0;
     this.wordCache = new Map();
