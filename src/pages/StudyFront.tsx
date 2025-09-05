@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-hot-toast';
 import type { MeanInfo, SentenceInfo, ShortPhraseInfo, SynAntInfo, SimilarWord, UserBookItem, SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
@@ -22,6 +22,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   const [showCollectModal, setShowCollectModal] = useState(false);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const { wordList } = useStudyStore();
 
 
@@ -29,19 +30,22 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   useEffect(() => {
     const initStudy = async (studyPlans: SelectBookPlanInfo[]) => {
       try {        
-        let studyPlan = studyPlans[0];
+        let currentStudyPlan = studyPlans[0];
 
-        if (!studyPlan || !wordList.length) {
+        if (!currentStudyPlan || !wordList.length) {
           toast.loading('等待学习计划和单词列表加载...');
           return;
         }
 
+        // 设置学习计划状态
+        setStudyPlan(currentStudyPlan);
+
         // 获取已学习的单词列表
-        const learnedWords = await studyService.getLearnedWords(studyPlan.book_id);
+        const learnedWords = await studyService.getLearnedWords(currentStudyPlan.book_id);
         const learnedTopicIds = new Set(learnedWords.map(word => word.topic_id));
         
         // 从全部单词中筛选出未学习的单词
-        const unlearnedWords = wordList.filter(word => !learnedTopicIds.has(word.topic_id)).slice(0, studyPlan.learned_words_count);
+        const unlearnedWords = wordList.filter(word => !learnedTopicIds.has(word.topic_id)).slice(0, currentStudyPlan.daily_plan_count);
         
         if (unlearnedWords.length === 0) {
           toast.success('所有单词都已学习完成！');
@@ -135,10 +139,10 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   // 渲染正面内容
   const renderFrontContent = () => (
     <div className={styles.studyFrontContainer}>
-      <header className={styles.header}>
-        <span>已学习 0</span>
+      <header className={styles.header}>      
+        <span>需学习 {studyPlan?.daily_plan_count || 0}</span>
         <span> / </span>
-        <span>需学习 10</span>
+        <span>当前进度：{study?.getProgress()}%</span>
       </header>
 
       <main className={styles.studyFrontCard}>

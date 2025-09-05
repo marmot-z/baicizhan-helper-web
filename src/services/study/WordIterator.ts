@@ -47,4 +47,8 @@ export class WordIterator {
 
     this.wordQueue.push(wordId);
   }
+
+  public getRemainNum(): number {
+    return this.wordQueue.length;
+  }
 }

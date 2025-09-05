@@ -12,6 +12,7 @@ export class ProcessIterator {
   private iterators: WordIterator[];
   private currentIteratorIndex: number;
   private wordCache: Map<number, StudyWord>;
+  private wordNum: number;
   
   /**
    * 构造函数
@@ -26,6 +27,7 @@ export class ProcessIterator {
     ];    
     this.currentIteratorIndex = 0;
     this.wordCache = new Map();
+    this.wordNum = words.length;
   }
   
   /**
@@ -91,5 +93,11 @@ export class ProcessIterator {
 
   public putback(wordId: UserRoadMapElementV2) : void {
     this.iterators[this.currentIteratorIndex]?.putback(wordId);
+  }
+
+  public getProgress(): number {
+    const remain = this.iterators.reduce((acc, cur) => acc + cur.getRemainNum(), 0);
+    const total = this.iterators.length * this.wordNum;
+    return (total - remain - 1) / total;
   }
 }

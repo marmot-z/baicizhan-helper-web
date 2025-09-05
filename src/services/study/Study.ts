@@ -61,8 +61,12 @@ export class Study {
     this.currentWordCard?.fail(optionId);
     this.processIterator.putback(this.currentWordCard.originInfo);
   }
+
+  public getProgress(): number {
+    return parseFloat((this.processIterator.getProgress() * 100).toFixed(0));
+  }
   
   public complete(): void {    
-    // 学习完成逻辑
+    
   }
 }
