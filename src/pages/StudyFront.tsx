@@ -152,42 +152,10 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
           <h1 className={styles.studyFrontWord}>{wordCard?.word.word.dict.word_basic_info.word}</h1>
         }        
         <div className={styles.pronunciationContainer}>              
-          {wordCard?.word.word.dict.word_basic_info.accent_uk &&
-             <span className={styles.pronunciationSpan}>英 {wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}          
-          {wordCard?.word.word.dict.word_basic_info.accent_uk && 
-          <FontAwesomeIcon 
-            icon={faVolumeUp} 
-            className={styles.volumeIcon}
-            onClick={() => {
-              const wordBasicInfo = wordCard?.word.word.dict.word_basic_info;
-              if (wordBasicInfo?.accent_usa_audio_uri) {
-                const audio = new Audio("https://7n.bczcdn.com" + wordBasicInfo.accent_usa_audio_uri);
-                audio.play().catch(error => {
-                  console.error('音频播放失败:', error);
-                });
-              }
-            }}
-            title="播放英式发音"
-          />
-          }
-          {wordCard?.word.word.dict.word_basic_info.accent_uk &&
-            <span className={styles.pronunciationSpan}>美 {wordCard?.word.word.dict.word_basic_info.accent_usa}</span>
-          }
-          {wordCard?.word.word.dict.word_basic_info.accent_uk &&
-          <FontAwesomeIcon icon={faVolumeUp} 
-            className={styles.volumeIcon}
-            onClick={() => {
-              const wordBasicInfo = wordCard?.word.word.dict.word_basic_info;
-              if (wordBasicInfo?.accent_usa_audio_uri) {
-                const audio = new Audio("https://7n.bczcdn.com" + wordBasicInfo.accent_usa_audio_uri);
-                audio.play().catch(error => {
-                  console.error('音频播放失败:', error);
-                });
-              }
-            }}
-            title="播放美式发音"
-          />  
-          }  
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <span className={styles.pronunciationSpan}>英 {wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}                    
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon src={wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri}></AudioIcon>}                    
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <span className={styles.pronunciationSpan}>美 {wordCard?.word.word.dict.word_basic_info.accent_usa}</span>}
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon src={wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri}></AudioIcon>}  
         </div>
         <div style={{
           display: 'flex',
@@ -201,24 +169,8 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
             margin: 0
           }}>{wordCard?.word.word.dict.sentences?.[0]?.sentence}</p>
         }
-          {wordCard?.showSentence && wordCard?.word.word.dict.sentences?.[0]?.audio_uri && (
-            <FontAwesomeIcon 
-              icon={faVolumeUp} 
-              style={{
-                width: '20px',
-                height: '20px',
-                cursor: 'pointer',
-                color: 'rgb(65, 84, 98)'
-              }}
-              onClick={() => {
-                const audio = new Audio("https://7n.bczcdn.com" + wordCard?.word.word.dict.sentences?.[0]?.audio_uri);
-                audio.play().catch(error => {
-                  console.error('音频播放失败:', error);
-                });
-              }}
-              title="播放例句发音"
-            />
-          )}
+          {wordCard?.showSentence && wordCard?.word.word.dict.sentences?.[0]?.audio_uri &&
+          <AudioIcon src={wordCard?.word.word.dict.sentences?.[0]?.audio_uri}></AudioIcon>}
         </div>
         {wordCard?.showTranslation && 
         <p style={{
@@ -277,7 +229,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
 
           {wordCard?.word.word.dict.word_basic_info.accent_usa && 
           <span>美 { wordCard?.word.word.dict.word_basic_info.accent_usa }</span> }
-          
+
           {wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri && 
           <AudioIcon src={ wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri } />}
         </div>
