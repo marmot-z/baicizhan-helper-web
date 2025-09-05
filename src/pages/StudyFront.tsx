@@ -8,7 +8,7 @@ import type {StudyOption} from '../services/study/types';
 import { useStudyStore } from '../stores/studyStore';
 import { studyService } from '../services/studyService';
 import { wordService } from '../services/wordService';
-import { CollectModal } from '../components';
+import { CollectModal, AudioIcon } from '../components';
 import styles from './StudyFront.module.css';
 
 interface StudyFrontProps {
@@ -269,20 +269,17 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
           />
         </div>
         <div className={styles.backPronunciation}>
-          {wordCard?.word.word.dict.word_basic_info.accent_uk && <span>{wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}
-          {wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri && (
-            <FontAwesomeIcon 
-              icon={faVolumeUp} 
-              className={styles.backSoundIcon}
-              onClick={() => {
-                const audio = new Audio("https://7n.bczcdn.com" + wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri);
-                audio.play().catch(error => {
-                  console.error('音频播放失败:', error);
-                });
-              }}
-              title="播放英式发音"
-             />
-           )}
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && 
+          <span>英 { wordCard?.word.word.dict.word_basic_info.accent_uk }</span> }
+
+          {wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri && 
+          <AudioIcon src={ wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri } />}
+
+          {wordCard?.word.word.dict.word_basic_info.accent_usa && 
+          <span>美 { wordCard?.word.word.dict.word_basic_info.accent_usa }</span> }
+          
+          {wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri && 
+          <AudioIcon src={ wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri } />}
         </div>
         {(() => {
           // 按照 mean_type 对中文释义进行分组
@@ -327,19 +324,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                       sentence.sentence
                     )}
                   </p>
-                  {sentence.audio_uri && (
-                    <FontAwesomeIcon 
-                      icon={faVolumeUp} 
-                      className={styles.backSoundIcon}
-                      onClick={() => {
-                        const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
-                        audio.play().catch(error => {
-                          console.error('音频播放失败:', error);
-                        });
-                      }}
-                      title="播放例句发音"
-                    />
-                  )}
+                  {sentence.audio_uri && <AudioIcon src={ sentence.audio_uri } />}
                 </div>
                 <p className={styles.backSentenceTranslation}>{sentence.sentence_trans}</p>
                 {sentence.img_uri && (

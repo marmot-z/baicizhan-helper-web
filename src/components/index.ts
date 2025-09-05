@@ -4,3 +4,4 @@ export { default as Input } from './Input';
 export { ProtectedRoute, PublicRoute } from './RouteGuards';
 export { default as LoginForm } from './LoginForm';
 export { default as CollectModal } from './CollectModal';
+export { default as AudioIcon } from './AudioIcon';

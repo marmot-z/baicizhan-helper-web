@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
 import { wordService } from '../services/wordService';
-import { CollectModal } from '../components';
+import { CollectModal, AudioIcon } from '../components';
 import type { TopicResourceV2, UserBookItem } from '../types';
 
 const WordDetail: React.FC = () => {
@@ -169,43 +169,10 @@ const WordDetail: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: '#6c757d', marginBottom: '1rem' }}>
             {word_basic_info.accent_uk && <span>英 {word_basic_info.accent_uk}</span>}                      
-            {word_basic_info.accent_uk_audio_uri && (
-               <FontAwesomeIcon 
-                 icon={faVolumeUp} 
-                 style={{
-                   width: '20px',
-                   height: '20px',
-                   flexShrink: 0,
-                   cursor: 'pointer'
-                 }}
-                 onClick={() => {
-                   const audio = new Audio("https://7n.bczcdn.com" + word_basic_info.accent_uk_audio_uri);
-                   audio.play().catch(error => {
-                     console.error('音频播放失败:', error);
-                   });
-                 }}
-                 title="播放英式发音"
-               />
-             )}
+            {word_basic_info.accent_uk_audio_uri && <AudioIcon src={ word_basic_info.accent_uk_audio_uri } />}
+
              {word_basic_info.accent_usa && <span>美 {word_basic_info.accent_usa}</span>}
-             {word_basic_info.accent_usa_audio_uri && (
-               <FontAwesomeIcon 
-                 icon={faVolumeUp} 
-                 style={{
-                   width: '20px',
-                   height: '20px',
-                   flexShrink: 0,
-                   cursor: 'pointer'
-                 }}
-                 onClick={() => {
-                   const audio = new Audio("https://7n.bczcdn.com" + word_basic_info.accent_usa_audio_uri);
-                   audio.play().catch(error => {
-                     console.error('音频播放失败:', error);
-                   });
-                 }}
-                 title="播放美式发音"
-               />
-             )}
+             {word_basic_info.accent_usa_audio_uri && <AudioIcon src={ word_basic_info.accent_usa_audio_uri } />}             
           </div>
           {(() => {
             // 按照 mean_type 对中文释义进行分组
@@ -374,24 +341,7 @@ const WordDetail: React.FC = () => {
                         sentence.sentence
                       )}
                     </p>
-                    {sentence.audio_uri && (
-                      <FontAwesomeIcon 
-                        icon={faVolumeUp} 
-                        style={{
-                          width: '20px',
-                          height: '20px',
-                          flexShrink: 0,
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
-                          audio.play().catch(error => {
-                            console.error('音频播放失败:', error);
-                          });
-                        }}
-                        title="播放例句发音"
-                      />
-                    )}
+                    {sentence.audio_uri && <AudioIcon src={ sentence.audio_uri } />}
                   </div>
                   <p style={{ margin: '0.25rem 0' }}>{sentence.sentence_trans}</p>
                   {sentence.img_uri && (
@@ -440,24 +390,7 @@ const WordDetail: React.FC = () => {
                           sentence.sentence
                         )}
                       </p>
-                      {sentence.audio_uri && (
-                        <FontAwesomeIcon 
-                          icon={faVolumeUp} 
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            flexShrink: 0,
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => {
-                            const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
-                            audio.play().catch(error => {
-                              console.error('音频播放失败:', error);
-                            });
-                          }}
-                          title="播放例句发音"
-                        />
-                      )}
+                      {sentence.audio_uri && <AudioIcon src={ sentence.audio_uri } />}
                     </div>
                     <p style={{ margin: '0.25rem 0' }}>{sentence.sentence_trans}</p>
                   </div>
