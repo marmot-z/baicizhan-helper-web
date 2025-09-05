@@ -8,10 +8,8 @@ import type { WordCard } from './WordCard';
  */
 export class Study {
   private processIterator: ProcessIterator;
-  private startTime: number;
   private currentWordCard: WordCard | null;
   private statistics: Map<number, number>;
-  private isComplete: boolean;
   
   /**
    * 构造函数
@@ -19,14 +17,11 @@ export class Study {
    */
   constructor(words: UserRoadMapElementV2[]) {
     this.processIterator = new ProcessIterator(words);
-    this.startTime = 0;
     this.currentWordCard = null;
     this.statistics = new Map();
-    this.isComplete = false;
   }
   
   public async start(): Promise<void> {  
-    this.startTime = Date.now();
     await this.process();
   }
 
@@ -68,11 +63,6 @@ export class Study {
   }
   
   public complete(): void {    
-    let studyInfo = {
-      totalTimeSpent: Date.now() - this.startTime,
-      statistics: this.statistics,
-    }
-    console.log(studyInfo);
-    this.isComplete = true;
+    // 学习完成逻辑
   }
 }

@@ -368,3 +368,33 @@ export interface UserRoadMapElementV2 {
   tag_id: number;
   options: number[];
 }
+
+export interface UserLearnedWordInfo {
+  topic_id: number;
+  score: number;
+  used_time: number;
+  wrong_times: number;
+  done_times: number;
+  span_days: number;
+  update_days: number;
+  created_at: number;
+  spell_score: number;
+  listening_score: number;
+  chn_score: number;
+  review_round: number;
+}
+
+export interface UserDoneWordRecord {
+  word_topic_id: number;
+  current_score: number;
+  span_days: number;
+  used_time: number;
+  done_times: number;
+  wrong_times: number;
+  is_first_do_at_today: number;
+  tag_id: number;
+  spell_score: number;
+  listening_score: number;
+  chn_score: number;
+  review_round: number;
+}

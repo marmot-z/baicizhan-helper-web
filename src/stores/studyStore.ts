@@ -1,13 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UserBookBasicInfo, SelectBookPlanInfo } from '../types';
+import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
   studyPlan: SelectBookPlanInfo | null;
+  wordList: UserRoadMapElementV2[];
   setCurrentBook: (book: UserBookBasicInfo) => void;
   setStudyPlan: (plan: SelectBookPlanInfo) => void;
+  setWordList: (words: UserRoadMapElementV2[]) => void;
   fetchStudyData: () => Promise<void>;
   clearStudyData: () => void;
 }
@@ -17,6 +19,7 @@ export const useStudyStore = create<StudyState>()(
     (set, get) => ({
       currentBook: null,
       studyPlan: null,
+      wordList: [],
 
       setCurrentBook: (book: UserBookBasicInfo) => {
         set({ currentBook: book });
@@ -24,6 +27,10 @@ export const useStudyStore = create<StudyState>()(
 
       setStudyPlan: (plan: SelectBookPlanInfo) => {
         set({ studyPlan: plan });
+      },
+
+      setWordList: (words: UserRoadMapElementV2[]) => {
+        set({ wordList: words });
       },
 
       fetchStudyData: async () => {
@@ -46,6 +53,10 @@ export const useStudyStore = create<StudyState>()(
               const matchedBook = booksData.find(book => book.id === userPlan.book_id);
               if (matchedBook) {
                 set({ currentBook: matchedBook });
+                
+                // 获取单词列表
+                const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+                set({ wordList: roadmapData });
               }
             }
           }
@@ -55,13 +66,14 @@ export const useStudyStore = create<StudyState>()(
       },
 
       clearStudyData: () => {
-        set({ currentBook: null, studyPlan: null });
+        set({ currentBook: null, studyPlan: null, wordList: [] });
       },
     }),
     {
       name: 'study-storage',
       partialize: (state) => ({
         currentBook: state.currentBook,
+        wordList: state.wordList,
       }),
     }
   )

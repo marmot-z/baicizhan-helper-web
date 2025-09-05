@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVolumeUp, faStar } from '@fortawesome/free-solid-svg-icons';
-import type { UserRoadMapElementV2, MeanInfo, SentenceInfo, ShortPhraseInfo, SynAntInfo, SimilarWord } from '../types';
+import { toast } from 'react-hot-toast';
+import type { MeanInfo, SentenceInfo, ShortPhraseInfo, SynAntInfo, SimilarWord, UserBookItem, SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
 import type {StudyOption} from '../services/study/types';
+import { useStudyStore } from '../stores/studyStore';
+import { studyService } from '../services/studyService';
+import { wordService } from '../services/wordService';
+import { CollectModal } from '../components';
 import styles from './StudyFront.module.css';
 
 interface StudyFrontProps {
@@ -14,18 +19,47 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   const [activeTab, setActiveTab] = useState('词组搭配');
   const [study, setStudy] = useState<Study | null>(null);
   const [wordCard, setWordCard] = useState<any | null>(null);
-  const words: UserRoadMapElementV2[] = [{"topic_id":6011,"word_level_id":11,"tag_id":0,"options":[347,15253,5969]},{"topic_id":4843,"word_level_id":11,"tag_id":0,"options":[4333,4347,6839]},{"topic_id":5969,"word_level_id":11,"tag_id":0,"options":[1695,9020,5729]}];
+  const [showCollectModal, setShowCollectModal] = useState(false);
+  const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const { wordList } = useStudyStore();
+
 
   // 初始化学习流程
   useEffect(() => {
-    const initStudy = async () => {
-      const studyInstance = new Study(words);
-      await studyInstance.start();
-      setStudy(studyInstance);
-      setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
+    const initStudy = async (studyPlans: SelectBookPlanInfo[]) => {
+      try {        
+        let studyPlan = studyPlans[0];
+
+        if (!studyPlan || !wordList.length) {
+          toast.loading('等待学习计划和单词列表加载...');
+          return;
+        }
+
+        // 获取已学习的单词列表
+        const learnedWords = await studyService.getLearnedWords(studyPlan.book_id);
+        const learnedTopicIds = new Set(learnedWords.map(word => word.topic_id));
+        
+        // 从全部单词中筛选出未学习的单词
+        const unlearnedWords = wordList.filter(word => !learnedTopicIds.has(word.topic_id)).slice(0, studyPlan.learned_words_count);
+        
+        if (unlearnedWords.length === 0) {
+          toast.success('所有单词都已学习完成！');
+          return;
+        }
+        
+        console.log(`共有 ${wordList.length} 个单词，已学习 ${learnedWords.length} 个，待学习 ${unlearnedWords.length} 个`);
+        
+        const studyInstance = new Study(unlearnedWords);
+        await studyInstance.start();
+        setStudy(studyInstance);
+        setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
+      } catch (error) {
+        console.error('初始化学习流程失败:', error);
+      }
     };
     
-    initStudy();
+    studyService.getBookPlanInfo().then(initStudy);
   }, []);
 
   const handleOptionClick = async (id: number, isCorrect: boolean) => {  
@@ -45,6 +79,57 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   const handleNext = async () => {
     await study?.pass();
     setWordCard(study?.getCurrentWord()?.toObject() || null);
+  };
+
+  // 检查单词是否已收藏
+  const isWordCollected = () => {
+    let topicId = wordCard?.word?.word?.dict.word_basic_info.topic_id;    
+    return topicId && wordService.getAllWordIds().has(topicId);
+  };
+
+  // 处理星标点击
+  const handleStarClick = async () => {
+    if (!wordCard?.word?.word?.dict.word_basic_info.topic_id) return;
+    
+    // 总是显示收藏模态框
+    await loadUserBooks();
+    setShowCollectModal(true);
+  };
+
+  // 加载用户单词本列表
+  const loadUserBooks = async () => {
+    const currentTopicId = wordCard?.word?.word?.dict.word_basic_info.topic_id.toString();
+    if (!currentTopicId) return;
+    
+    await wordService.loadUserBooks(currentTopicId, setUserBooks, setSelectedBookId);
+  };
+
+  // 切换单词本选择
+  const toggleBookSelection = (bookId: number) => {
+    if (selectedBookId === bookId) {
+      setSelectedBookId(null); // 取消选择
+    } else {
+      setSelectedBookId(bookId); // 选择新的单词本
+    }
+  };
+
+  // 保存收藏设置
+  const handleSaveCollect = async () => {
+    const currentTopicId = wordCard?.word?.word?.dict.word_basic_info.topic_id.toString();
+    if (!currentTopicId) return;
+    
+    try {
+      await wordService.saveCollectSettings(currentTopicId, selectedBookId);
+      setShowCollectModal(false);
+    } catch (error) {
+      // 错误处理已在wordService中完成
+    }
+  };
+
+  // 取消收藏
+  const handleCancelCollect = () => {
+    setShowCollectModal(false);
+    setSelectedBookId(null);
   };
 
   // 渲染正面内容
@@ -142,10 +227,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         }}>{wordCard?.word.word.dict.sentences?.[0]?.sentence_trans}</p>
         }
         {wordCard?.showEnglishTranslation && 
-        <p style={{
-          color: '#6c757d',
-          marginBottom: '2rem'
-        }}>{wordCard?.word.word.dict.en_means?.[0]?.mean}</p>
+        <p style={{ color: '#6c757d' }}>{wordCard?.word.word.dict.en_means?.[0]?.mean}</p>
         }
       </main>
 
@@ -160,8 +242,8 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
               }}
               className={styles.optionButton}
             >
-              {wordCard?.options[option.id].showOptionWord && <p>{option.word}</p>}
-              {wordCard?.options[option.id].showOptionTranslation && <p>{option.translation}</p>}
+              {wordCard?.options[option.id].showOptionWord && <span>{option.word}<br></br></span>}
+              {wordCard?.options[option.id].showOptionTranslation && <span>{option.translation}</span>}
             </button>
           ))}
         </div>
@@ -171,23 +253,27 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
 
   // 渲染背面内容
   const renderBackContent = () => (
-    <div className={styles.studyFrontContainer}>
-      {/* 单词信息 */}
-      <section className={styles.studyFrontCard}>
-        <div className={styles.wordHeader}>
+    <div className={styles.backContainer}>    
+      <section className={`${styles.backCard} ${styles.backWordInfo}`}>
+        <div className={styles.backWordHeader}>
           <h1 className={styles.backWordTitle}>{wordCard?.word.word.dict.word_basic_info.word}</h1>
           <FontAwesomeIcon 
             icon={faStar} 
-            className={styles.starIcon}
+            className={styles.backStarIcon}
+            onClick={handleStarClick}
+            style={{
+              color: isWordCollected() ? '#007bff' : '#d3d3d3',
+              cursor: 'pointer'
+            }}
             title="收藏/取消收藏"
           />
         </div>
-        <div className={styles.pronunciationContainer}>
-          {wordCard?.word.word.dict.word_basic_info.accent_uk && <span>英 {wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}
+        <div className={styles.backPronunciation}>
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <span>{wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}
           {wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri && (
             <FontAwesomeIcon 
               icon={faVolumeUp} 
-              className={styles.volumeIcon}
+              className={styles.backSoundIcon}
               onClick={() => {
                 const audio = new Audio("https://7n.bczcdn.com" + wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri);
                 audio.play().catch(error => {
@@ -195,22 +281,8 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                 });
               }}
               title="播放英式发音"
-            />
-          )}
-          {wordCard?.word.word.dict.word_basic_info.accent_usa && <span>美 {wordCard?.word.word.dict.word_basic_info.accent_usa}</span>}
-          {wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri && (
-            <FontAwesomeIcon 
-              icon={faVolumeUp} 
-              className={styles.volumeIcon}
-              onClick={() => {
-                const audio = new Audio("https://7n.bczcdn.com" + wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri);
-                audio.play().catch(error => {
-                  console.error('音频播放失败:', error);
-                });
-              }}
-              title="播放美式发音"
-            />
-          )}
+             />
+           )}
         </div>
         {(() => {
           // 按照 mean_type 对中文释义进行分组
@@ -226,24 +298,23 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
 
           // 按分组展示释义
           return Object.entries(groupedMeans).map(([meanType, means]) => (
-            <p key={meanType} className={styles.meaningText}>
+            <p key={meanType} className={styles.backTranslation}>
               <strong>{meanType}</strong> {means.map(mean => mean.mean).join('; ')}
             </p>
           ));
         })()}
       </section>
 
-      {/* 图文例句 */}
-      {wordCard?.word.word.dict?.sentences?.length && wordCard.word.word.dict.sentences.length > 0 && (
-         <section className={styles.studyFrontCard}>
-           <h2 className={styles.sectionTitle}>图文例句</h2>
+      {wordCard?.word.word.dict?.sentences?.length && (
+         <section className={styles.backCard}>
+           <h2 className={styles.backSectionTitle}>图文例句</h2>
            {(() => {
              const sentence: SentenceInfo = wordCard?.word.word.dict.sentences?.[0];
              if (!sentence) return null;
             return (
               <div>
-                <div className={styles.sentenceHeader}>
-                  <p className={styles.sentenceText}>
+                <div className={styles.backSentenceHeader}>
+                  <p className={styles.backSentenceText}>
                     {sentence.highlight_phrase ? (
                       sentence.sentence.split(sentence.highlight_phrase).map((part, i) => (
                         i === 0 ? (
@@ -259,7 +330,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                   {sentence.audio_uri && (
                     <FontAwesomeIcon 
                       icon={faVolumeUp} 
-                      className={styles.volumeIcon}
+                      className={styles.backSoundIcon}
                       onClick={() => {
                         const audio = new Audio("https://7n.bczcdn.com" + sentence.audio_uri);
                         audio.play().catch(error => {
@@ -270,12 +341,12 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                     />
                   )}
                 </div>
-                <p className={styles.sentenceTranslation}>{sentence.sentence_trans}</p>
+                <p className={styles.backSentenceTranslation}>{sentence.sentence_trans}</p>
                 {sentence.img_uri && (
                     <img 
                       src={"https://7n.bczcdn.com" + sentence.img_uri} 
                       alt="例句配图" 
-                      className={styles.sentenceImage}
+                      className={styles.backSentenceImage}
                     />                    
                 )}
               </div>
@@ -283,10 +354,9 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
           })()} 
         </section>
       )}
-
-      {/* 其他信息 */}
-      <section className={styles.studyFrontCard}>
-        <div className={styles.tabContainer}>
+    
+      <section className={styles.backCard}>
+        <div className={styles.backTabContainer}>
           {(() => {
              const availableTabs = [];
              const wordData = wordCard?.word.word;
@@ -311,14 +381,14 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
               <button
                 key={tab}
                 onClick={() => handleTabClick(tab)}
-                className={`${styles.tabButton} ${activeTab === tab ? styles.tabButtonActive : ''}`}
+                className={`${styles.backTabButton} ${activeTab === tab ? styles.backTabButtonActive : ''}`}
               >
                 {tab}
               </button>
             ));
           })()} 
         </div>
-        <div>
+        <div className={styles.backTabContent}>
           {(() => {
             const wordData = wordCard?.word.word;
             if (!wordData) return null;
@@ -326,9 +396,9 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
             switch (activeTab) {
                case '词组搭配':
                  return (wordData.dict?.short_phrases as ShortPhraseInfo[])?.map((phrase, index) => (
-                   <div key={index} className={styles.phraseItem}>
-                     <p className={styles.phraseText}>{phrase.short_phrase}</p>
-                     <p className={styles.phraseTranslation}>{phrase.short_phrase_trans}</p>
+                   <div key={index} className={styles.backPhraseItem}>
+                     <p className={styles.backPhraseText}>{phrase.short_phrase}</p>
+                     <p className={styles.backPhraseTranslation}>{phrase.short_phrase_trans}</p>
                    </div>
                  ));
                
@@ -361,8 +431,8 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                    return availableVariants.map((variant, index) => {
                      const word = variantInfo[variant.key as keyof typeof variantInfo] as string;
                      return (
-                       <div key={index} className={styles.variantItem}>
-                         <p className={styles.variantText}>{variant.label}: {word}</p>
+                       <div key={index} className={styles.backVariantItem}>
+                         <p className={styles.backVariantText}>{variant.label}: {word}</p>
                        </div>
                      );
                    });
@@ -370,22 +440,22 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
                
                case '英文释义':
                  return (wordData.dict?.en_means as MeanInfo[])?.map((meaning, index) => (
-                   <div key={index} className={styles.meaningItem}>
-                     <p className={styles.meaningText}>{meaning.mean_type && `[${meaning.mean_type}] `}{meaning.mean}</p>
+                   <div key={index} className={styles.backMeaningItem}>
+                     <p className={styles.backMeaningText}>{meaning.mean_type && `[${meaning.mean_type}] `}{meaning.mean}</p>
                    </div>
                  ));
                
                case '近义词':
                  return (wordData.dict?.synonyms as SynAntInfo[])?.map((synonym, index) => (
-                   <div key={index} className={styles.synonymItem}>
-                     <p className={styles.synonymText}>{synonym.syn_ant}</p>
+                   <div key={index} className={styles.backSynonymItem}>
+                     <p className={styles.backSynonymText}>{synonym.syn_ant}</p>
                    </div>
                  ));
                
                case '形近词':
                  return (wordData.similar_words as SimilarWord[])?.map((word, index) => (
-                   <div key={index} className={styles.similarWordItem}>
-                     <p className={styles.similarWordText}>{word.word}</p>
+                   <div key={index} className={styles.backSimilarWordItem}>
+                     <p className={styles.backSimilarWordText}>{word.word}</p>
                    </div>
                  ));
               
@@ -396,10 +466,10 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         </div>
       </section>
 
-      <footer className={styles.backFooter}>
+      <footer className={styles.backStudyFooter}>
         <button 
           onClick={handleNext}
-          className={styles.nextButton}>下一个</button>
+          className={styles.backNextButton}>下一个</button>
       </footer>
     </div>
   );
@@ -407,6 +477,15 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   return (
     <div className={styles.container}>
       {wordCard ? (wordCard.showAnswer ? renderBackContent() : renderFrontContent()) : <div>加载中...</div>}
+      
+      <CollectModal 
+        showModal={showCollectModal}
+        userBooks={userBooks}
+        selectedBookId={selectedBookId}
+        onToggleBookSelection={toggleBookSelection}
+        onCancel={handleCancelCollect}
+        onSave={handleSaveCollect}
+      />
 
       {/* 响应式样式 */}
       <style>{`
