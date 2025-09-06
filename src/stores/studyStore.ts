@@ -2,14 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
+import type { StudyStatistcs } from '../services/study/types';
 
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
   studyPlan: SelectBookPlanInfo | null;
   wordList: UserRoadMapElementV2[];
+  lastStudyStatistics: StudyStatistcs | null;
   setCurrentBook: (book: UserBookBasicInfo) => void;
   setStudyPlan: (plan: SelectBookPlanInfo) => void;
   setWordList: (words: UserRoadMapElementV2[]) => void;
+  setLastStudyStatistics: (statistics: StudyStatistcs) => void;
   fetchStudyData: () => Promise<void>;
   clearStudyData: () => void;
 }
@@ -20,6 +23,7 @@ export const useStudyStore = create<StudyState>()(
       currentBook: null,
       studyPlan: null,
       wordList: [],
+      lastStudyStatistics: null,
 
       setCurrentBook: (book: UserBookBasicInfo) => {
         set({ currentBook: book });
@@ -31,6 +35,10 @@ export const useStudyStore = create<StudyState>()(
 
       setWordList: (words: UserRoadMapElementV2[]) => {
         set({ wordList: words });
+      },
+
+      setLastStudyStatistics: (statistics: StudyStatistcs) => {
+        set({ lastStudyStatistics: statistics });
       },
 
       fetchStudyData: async () => {
@@ -66,7 +74,7 @@ export const useStudyStore = create<StudyState>()(
       },
 
       clearStudyData: () => {
-        set({ currentBook: null, studyPlan: null, wordList: [] });
+        set({ currentBook: null, studyPlan: null, wordList: [], lastStudyStatistics: null });
       },
     }),
     {
@@ -74,6 +82,7 @@ export const useStudyStore = create<StudyState>()(
       partialize: (state) => ({
         currentBook: state.currentBook,
         wordList: state.wordList,
+        lastStudyStatistics: state.lastStudyStatistics,
       }),
     }
   )

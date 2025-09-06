@@ -1,5 +1,5 @@
 // 背单词功能相关类型定义
-import type { TopicResourceV2 } from '../../types';
+import type { TopicResourceV2, SearchWordResultV2 } from '../../types';
 
 // 选项接口
 export interface StudyOption {
@@ -37,6 +37,13 @@ export interface IteratorStatistics {
   completedWords: number;
   failedWords: number;
   retryCount: number;
+}
+
+export interface StudyStatistcs {
+  failMap: Record<number, number>;
+  usedTimeMap: Record<number, number>;
+  totalTime: number;
+  words: SearchWordResultV2[]
 }
 
 // 学习状态类型

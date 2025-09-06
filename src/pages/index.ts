@@ -10,3 +10,4 @@ export { default as StudyFront } from './StudyFront';
 export { default as VipCenter } from './VipCenter';
 export { default as WordBook } from './WordBook';
 export { default as WordDetail } from './WordDetail';
+export { default as StudyStatistics } from './studyStatistics';

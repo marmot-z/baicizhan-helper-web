@@ -12,6 +12,7 @@ import {
   WordDetail,
   VipCenter,
   PaymentPage,
+  StudyStatistics,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 
@@ -98,6 +99,14 @@ export const router = createBrowserRouter([
           element: (
             <ProtectedRoute>
               <PaymentPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: ROUTES.STUDY_STATISTICS,
+          element: (
+            <ProtectedRoute>
+              <StudyStatistics />
             </ProtectedRoute>
           ),
         },

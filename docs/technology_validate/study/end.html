@@ -1,47 +1,52 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>学习结束</title>
+    <title>Study Summary</title>
     <link rel="stylesheet" href="end.css">
 </head>
 <body>
     <div class="container">
-        <div class="summary-card">
-            <div class="celebration-icon" style="width: 100px; height: 100px; background-color: #e9ecef; border-radius: 50%; margin: 0 auto 1.5rem auto;"></div>
-            <h2>恭喜你拼完所有单词</h2>
-            <div class="stats">
-                <span>平均用时：<strong>3s</strong></span>
-                <span>正确率：<strong>50%</strong></span>
-            </div>
-            <p class="motivation">超过65%的同学！乾坤未定，皆是黑马</p>
+        <div class="summary-header">
+            <img src="../images/celebrate.jpeg" alt="Celebration" class="celebration-image">
         </div>
-
-        <div class="word-list-card">
-            <div class="word-item">
-                <div class="word-info">
-                    <h3>crawl</h3>
-                    <p>v.爬，爬行</p>
-                </div>
-                <div class="status-incorrect">
-                    拼错1次
-                </div>
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value">10:25</div>
+                <div class="stat-label">学习用时</div>
             </div>
-            <div class="word-item">
-                <div class="word-info">
-                    <h3>dip</h3>
-                    <p>v.浸，蘸</p>
-                </div>
-                <div class="status-correct">
-                    ✓ 正确
-                </div>
+            <div class="stat-item">
+                <div class="stat-value">95%</div>
+                <div class="stat-label">正确率</div>
             </div>
         </div>
-
-        <footer class="end-footer">
-            <button class="btn-home">返回首页</button>
-        </footer>
+        <div class="word-list-container">
+            <table class="word-list-table">
+                <tbody>
+                    <tr>
+                        <td>abandon</td>
+                        <td>v.放弃</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>abundant</td>
+                        <td>adj.丰富的</td>
+                        <td>1</td>
+                    </tr>
+                    <tr>
+                        <td>accelerate</td>
+                        <td>v.加速</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>accommodate</td>
+                        <td>v.容纳</td>
+                        <td>2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-hot-toast';
@@ -9,6 +10,7 @@ import { useStudyStore } from '../stores/studyStore';
 import { studyService } from '../services/studyService';
 import { wordService } from '../services/wordService';
 import { CollectModal, AudioIcon } from '../components';
+import { ROUTES } from '../constants';
 import styles from './StudyFront.module.css';
 
 interface StudyFrontProps {
@@ -16,6 +18,7 @@ interface StudyFrontProps {
 }
 
 const StudyFront: React.FC<StudyFrontProps> = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('词组搭配');
   const [study, setStudy] = useState<Study | null>(null);
   const [wordCard, setWordCard] = useState<any | null>(null);
@@ -66,6 +69,13 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
     studyService.getBookPlanInfo().then(initStudy);
   }, []);
 
+  // 监听学习完成状态，完成时跳转到统计页面
+  useEffect(() => {
+    if (study && study.completed) {
+      navigate(ROUTES.STUDY_STATISTICS);
+    }
+  }, [study?.completed, navigate]);
+
   const handleOptionClick = async (id: number, isCorrect: boolean) => {  
     if (isCorrect) {
       await study?.pass();      
@@ -84,6 +94,54 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
     await study?.pass();
     setWordCard(study?.getCurrentWord()?.toObject() || null);
   };
+
+  // 添加键盘事件监听
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const key = event.key;
+      
+      // 处理选项选择（1-4数字键）
+      if (!wordCard || wordCard.showAnswer || !wordCard.options) {
+        // 在背面或无选项时，处理空格键点击下一个按钮
+        if (key === ' ') {
+          event.preventDefault(); // 防止页面滚动
+          handleNext();
+          return;
+        }
+        return;
+      }
+      
+      const options = Object.values(wordCard.options) as StudyOption[];
+      
+      // 检查按键是否为1-4数字键
+      if (['1', '2', '3', '4'].includes(key)) {
+        const optionIndex = parseInt(key) - 1;
+        
+        // 确保选项存在
+        if (optionIndex >= 0 && optionIndex < options.length) {
+          const option = options[optionIndex];
+          
+          // 找到对应的按钮元素并触发视觉反馈
+          const buttons = document.querySelectorAll(`.${styles.optionButton}`);
+          const targetButton = buttons[optionIndex] as HTMLElement;
+          if (targetButton) {
+            targetButton.style.border = option.isCorrect ? '2px solid #388e3c' : '2px solid #c62828';
+          }
+          
+          // 触发选项点击事件
+          handleOptionClick(option.id, option.isCorrect);
+        }
+      }
+    };
+
+    // 添加事件监听器
+    document.addEventListener('keydown', handleKeyPress);
+
+    // 清理函数
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [wordCard, handleOptionClick, handleNext]);
 
   // 检查单词是否已收藏
   const isWordCollected = () => {
@@ -258,9 +316,10 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         })()}
       </section>
 
+      {/* TODO：词根帮组记忆 */}
+
       {wordCard?.word.word.dict?.sentences?.length && (
          <section className={styles.backCard}>
-           <h2 className={styles.backSectionTitle}>图文例句</h2>
            {(() => {
              const sentence: SentenceInfo = wordCard?.word.word.dict.sentences?.[0];
              if (!sentence) return null;

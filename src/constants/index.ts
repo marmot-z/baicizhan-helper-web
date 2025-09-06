@@ -12,6 +12,7 @@ export const ROUTES = {
   WORD_DETAIL: '/page/word-detail/:word',
   VIP_CENTER: '/page/vip-center',
   PAYMENT_PAGE: '/page/payment',
+  STUDY_STATISTICS: '/page/study-statistics',
 } as const;
 
 // API端点常量

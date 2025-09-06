@@ -1,8 +1,9 @@
 import { WordIterator } from './WordIterator';
 import type { StudyWord } from './types';
-import type { UserRoadMapElementV2 } from '../../types';
+import type { UserRoadMapElementV2, SearchWordResultV2 } from '../../types';
 import { WordCard } from './WordCard';
 import { StudyUtils } from './StudyUtils';
+import { groupChineseMeanings } from '../../utils';
 
 /**
  * ProcessIterator类 - 学习流程迭代器
@@ -99,5 +100,28 @@ export class ProcessIterator {
     const remain = this.iterators.reduce((acc, cur) => acc + cur.getRemainNum(), 0);
     const total = this.iterators.length * this.wordNum;
     return (total - remain - 1) / total;
+  }
+
+  public getWordBriefInfos(): SearchWordResultV2[] {
+    const result: SearchWordResultV2[] = [];
+    
+    // 遍历 wordCache 中的所有单词
+    this.wordCache.forEach((studyWord, topicId) => {
+      const wordBasicInfo = studyWord.word.dict.word_basic_info;            
+      const meansByType = groupChineseMeanings(studyWord.word.dict.chn_means);      
+      const meanCn = Array.from(meansByType.entries())
+        .map(([type, means]) => `${type}.${means.join('，')}`)
+        .join('；');      
+      const accent = wordBasicInfo.accent_usa || wordBasicInfo.accent_uk || '';
+      
+      result.push({
+        word: wordBasicInfo.word,
+        topic_id: topicId,
+        mean_cn: meanCn,
+        accent: accent
+      });
+    });
+    
+    return result;
   }
 }
