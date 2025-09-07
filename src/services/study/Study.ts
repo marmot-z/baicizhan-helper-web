@@ -2,7 +2,7 @@ import { ProcessIterator } from './ProcessIterator';
 import type { UserRoadMapElementV2, UserDoneWordRecord } from '../../types';
 import type { WordCard } from './WordCard';
 import { studyService } from '../studyService';
-import type { StudyStatistcs } from './types';
+import type { StudyStatistcs, StudyStage } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 
 /**
@@ -57,27 +57,40 @@ export class Study {
   }
 
   public async pass(): Promise<void> {
+    // 当前为反面
     if (this.currentWordCard?.showAnswer) {
       // 选项全部错误时，展示答案，继续背该单词
       if (this.currentWordCard?.attemptCount == 0) {
         this.currentWordCard.showAnswer = false;
-      } else {
+      } 
+      // 下一个单词
+      else {
         await this.process();
       }
-    } else {
-      this.currentWordCard?.pass();
+    } 
+    // 当前为正面
+    else {
+      // 第二三个环节，如果没有选错，则不展示单词详情，直接下一个单词
+      if (this.currentWordCard?.stage != 'recognition' &&
+         !this.failMap.has(this.currentWordCard?.getId() || 0)) {        
+        await this.process();
+      } 
+      // 反面，显示反面
+      else {
+        this.currentWordCard?.pass();
+      }
     }
   }
 
-  public async fail(optionId: number): Promise<void> {
+  public async fail(optionId: number): Promise<boolean> {
     if (!this.currentWordCard) {
-      return;
+      return false;
     }
 
     let failedTimes = this.failMap.get(this.currentWordCard.getId()) || 0;
     this.failMap.set(this.currentWordCard?.getId(), failedTimes + 1);
-    this.currentWordCard?.fail(optionId);
     this.processIterator.putback(this.currentWordCard.originInfo);
+    return this.currentWordCard?.fail(optionId);    
   }
 
   public getProgress(): number {

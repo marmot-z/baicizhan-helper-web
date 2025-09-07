@@ -26,6 +26,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
+  const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
   const { wordList } = useStudyStore();
 
 
@@ -61,6 +62,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         await studyInstance.start();
         setStudy(studyInstance);
         setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
+        setSelectedOptionIds([]);
       } catch (error) {
         console.error('初始化学习流程失败:', error);
       }
@@ -72,18 +74,24 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   // 监听学习完成状态，完成时跳转到统计页面
   useEffect(() => {
     if (study && study.completed) {
+      toast.success('学习完成，学习记录已上传！');
       navigate(ROUTES.STUDY_STATISTICS);
     }
   }, [study?.completed, navigate]);
 
   const handleOptionClick = async (id: number, isCorrect: boolean) => {  
+    let fresh = true;
     if (isCorrect) {
       await study?.pass();      
     } else {
-      await study?.fail(id);
+      fresh = await study?.fail(id) || false;
     }
 
     setWordCard(study?.getCurrentWord()?.toObject() || null);
+
+    if (fresh) {      
+      setSelectedOptionIds([]);
+    }
   };
 
   const handleTabClick = (tab: string) => {
@@ -93,6 +101,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
   const handleNext = async () => {
     await study?.pass();
     setWordCard(study?.getCurrentWord()?.toObject() || null);
+    setSelectedOptionIds([]);
   };
 
   // 添加键盘事件监听
@@ -119,17 +128,9 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         
         // 确保选项存在
         if (optionIndex >= 0 && optionIndex < options.length) {
-          const option = options[optionIndex];
-          
-          // 找到对应的按钮元素并触发视觉反馈
           const buttons = document.querySelectorAll(`.${styles.optionButton}`);
           const targetButton = buttons[optionIndex] as HTMLElement;
-          if (targetButton) {
-            targetButton.style.border = option.isCorrect ? '2px solid #388e3c' : '2px solid #c62828';
-          }
-          
-          // 触发选项点击事件
-          handleOptionClick(option.id, option.isCorrect);
+          targetButton.click();
         }
       }
     };
@@ -250,11 +251,15 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
           {(Object.values(wordCard?.options) as StudyOption[]).map((option, index) => (
             <button
               key={index}
-              onClick={(e) => {
-                (e.currentTarget as HTMLElement).style.border = option.isCorrect ? '2px solid #388e3c' : '2px solid #c62828';
+              onClick={selectedOptionIds.includes(option.id) ? undefined : () => {
+                setSelectedOptionIds(prev => [...prev, option.id]);
                 handleOptionClick(option.id, option.isCorrect);            
               }}
-              className={styles.optionButton}
+              className={`${styles.optionButton} ${
+                selectedOptionIds.includes(option.id)
+                  ? (option.isCorrect ? styles.optionButtonCorrect : styles.optionButtonIncorrect)
+                  : ''
+              }`}
             >
               {wordCard?.options[option.id].showOptionWord && <span>{option.word}<br></br></span>}
               {wordCard?.options[option.id].showOptionTranslation && <span>{option.translation}</span>}

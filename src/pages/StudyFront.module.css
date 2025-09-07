@@ -118,6 +118,16 @@
   text-align: center;
 }
 
+.optionButtonCorrect {
+  border: 2px solid #388e3c;
+  cursor: default;
+}
+
+.optionButtonIncorrect {
+  border: 2px solid #c62828;
+  cursor: default;
+}
+
 /* 背面内容样式 */
 .backContainer {
   width: 100%;

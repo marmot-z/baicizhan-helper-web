@@ -44,7 +44,7 @@ export class WordCard {
     this.clickedOptionIds.clear();
   }
 
-  public fail(optionId: number): void {
+  public fail(optionId: number): boolean {
     this.attemptCount++;
     this.clickedOptionIds.add(optionId);
 
@@ -52,7 +52,10 @@ export class WordCard {
       this.showAnswer = true;
       this.attemptCount = 0;
       this.clickedOptionIds.clear();
+      return true;
     }
+
+    return false;
   }
 
   public getId(): number {
