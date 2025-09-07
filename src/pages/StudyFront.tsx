@@ -316,7 +316,19 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         })()}
       </section>
 
-      {/* TODO：词根帮组记忆 */}
+      {/* 词根助记 */}
+      {wordCard?.word.word.dict?.word_basic_info.etyma && (
+        <section className={styles.backCard}>
+          <span className={styles.etymaLabel}>词根助记</span>
+          <div>
+            <div className={styles.backSentenceHeader}>
+              <p className={styles.backSentenceText}>
+                {wordCard.word.word.dict.word_basic_info.etyma}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {wordCard?.word.word.dict?.sentences?.length && (
          <section className={styles.backCard}>

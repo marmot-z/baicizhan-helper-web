@@ -275,6 +275,15 @@
   margin: 0;
 }
 
+.etymaLabel {
+  background-color: rgb(188, 190, 192);
+  font-size: 1rem;
+  border-radius: 2px;
+  padding: 4px 8px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
 .backStudyFooter {
   padding: 0 1rem;
   text-align: center;
