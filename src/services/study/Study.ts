@@ -2,7 +2,7 @@ import { ProcessIterator } from './ProcessIterator';
 import type { UserRoadMapElementV2, UserDoneWordRecord } from '../../types';
 import type { WordCard } from './WordCard';
 import { studyService } from '../studyService';
-import type { StudyStatistcs, StudyStage } from './types';
+import type { StudyStatistcs } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 
 /**

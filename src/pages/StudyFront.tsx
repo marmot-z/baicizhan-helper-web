@@ -216,9 +216,9 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
         }        
         <div className={styles.pronunciationContainer}>              
           {wordCard?.word.word.dict.word_basic_info.accent_uk && <span className={styles.pronunciationSpan}>英 {wordCard?.word.word.dict.word_basic_info.accent_uk}</span>}                    
-          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon src={wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri}></AudioIcon>}                    
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon id="accentUkAudio" src={wordCard?.word.word.dict.word_basic_info.accent_uk_audio_uri}></AudioIcon>}                    
           {wordCard?.word.word.dict.word_basic_info.accent_uk && <span className={styles.pronunciationSpan}>美 {wordCard?.word.word.dict.word_basic_info.accent_usa}</span>}
-          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon src={wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri}></AudioIcon>}  
+          {wordCard?.word.word.dict.word_basic_info.accent_uk && <AudioIcon id="accentUsaAudio" src={wordCard?.word.word.dict.word_basic_info.accent_usa_audio_uri}></AudioIcon>}  
         </div>
         <div style={{
           display: 'flex',
@@ -233,7 +233,7 @@ const StudyFront: React.FC<StudyFrontProps> = () => {
           }}>{wordCard?.word.word.dict.sentences?.[0]?.sentence}</p>
         }
           {wordCard?.showSentence && wordCard?.word.word.dict.sentences?.[0]?.audio_uri &&
-          <AudioIcon src={wordCard?.word.word.dict.sentences?.[0]?.audio_uri}></AudioIcon>}
+          <AudioIcon id="sentenceAudio" src={wordCard?.word.word.dict.sentences?.[0]?.audio_uri}></AudioIcon>}
         </div>
         {wordCard?.showTranslation && 
         <p style={{

@@ -323,17 +323,20 @@ export default function Dashboard() {
               gap: '1rem',
               justifyContent: 'center'
             }}>
-              <button className="btn btn-study" disabled style={{
-                padding: '10px 20px',
-                borderRadius: '5px',
-                color: '#fff',
-                fontWeight: 'bold',
-                border: 'none',
-                cursor: 'not-allowed',
-                fontSize: '1rem',
-                backgroundColor: '#007bff',
-                opacity: 0.5
-              }}>学习</button>
+              <button 
+                className="btn btn-study" 
+                onClick={() => navigate(ROUTES.STUDY_FRONT)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '5px',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  backgroundColor: '#007bff',
+                  opacity: 1
+                }}>学习</button>
               <button className="btn btn-review" disabled style={{
                 padding: '10px 20px',
                 borderRadius: '5px',

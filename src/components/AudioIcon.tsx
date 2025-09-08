@@ -4,12 +4,14 @@ import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 const CDN_HOST = 'https://7n.bczcdn.com';
 
 interface AudioIconProps {
+    id?: string,
     src: string;
 }
 
-const AudioIcon: React.FC<AudioIconProps> = ({ src }) => {
+const AudioIcon: React.FC<AudioIconProps> = ({ id = "", src }) => {
     return <FontAwesomeIcon
         icon={faVolumeUp}
+        id={id}
         style={{
             width: '20px',
             height: '20px',
