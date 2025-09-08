@@ -53,7 +53,14 @@ export const useStudyStore = create<StudyState>()(
             
             // 检查缓存的单词书ID是否与当前学习计划的book_id匹配
             if (currentBook && currentBook.id === userPlan.book_id) {
-              // 匹配，使用缓存数据
+              let { wordList } =  get();
+
+              // 无单词列表则拉取
+              if (!wordList || !wordList.length) {
+                const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+                set({ wordList: roadmapData });
+              }
+
               return;
             } else {
               // 不匹配或无缓存，重新拉取单词书信息
