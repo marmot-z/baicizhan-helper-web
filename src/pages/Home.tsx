@@ -30,7 +30,7 @@ export default function Home() {
       backgroundColor: '#f8f9fa',
       color: '#333'
     }}>
-      <header className="navbar" style={{
+      <header className="navbar" role="banner" style={{
         backgroundColor: '#fff',
         borderBottom: '1px solid #e7e7e7',
         padding: '1rem 0'
@@ -45,14 +45,14 @@ export default function Home() {
         }}>
           <img 
             src={iconImg} 
-            alt="Logo" 
+            alt="百词斩助手 Logo" 
             style={{
               width: '30px',
               height: '30px',
               objectFit: 'contain'
             }}
           />
-          <nav>
+          <nav role="navigation" aria-label="主导航">
             <ul style={{
               margin: 0,
               padding: 0,
@@ -94,8 +94,8 @@ export default function Home() {
         </div>
       </header>
 
-      <main>
-        <section className="hero" style={{
+      <main role="main">              
+        <section className="hero" aria-labelledby="hero-title" style={{
           padding: '4rem 0',
           backgroundColor: '#fff'
         }}>
@@ -111,7 +111,7 @@ export default function Home() {
               flex: 1,
               textAlign: 'left'
             }}>
-              <h1 style={{
+              <h1 id="hero-title" style={{
                 fontSize: '2.5rem',
                 marginBottom: '1.5rem'
               }}>在浏览器上使用百词斩</h1>
@@ -187,7 +187,7 @@ export default function Home() {
                 width: '100%',
                 height: '400px'
               }}>
-                <img src={collectWordGif} alt="产品展示图" style={{
+                <img src={collectWordGif} alt="百词斩助手产品演示 - 选词翻译功能展示" style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
@@ -198,7 +198,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="features" style={{
+        <section className="features" aria-labelledby="features-title" style={{
           padding: '4rem 0'
         }}>
           <div className="container" style={{
@@ -206,7 +206,14 @@ export default function Home() {
             margin: '0 auto',
             padding: '0 20px'
           }}>
-            <div className="feature" style={{
+            <h2 id="features-title" style={{
+              fontSize: '2.2rem',
+              textAlign: 'center',
+              marginBottom: '3rem',
+              color: '#333'
+            }}>核心功能</h2>
+            
+            <article className="feature" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3rem',
@@ -216,10 +223,10 @@ export default function Home() {
                 flex: '1',
                 textAlign: 'center'
               }}>
-                <h2 style={{
+                <h3 style={{
                   fontSize: '2rem',
                   marginBottom: '0.5rem'
-                }}>选词翻译</h2>
+                }}>选词翻译</h3>
                 <p style={{
                   fontSize: '1.1rem',
                   color: '#6c757d',
@@ -231,7 +238,7 @@ export default function Home() {
               }}>
                 <img 
                   src={collectWordGif} 
-                  alt="搜索单词功能截图" 
+                  alt="选词翻译功能演示 - 鼠标选中网页单词即可查看详细释义" 
                   style={{
                     width: '100%',
                     objectFit: 'cover',
@@ -240,8 +247,9 @@ export default function Home() {
                   }} 
                 />
               </div>
-            </div>
-            <div className="feature" style={{
+            </article>
+            
+            <article className="feature" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3rem',
@@ -251,10 +259,10 @@ export default function Home() {
                 flex: '1',
                 textAlign: 'center'
               }}>
-                <h2 style={{
+                <h3 style={{
                   fontSize: '2rem',
                   marginBottom: '0.5rem'
-                }}>搜索单词</h2>
+                }}>搜索单词</h3>
                 <p style={{
                   fontSize: '1.1rem',
                   color: '#6c757d',
@@ -266,17 +274,18 @@ export default function Home() {
               }}>
                 <img 
                   src={searchImg} 
-                  alt="搜索单词功能截图" 
+                  alt="单词搜索功能界面 - 输入单词获取详细释义和例句" 
                   style={{
                     width: '100%',
                     objectFit: 'cover',
                     borderRadius: '8px',
                     border: '1px solid #ced4da'
                   }} 
-                  />
+                />
               </div>
-            </div>
-            <div className="feature" style={{
+            </article>
+            
+            <article className="feature" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3rem',
@@ -286,10 +295,10 @@ export default function Home() {
                 flex: '1',
                 textAlign: 'center'
               }}>
-                <h2 style={{
+                <h3 style={{
                   fontSize: '2rem',
                   marginBottom: '0.5rem'
-                }}>收藏同步</h2>
+                }}>收藏同步</h3>
                 <p style={{
                   fontSize: '1.1rem',
                   color: '#6c757d',
@@ -301,17 +310,18 @@ export default function Home() {
               }}>
                 <img 
                   src={collectImg} 
-                  alt="搜索单词功能截图" 
+                  alt="单词收藏功能界面 - 一键收藏单词并同步到百词斩APP" 
                   style={{
                     width: '100%',
                     objectFit: 'cover',
                     borderRadius: '8px',
                     border: '1px solid #ced4da'
                   }} 
-                  />
+                />
               </div>
-            </div>
-            <div className="feature" style={{
+            </article>
+            
+            <article className="feature" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3rem',
@@ -321,32 +331,33 @@ export default function Home() {
                 flex: '1',
                 textAlign: 'center'
               }}>
-                <h2 style={{
+                <h3 style={{
                   fontSize: '2rem',
                   marginBottom: '0.5rem'
-                }}>anki 导出</h2>
+                }}>Anki 导出</h3>
                 <p style={{
                   fontSize: '1.1rem',
                   color: '#6c757d',
                   marginBottom: '0'
-                }}>导出单词到 anki 上</p>
+                }}>导出单词到 Anki 上</p>
               </div>
               <div className="feature-image" style={{
                 flex: '1'
               }}>
                 <img 
                   src={ankiImg} 
-                  alt="搜索单词功能截图" 
+                  alt="Anki导出功能界面 - 将收藏的单词导出为Anki卡片格式" 
                   style={{
                     width: '100%',
                     objectFit: 'cover',
                     borderRadius: '8px',
                     border: '1px solid #ced4da'
                   }} 
-                  />
+                />
               </div>
-            </div>
-            <div className="feature" style={{
+            </article>
+            
+            <article className="feature" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3rem',
@@ -356,10 +367,10 @@ export default function Home() {
                 flex: '1',
                 textAlign: 'center'
               }}>
-                <h2 style={{
+                <h3 style={{
                   fontSize: '2rem',
                   marginBottom: '0.5rem'
-                }}>学习/复习</h2>
+                }}>学习/复习</h3>
                 <p style={{
                   fontSize: '1.1rem',
                   color: '#6c757d',
@@ -371,21 +382,21 @@ export default function Home() {
               }}>
                 <img 
                   src={studyImg} 
-                  alt="搜索单词功能截图" 
+                  alt="在线学习功能界面 - 直接在浏览器中进行单词学习和复习" 
                   style={{
                     width: '100%',
                     objectFit: 'cover',
                     borderRadius: '8px',
                     border: '1px solid #ced4da'
                   }} 
-                  />
+                />
               </div>
-            </div>
+            </article>
           </div>
         </section>
       </main>
 
-      <footer className="footer" style={{
+      <footer className="footer" role="contentinfo" style={{
         textAlign: 'center',
         padding: '2rem 0',
         backgroundColor: '#343a40',
