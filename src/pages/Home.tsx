@@ -115,7 +115,7 @@ export default function Home() {
                 fontSize: '2.5rem',
                 marginBottom: '1.5rem'
               }}>在浏览器上使用百词斩</h1>
-              <div className="download-buttons" style={{
+              {/* <div className="download-buttons" style={{
                 marginBottom: '2rem'
               }}>
                 <a href="https://chromewebstore.google.com/detail/%E7%99%BE%E8%AF%8D%E6%96%A9%E5%8A%A9%E6%89%8B/ofdejofffdjcmlbclhhfeaefodgffbnm" className="btn btn-chrome" style={{
@@ -175,7 +175,7 @@ export default function Home() {
                  }} onMouseLeave={(e) => {
                    (e.target as HTMLElement).style.opacity = '1';
                  }}>离线下载</a>
-              </div>
+              </div> */}
             </div>
             <div className="hero-image" style={{
               flex: 1
