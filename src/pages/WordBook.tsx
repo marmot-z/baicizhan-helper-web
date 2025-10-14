@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
 import { useWordBookStore } from '../stores/wordBookStore';
+import toast from 'react-hot-toast';
 import type { UserBookItem, UserBookWordDetail } from '../types';
 
 const WordBook: React.FC = () => {
@@ -14,10 +15,16 @@ const WordBook: React.FC = () => {
   const [wordCount, setWordCount] = useState(49);
   const [currentBook, setCurrentBook] = useState<UserBookItem | null>(null);
   const [words, setWords] = useState<UserBookWordDetail[]>([]);
+  const [selectedWords, setSelectedWords] = useState<Record<number, string>>({});
+  const selectWordsRef = useRef(selectedWords);
   
   const { getWordBook, setWordBook, clearExpiredData } = useWordBookStore();
 
   const sortOptions = ['时间顺序', '时间逆序', '字母顺序', '字母逆序'];
+
+  useEffect(() => {
+    selectWordsRef.current = selectedWords;
+  }, [selectedWords]);
 
   useEffect(() => {
     // 根据单词本ID获取单词本信息
@@ -62,9 +69,34 @@ const WordBook: React.FC = () => {
           console.error('获取单词本信息失败:', error);
         }
       }
+    };    
+
+    const exportToAnki = () => {
+      const injectionElement = document.getElementById('baicizhan-helper-extension-injection');
+
+      if (!injectionElement) {
+        toast.error('请先安装并启用「百词斩助手」插件');
+        return;
+      }
+
+      if (Object.values(selectWordsRef.current).length === 0) {
+        toast.error('请先选择要导出的单词');
+        return;
+      }
+
+      window.postMessage({
+        type: 'EXPORT_TO_ANKI_WORDS',
+        payload: selectWordsRef.current
+      }, '*');
     };
-    
+
+    const btn = document.getElementById('exportBtn');
+    btn?.addEventListener('click', exportToAnki);
     fetchBookInfo();
+
+    return () => {
+      btn?.removeEventListener('click', exportToAnki);
+    };
   }, [id]);
 
   // 排序逻辑
@@ -85,7 +117,37 @@ const WordBook: React.FC = () => {
     }
   }, [words, activeSort]);
 
+  function selectAllWords(e: React.ChangeEvent<HTMLInputElement>) {
+    const checked = e.target.checked;
 
+    if (!checked) {
+      setSelectedWords({});
+      return;
+    }
+
+    const allSelected = sortedWords.reduce((acc, word) => {
+      acc[word.topic_id] = word.word;
+      return acc;
+    }, {} as Record<number, string>);
+    setSelectedWords(allSelected);
+  }
+
+  function selectWord(e: React.ChangeEvent<HTMLInputElement>) {
+    const { value, checked } = e.target;
+    const topicId = Number(value);
+
+    if (checked) {
+      setSelectedWords(prev => ({
+        ...prev,
+        [topicId]: sortedWords.find(word => word.topic_id === topicId)?.word || ''
+      }));
+    } else {
+      setSelectedWords(prev => {
+        const { [topicId]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  }
 
   return (
     <div style={{
@@ -197,72 +259,119 @@ const WordBook: React.FC = () => {
           borderRadius: '8px',
           overflow: 'hidden'
         }}>
+          <div style={{
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid #e7e7e7',
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <input
+              type="checkbox"
+              // checked={sortedWords.length > 0 && Object.keys(selectedWords).length === sortedWords.length}
+              onChange={selectAllWords}
+              style={{
+                marginRight: '1rem',
+                width: '18px',
+                height: '18px'
+              }}
+            />
+            <span style={{ fontWeight: 'bold' }}>全选/全不选</span>
+
+            <button id="exportBtn" style={{
+                backgroundColor: '#007bff',
+                color: '#fff',
+                padding: '8px 16px',
+                fontSize: '0.9rem',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                borderRadius: '5px',
+                marginLeft: '10px'
+              }}>导出</button>
+          </div>
           {sortedWords.map((wordItem, index) => (
             <div
               key={wordItem.topic_id}
               style={{
                 padding: '1.5rem',
-                borderBottom: index === sortedWords.length - 1 ? 'none' : '1px solid #e7e7e7'
+                borderBottom: index === sortedWords.length - 1 ? 'none' : '1px solid #e7e7e7',
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
+              <input
+                type="checkbox"
+                checked={!!selectedWords[wordItem.topic_id]}
+                value={wordItem.topic_id}
+                onChange={selectWord}
+                style={{
+                  marginRight: '1rem',
+                  width: '18px',
+                  height: '18px'
+                }}
+              />
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem'
+                flex: 1
               }}>
-                <h2 style={{
-                  fontSize: '1.5rem',
-                  margin: 0
-                }}>{wordItem.word}</h2>
-                <FontAwesomeIcon 
-                  icon={faVolumeUp} 
-                  style={{
-                    width: '20px',
-                    height: '20px',
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <h2 style={{
+                    fontSize: '1.5rem',
+                    margin: 0
+                  }}>{wordItem.word}</h2>
+                  <FontAwesomeIcon 
+                    icon={faVolumeUp} 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      color: '#6c757d',
+                      flexShrink: 0,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      if (wordItem.audio_uk) {
+                        const audio = new Audio(wordItem.audio_uk);
+                        audio.play().catch(error => {
+                          console.error('音频播放失败:', error);
+                        });
+                      }
+                    }}
+                  />
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <p style={{
+                    margin: 0,
                     color: '#6c757d',
-                    flexShrink: 0,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => {
-                    if (wordItem.audio_uk) {
-                      const audio = new Audio(wordItem.audio_uk);
-                      audio.play().catch(error => {
-                        console.error('音频播放失败:', error);
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <p style={{
-                  margin: 0,
-                  color: '#6c757d',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  flexGrow: 1,
-                  marginRight: '1rem'
-                }}>{wordItem.mean}</p>
-                <a
-                  href="#"
-                  style={{
-                    color: '#007bff',
-                    textDecoration: 'none',
-                    flexShrink: 0,
-                    cursor: 'pointer'
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(`/page/word-detail/${wordItem.topic_id}`);
-                  }}
-                >
-                  详情 &gt;
-                </a>
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    flexGrow: 1,
+                    marginRight: '1rem'
+                  }}>{wordItem.mean.substring(0, 40)}</p>
+                  <a
+                    href="#"
+                    style={{
+                      color: '#007bff',
+                      textDecoration: 'none',
+                      flexShrink: 0,
+                      cursor: 'pointer'
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(`/page/word-detail/${wordItem.topic_id}`);
+                    }}
+                  >
+                    详情 &gt;
+                  </a>
+                </div>
               </div>
             </div>
           ))}
