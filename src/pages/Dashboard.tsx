@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket, faCommentDots, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
 import { useStudyStore } from '../stores/studyStore';
 import { bookService } from '../services/bookService';
+import ExtensionsDownloadModel from '../components/ExtensionsDownloadModel';
 import type { UserBindInfo, UserBookItem } from '../types';
 import { ROUTES } from '../constants';
 import iconLogo from '../assets/icon.png';
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [downloadModelShow, setDownloadModelShow] = useState(false);
   const { user, logout, checkAndGetUserInfo } = useAuthStore();
   const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
 
@@ -41,6 +43,10 @@ export default function Dashboard() {
       handleSearch();
     }
   };
+
+  const closeDownloadModel = () => {
+    setDownloadModelShow(false);
+  }
 
   useEffect(() => {
     // 检查并获取用户信息
@@ -169,6 +175,29 @@ export default function Dashboard() {
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
                       }}><FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />会员中心</a>
+                      <a href="#" style={{
+                        color: 'black',
+                        padding: '12px 16px',
+                        textDecoration: 'none',
+                        display: 'block'
+                      }} onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
+                      }} onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                      }} onClick={(e) => {
+                        e.preventDefault();
+                        setDownloadModelShow(true);
+                      }}><FontAwesomeIcon icon={faDownload} style={{ marginRight: '8px' }} />插件下载</a>
+                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank" style={{
+                        color: 'black',
+                        padding: '12px 16px',
+                        textDecoration: 'none',
+                        display: 'block'
+                      }} onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
+                      }} onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
+                      }}><FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />反馈</a>
                       <a href="#" style={{
                         color: 'black',
                         padding: '12px 16px',
@@ -416,6 +445,7 @@ export default function Dashboard() {
           </div>
         </section>
       </main>
+      <ExtensionsDownloadModel showModal={downloadModelShow} onClose={closeDownloadModel} />    
     </div>
   );
 }
