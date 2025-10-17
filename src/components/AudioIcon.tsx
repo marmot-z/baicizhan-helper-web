@@ -19,7 +19,8 @@ const AudioIcon: React.FC<AudioIconProps> = ({ id = "", src }) => {
             color: '#6c757d'
         }}
         onClick={() => {
-            const audio = new Audio(CDN_HOST + src);
+            src = src.startsWith('http') ? src : CDN_HOST + src;
+            const audio = new Audio(src);
             audio.play().catch(error => console.error('音频播放失败:', error));
         }}
         title="播放发音"

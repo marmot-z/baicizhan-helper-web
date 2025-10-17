@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { bookService } from '../services/bookService';
 import { useWordBookStore } from '../stores/wordBookStore';
+import { AudioIcon } from '../components';
 import toast from 'react-hot-toast';
 import type { UserBookItem, UserBookWordDetail } from '../types';
+import ExtensionsDownloadModel from '../components/ExtensionsDownloadModel';
+import styles from './WordBook.module.css';
 
 const WordBook: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,7 @@ const WordBook: React.FC = () => {
   const [words, setWords] = useState<UserBookWordDetail[]>([]);
   const [selectedWords, setSelectedWords] = useState<Record<number, string>>({});
   const selectWordsRef = useRef(selectedWords);
+  const [downloadModelShow, setDownloadModelShow] = useState(false);
   
   const { getWordBook, setWordBook, clearExpiredData } = useWordBookStore();
 
@@ -75,7 +77,7 @@ const WordBook: React.FC = () => {
       const injectionElement = document.getElementById('baicizhan-helper-extension-injection');
 
       if (!injectionElement) {
-        toast.error('请先安装并启用「百词斩助手」插件');
+        setDownloadModelShow(true);
         return;
       }
 
@@ -149,234 +151,96 @@ const WordBook: React.FC = () => {
     }
   }
 
+  function toggleDownloadModelShow() {
+    setDownloadModelShow(false);
+  }
+
   return (
-    <div style={{
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      margin: 0,
-      lineHeight: 1.6,
-      backgroundColor: '#f8f9fa',
-      color: '#333',
-      minHeight: '100vh'
-    }}>
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '20px'
-      }}>
-        {/* Wordbook Header */}
-        <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1.5rem',
-          padding: '1.5rem',
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          marginBottom: '1.5rem'
-        }}>
-          {currentBook?.cover ? (
-            <img 
-              src={currentBook.cover} 
-              alt={currentBook.book_name}
-              style={{
-                width: '100px',
-                borderRadius: '8px',
-                flexShrink: 0,
-                objectFit: 'cover'
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '100px',
-              height: '125px',
-              backgroundColor: '#e9ecef',
-              borderRadius: '8px',
-              flexShrink: 0
-            }}></div>
-          )}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            height: '125px'
-          }}>
-            <h1 style={{
-              fontSize: '1.5rem',
-              margin: 0
-            }}>{bookTitle}</h1>
-            <p style={{
-              margin: 0,
-              color: '#6c757d'
-            }}>单词数：{wordCount}</p>
-            <div style={{
-              display: 'flex',
-              gap: '5px',
-              alignSelf: 'flex-start'
-            }}>
-              <button disabled style={{
-                backgroundColor: '#007bff',
-                color: '#fff',
-                padding: '8px 16px',
-                fontSize: '0.9rem',
-                border: 'none',
-                cursor: 'not-allowed',
-                fontWeight: 'bold',
-                borderRadius: '5px',
-                opacity: 0.5
-              }}>学习</button>
-            </div>
-          </div>
-        </header>
-
-        {/* Sort Options */}
-        <nav style={{
-          display: 'flex',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-          flexWrap: 'wrap'
-        }}>
-          {sortOptions.map((option) => (
-            <button
-              key={option}
-              onClick={() => setActiveSort(option)}
-              style={{
-                backgroundColor: activeSort === option ? '#007bff' : '#e9ecef',
-                color: activeSort === option ? '#fff' : '#333',
-                border: `1px solid ${activeSort === option ? '#007bff' : '#ced4da'}`,
-                padding: '8px 16px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              {option}
-            </button>
-          ))}
-        </nav>
-
-        {/* Word List */}
-        <main style={{
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            padding: '1rem 1.5rem',
-            borderBottom: '1px solid #e7e7e7',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <input
-              type="checkbox"
-              // checked={sortedWords.length > 0 && Object.keys(selectedWords).length === sortedWords.length}
-              onChange={selectAllWords}
-              style={{
-                marginRight: '1rem',
-                width: '18px',
-                height: '18px'
-              }}
-            />
-            <span style={{ fontWeight: 'bold' }}>全选/全不选</span>
-
-            <button id="exportBtn" style={{
-                backgroundColor: '#007bff',
-                color: '#fff',
-                padding: '8px 16px',
-                fontSize: '0.9rem',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                borderRadius: '5px',
-                marginLeft: '10px'
-              }}>导出</button>
-          </div>
-          {sortedWords.map((wordItem, index) => (
-            <div
-              key={wordItem.topic_id}
-              style={{
-                padding: '1.5rem',
-                borderBottom: index === sortedWords.length - 1 ? 'none' : '1px solid #e7e7e7',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={!!selectedWords[wordItem.topic_id]}
-                value={wordItem.topic_id}
-                onChange={selectWord}
-                style={{
-                  marginRight: '1rem',
-                  width: '18px',
-                  height: '18px'
-                }}
+    <div>
+      <div className={styles.container}>
+        <div className={styles.wrapper}>
+          {/* Wordbook Header */}
+          <header className={styles.header}>
+            {currentBook?.cover ? (
+              <img 
+                src={currentBook.cover} 
+                alt={currentBook.book_name}
+                className={styles.bookCover}
               />
-              <div style={{
-                flex: 1
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <h2 style={{
-                    fontSize: '1.5rem',
-                    margin: 0
-                  }}>{wordItem.word}</h2>
-                  <FontAwesomeIcon 
-                    icon={faVolumeUp} 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      color: '#6c757d',
-                      flexShrink: 0,
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      if (wordItem.audio_uk) {
-                        const audio = new Audio(wordItem.audio_uk);
-                        audio.play().catch(error => {
-                          console.error('音频播放失败:', error);
-                        });
-                      }
-                    }}
-                  />
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <p style={{
-                    margin: 0,
-                    color: '#6c757d',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    flexGrow: 1,
-                    marginRight: '1rem'
-                  }}>{wordItem.mean.substring(0, 40)}</p>
-                  <a
-                    href="#"
-                    style={{
-                      color: '#007bff',
-                      textDecoration: 'none',
-                      flexShrink: 0,
-                      cursor: 'pointer'
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(`/page/word-detail/${wordItem.topic_id}`);
-                    }}
-                  >
-                    详情 &gt;
-                  </a>
-                </div>
+            ) : (
+              <div className={styles.coverPlaceholder}></div>
+            )}
+            <div className={styles.bookInfo}>
+              <h1 className={styles.bookTitle}>{bookTitle}</h1>
+              <p className={styles.bookCount}>单词数：{wordCount}</p>
+              <div className={styles.buttonGroup}>
+                <button disabled className={styles.disabledButton}>学习</button>
               </div>
             </div>
-          ))}
-        </main>
+          </header>
+
+          {/* Sort Options */}
+          <nav className={styles.sortNav}>
+            {sortOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setActiveSort(option)}
+                className={`${styles.sortButton} ${activeSort === option ? styles.sortButtonActive : styles.sortButtonInactive}`}
+              >
+                {option}
+              </button>
+            ))}
+          </nav>
+
+          {/* Word List */}
+          <main className={styles.wordList}>
+            <div className={styles.listHeader}>
+              <input
+                type="checkbox"
+                onChange={selectAllWords}
+                className={styles.checkbox}
+              />
+              <span className={styles.boldText}>全选/全不选</span>
+
+              <button id="exportBtn" className={styles.exportButton}>导出</button>
+            </div>
+            {sortedWords.map((wordItem, index) => (
+              <div
+                key={wordItem.topic_id}
+                className={`${styles.wordItem} ${index !== sortedWords.length - 1 ? styles.wordItemWithBorder : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!selectedWords[wordItem.topic_id]}
+                  value={wordItem.topic_id}
+                  onChange={selectWord}
+                  className={styles.checkbox}
+                />
+                <div className={styles.wordContent}>
+                  <div className={styles.wordHeader}>
+                    <h2 className={styles.word}>{wordItem.word}</h2>
+                    <AudioIcon src={wordItem.audio_uk} />                  
+                  </div>
+                  <div className={styles.wordFooter}>
+                    <p className={styles.wordMeaning}>{wordItem.mean.substring(0, 40)}</p>
+                    <a
+                      href="#"
+                      className={styles.detailLink}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/page/word-detail/${wordItem.topic_id}`);
+                      }}
+                    >
+                      详情 &gt;
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </main>
+        </div>
       </div>
+      <ExtensionsDownloadModel showModal={downloadModelShow} onClose={toggleDownloadModelShow} />    
     </div>
   );
 };
