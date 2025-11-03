@@ -1,0 +1,107 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  max-width: 400px;
+  width: 100%;
+  padding: 20px;
+  margin: 20px;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 0;
+  color: #6c757d;
+}
+
+.book-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.book-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  cursor: pointer;
+}
+
+.book-item:not(:last-child) {
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.book-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.book-icon {
+  font-size: 20px;
+  color: #000;
+}
+
+.book-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.star-icon {
+  font-size: 1.2rem;
+}
+
+.star-selected {
+  color: #007bff;
+}
+
+.star-unselected {
+  color: #d3d3d3;
+}
+
+.button-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.button {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.save-button {
+  background-color: #007bff;
+  color: #fff;
+}
