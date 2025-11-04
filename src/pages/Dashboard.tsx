@@ -354,7 +354,7 @@ export default function Dashboard() {
             }}>
               <button 
                 className="btn btn-study" 
-                onClick={() => navigate(ROUTES.STUDY_FRONT)}
+                onClick={() => navigate(ROUTES.STUDY_VIEW)}
                 style={{
                   padding: '10px 20px',
                   borderRadius: '5px',

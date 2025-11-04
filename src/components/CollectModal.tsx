@@ -29,7 +29,7 @@ const CollectModal: React.FC<CollectModalProps> = ({
         <div className="modal-content">
           <h2 className="modal-title">将单词添加到</h2>
           <ul className="book-list">
-            {userBooks.map((book, index) => (
+            {userBooks.map((book) => (
               <li 
                 key={book.user_book_id} 
                 className="book-item"

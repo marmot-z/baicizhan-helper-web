@@ -354,3 +354,18 @@
     font-size: 1rem;
   }
 }
+
+@media (max-width: 600px) {
+  .study-front-container {
+    padding: 15px !important;
+  }
+  .study-front-card {
+    padding: 1.5rem !important;
+  }
+  .study-front-word {
+    font-size: 2.5rem !important;
+  }
+  .study-front-options {
+    grid-template-columns: 1fr !important;
+  }
+}

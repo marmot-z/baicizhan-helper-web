@@ -8,7 +8,7 @@ export const ROUTES = {
   WORD_BOOK: '/page/wordbook/:id',
   STUDY_PLAN: '/page/study-plan',
   STUDY_CALENDAR: '/page/study-calendar',
-  STUDY_FRONT: '/page/study-front',
+  STUDY_VIEW: '/page/study-view',
   WORD_DETAIL: '/page/word-detail/:word',
   VIP_CENTER: '/page/vip-center',
   PAYMENT_PAGE: '/page/payment',

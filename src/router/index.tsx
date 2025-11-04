@@ -5,9 +5,8 @@ import {
   Login,
   Dashboard,
   Search,
-  StudyPlan,
   StudyCalendar,
-  StudyFront,
+  StudyView,
   WordBook,
   WordDetail,
   VipCenter,
@@ -55,14 +54,6 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: ROUTES.STUDY_PLAN,
-    element: (
-      <ProtectedRoute>
-        <StudyPlan />
-      </ProtectedRoute>
-    ),
-  },
-  {
     path: ROUTES.STUDY_CALENDAR,
     element: (
       <ProtectedRoute>
@@ -71,10 +62,10 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: ROUTES.STUDY_FRONT,
+    path: ROUTES.STUDY_VIEW,
     element: (
       <ProtectedRoute>
-        <StudyFront />
+        <StudyView />
       </ProtectedRoute>
     ),
   },
