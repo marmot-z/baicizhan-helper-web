@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useStudyStore } from '../stores/studyStore';
 import celebrationImage from '../assets/celebrate.jpeg';
 import styles from './studyStatistics.module.css';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface StudyStatisticsProps {
   // 可以根据需要添加props
 }
 
 const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
+  const navigate = useNavigate();
   const { lastStudyStatistics } = useStudyStore();
   const [visibleMeanings, setVisibleMeanings] = useState<Set<string>>(new Set());
 
@@ -91,6 +94,10 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className={styles.backButtonContainer}>
+        <button className={styles.backButton} onClick={() => navigate(ROUTES.DASHBOARD)}>返回首页</button>
       </div>
     </div>
   );

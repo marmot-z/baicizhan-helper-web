@@ -2,8 +2,9 @@
     font-family: sans-serif;
     background-color: #f0f2f5;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column; /* 垂直上下布局 */
+    justify-content: flex-start;
+    align-items: center; /* 水平居中展示 */
     min-height: 100vh;
     margin: 0;
     padding-top: 2rem;
@@ -129,6 +130,25 @@
     background-color: #f9f9f9;
     border-radius: 8px;
     margin: 20px 0;
+}
+
+/* 返回首页按钮容器：居中、与内容上下布局 */
+.backButtonContainer {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+/* 淡绿色按钮样式 */
+.backButton {
+    background-color: rgb(40, 167, 69); /* 淡绿色背景 */
+    color: rgb(255, 255, 255); /* 深绿色文字 */
+    border: 1px solid #b7eb8f; /* 浅绿色边框 */
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 @media (max-width: 600px) {
