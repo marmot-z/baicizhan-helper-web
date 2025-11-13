@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { AudioIcon } from '../components';
 import type { StudyOption } from '../services/study/types';
 import type { SelectBookPlanInfo } from '../types';
