@@ -146,7 +146,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
 
       <footer className={styles.footer}>
         <div className={styles.studyFrontOptions}>
-          {(Object.values(wordCard?.options) as StudyOption[]).map(
+          {(wordCard?.options as StudyOption[]).map(
             (option, index) => (
               <button
                 key={index}
@@ -163,13 +163,13 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
                     : ''
                 }`}
               >
-                {wordCard?.options[option.id].showOptionWord && (
+                {wordCard?.options[index].showOptionWord && (
                   <span>
                     {option.word}
                     <br></br>
                   </span>
                 )}
-                {wordCard?.options[option.id].showOptionTranslation && (
+                {wordCard?.options[index].showOptionTranslation && (
                   <span>{option.translation}</span>
                 )}
               </button>

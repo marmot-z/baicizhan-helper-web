@@ -1,6 +1,19 @@
 import type { StudyWord, StudyStage, StudyOption } from './types';
 import type { UserRoadMapElementV2 } from '../../types';
 
+function shuffle(array: Array<any>): Array<any> {
+  let i = array.length, j, temp;
+
+  while (--i > 0) {
+    j = Math.floor(Math.random() * (i + 1));
+    temp = array[j];
+    array[j] = array[i];
+    array[i] = temp;
+  }
+
+  return array;
+}
+
 /**
  * WordCard类 - 表示单个单词的学习卡片
  * 负责管理单词的展示、答案检查和提示逻辑
@@ -22,20 +35,11 @@ export class WordCard {
     this.originInfo = originInfo;
     this.stage = stage;
     this.word = word;
-    this.word.options = this.shuffle(this.word.options);
+    this.word.options = shuffle(this.word.options);
     this.attemptCount = 0;
     this.maxAttempts = 3;
     this.showAnswer = false;
     this.clickedOptionIds = new Set();
-  }
-
-  private shuffle(options: StudyOption[]): StudyOption[] {
-    const shuffledOptions = [...options];
-    for (let i = shuffledOptions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
-    }
-    return shuffledOptions;
   }
 
   public pass(): void {
@@ -98,6 +102,19 @@ export class WordCard {
   }
 
   public toObject(): any {
+    let options = [];
+    
+    for (let o of this.getOptions()) {
+      options.push({
+        id: o.id,
+        word: o.word,
+        translation: o.translation,     
+        isCorrect: o.isCorrect,     
+        showOptionWord: this.showOptionWord(o.id),
+        showOptionTranslation: this.showOptionTranslation(o.id)
+      });
+    }
+
     return {
       word: this.word as StudyWord,
       showAnswer: this.showAnswer,
@@ -105,17 +122,7 @@ export class WordCard {
       showSentence: this.showSentence(),
       showTranslation: this.showTranslation(),
       showEnglishTranslation: this.showEnglishTranslation(),
-      options: this.getOptions().reduce((acc, option) => {
-        acc[option.id] = {
-          id: option.id,
-          word: option.word,
-          translation: option.translation,     
-          isCorrect: option.isCorrect,   
-          showOptionWord: this.showOptionWord(option.id),
-          showOptionTranslation: this.showOptionTranslation(option.id)
-        };
-        return acc;
-      }, {} as Record<number, any>),
+      options: options,
     }
   }
 }
