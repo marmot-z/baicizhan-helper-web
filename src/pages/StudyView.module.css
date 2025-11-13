@@ -369,3 +369,37 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* 笔记本屏幕适配：仅调整尺寸与排布，保证一屏展示 */
+/* 11–13 英寸（典型视口高度 ≤ 900px，桌面宽度） */
+@media (min-width: 769px) and (max-height: 900px) {
+  .studyFrontContainer { padding: 8px; max-width: 700px; }
+  .header { font-size: 1rem; margin-bottom: 0.5rem; }
+  .studyFrontCard { height: 440px; padding: 1.5rem 1.5rem 1rem; margin-bottom: 1rem; }
+  .imageContainer { height: 220px; }
+  .studyFrontWord { font-size: 2.4rem; }
+  .pronunciationContainer { font-size: 1rem; }
+  .sentence { font-size: 1.1rem; }
+  .translation { margin-bottom: 1rem; }
+  .footer { padding: 0 0.75rem; }
+  .studyFrontOptions { height: 200px; gap: 0.75rem; }
+  .optionButton { padding: 1rem; min-height: 96px; }
+}
+
+/* 14 英寸（典型视口高度 901–1080px，桌面宽度） */
+@media (min-width: 769px) and (min-height: 901px) and (max-height: 1080px) {
+  .studyFrontContainer { max-width: 760px; }
+  .studyFrontCard { height: 500px; padding: 1.75rem 1.75rem 1.25rem; }
+  .imageContainer { height: 260px; }
+  .studyFrontWord { font-size: 2.7rem; }
+  .translation { margin-bottom: 1.25rem; }
+  .studyFrontOptions { height: 220px; }
+  .optionButton { min-height: 100px; padding: 1.1rem; }
+}
+
+/* 15–16 英寸（典型视口高度 ≥ 1081px，桌面宽度） */
+@media (min-width: 769px) and (min-height: 1081px) {
+  .studyFrontContainer { max-width: 800px; }
+  .studyFrontCard { height: 540px; }
+  .studyFrontOptions { height: 240px; }
+}
