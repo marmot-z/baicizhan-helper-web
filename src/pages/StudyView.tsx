@@ -28,18 +28,17 @@ const StudyView: React.FC = () => {
   const handleOptionClick = async (id: number, isCorrect: boolean) => {  
     setSelectedOptionIds(prev => [...prev, id]);
 
-    let fresh = true;
     if (isCorrect) {
-      await study?.pass();      
+      await study?.pass();            
     } else {
-      fresh = await study?.fail(id) || false;
-    }
+      const fresh = await study?.fail(id) || false;
+
+      if (fresh) {
+        setSelectedOptionIds([]);        
+      }
+    }    
 
     setWordCard(study?.getCurrentWord()?.toObject() || null);
-
-    if (fresh) {      
-      setSelectedOptionIds([]);
-    }
   };
 
   // 初始化学习流程
@@ -148,6 +147,45 @@ const StudyView: React.FC = () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
   }, [wordCard, handleNext]);
+
+  const CDN_HOST = 'https://7n.bczcdn.com';
+
+  useEffect(() => {
+    if (!wordCard) {
+      return;
+    }
+
+    const audios: HTMLAudioElement[] = [];
+
+    const playAudiosSequentially = async () => {
+      const audioUrls = [
+        wordCard.word.word.dict.word_basic_info.accent_uk_audio_uri,
+        wordCard.word.word.dict.sentences?.[0]?.audio_uri,
+      ].filter(Boolean);
+
+      for (const audioUrl of audioUrls) {
+        try {
+          const audio = new Audio(CDN_HOST + audioUrl);
+          audios.push(audio);
+
+          await new Promise((resolve, reject) => {
+            audio.onended = resolve;
+            audio.onerror = reject;            
+            audio.play().catch(reject);
+          });
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error('音频播放失败:', error);
+        }
+      }
+    };
+
+    playAudiosSequentially();
+
+    return () => {
+      audios.forEach((audio) => audio.pause());
+    };
+  }, [wordCard?.showAnswer]);
 
   return (
     <div className={styles.container}>

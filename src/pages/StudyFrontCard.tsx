@@ -13,8 +13,6 @@ interface StudyFrontCardProps {
   optionClick: (id: number, isCorrect: boolean) => Promise<void>;
 }
 
-const CDN_HOST = 'https://7n.bczcdn.com';
-
 const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
   wordCard,
   studyPlan,
@@ -22,39 +20,6 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
   selectedOptionIds,
   optionClick,
 }) => {
-  useEffect(() => {
-    const audios: HTMLAudioElement[] = [];
-
-    const playAudiosSequentially = async () => {
-      const audioUrls = [
-        wordCard.word.word.dict.word_basic_info.accent_uk_audio_uri,
-        wordCard.word.word.dict.sentences?.[0]?.audio_uri,
-      ].filter(Boolean);
-
-      for (const audioUrl of audioUrls) {
-        try {
-          const audio = new Audio(CDN_HOST + audioUrl);
-          audios.push(audio);
-
-          await new Promise((resolve, reject) => {
-            audio.onended = resolve;
-            audio.onerror = reject;            
-            audio.play().catch(reject);
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (error) {
-          console.error('音频播放失败:', error);
-        }
-      }
-    };
-
-    playAudiosSequentially();
-
-    return () => {
-      audios.forEach((audio) => audio.pause());
-    };
-  }, [wordCard]);
-
   return (
     <div className={styles.studyFrontContainer}>
       <header className={styles.header}>
