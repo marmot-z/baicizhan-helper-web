@@ -25,20 +25,22 @@ const StudyView: React.FC = () => {
     setSelectedOptionIds([]);
   };
 
-  const handleOptionClick = async (id: number, isCorrect: boolean) => {  
+  const handleOptionClick = async (id: number, isCorrect: boolean) => {
     setSelectedOptionIds(prev => [...prev, id]);
 
+    let fresh = false;
     if (isCorrect) {
-      await study?.pass();            
+      await study?.pass();
+      fresh = true;
     } else {
-      const fresh = await study?.fail(id) || false;
-
-      if (fresh) {
-        setSelectedOptionIds([]);        
-      }
-    }    
+      fresh = await study?.fail(id) || false;
+    }
 
     setWordCard(study?.getCurrentWord()?.toObject() || null);
+
+    if (fresh) {
+      setSelectedOptionIds([]);
+    }
   };
 
   // 初始化学习流程
@@ -95,7 +97,7 @@ const StudyView: React.FC = () => {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);    
+    window.addEventListener('beforeunload', handleBeforeUnload);
     studyService.getBookPlanInfo().then(initStudy);
 
     return () => {
@@ -109,7 +111,7 @@ const StudyView: React.FC = () => {
     if (study && study.completed) {
       toast.success('学习完成，学习记录已上传！');
       navigate(ROUTES.STUDY_STATISTICS);
-    }    
+    }
   }, [study?.completed, navigate]);
 
   // 添加键盘事件监听
@@ -160,7 +162,7 @@ const StudyView: React.FC = () => {
     const playAudiosSequentially = async () => {
       const audioUrls = [
         wordCard.word.word.dict.word_basic_info.accent_uk_audio_uri,
-        wordCard.word.word.dict.sentences?.[0]?.audio_uri,
+        wordCard.showSentence && wordCard.word.word.dict.sentences?.[0]?.audio_uri,
       ].filter(Boolean);
 
       for (const audioUrl of audioUrls) {
@@ -170,7 +172,7 @@ const StudyView: React.FC = () => {
 
           await new Promise((resolve, reject) => {
             audio.onended = resolve;
-            audio.onerror = reject;            
+            audio.onerror = reject;
             audio.play().catch(reject);
           });
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -185,7 +187,7 @@ const StudyView: React.FC = () => {
     return () => {
       audios.forEach((audio) => audio.pause());
     };
-  }, [wordCard?.showAnswer]);
+  }, [wordCard?.word, wordCard?.showAnswer]);
 
   return (
     <div className={styles.container}>

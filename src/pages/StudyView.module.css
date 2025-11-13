@@ -382,7 +382,7 @@
   .sentence { font-size: 1.1rem; }
   .translation { margin-bottom: 1rem; }
   .footer { padding: 0 0.75rem; }
-  .studyFrontOptions { height: 200px; gap: 0.75rem; }
+  .studyFrontOptions { gap: 0.75rem; }
   .optionButton { padding: 1rem; min-height: 96px; }
 }
 
