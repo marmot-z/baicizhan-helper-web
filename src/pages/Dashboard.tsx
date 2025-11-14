@@ -9,6 +9,7 @@ import ExtensionsDownloadModel from '../components/ExtensionsDownloadModel';
 import type { UserBindInfo, UserBookItem } from '../types';
 import { ROUTES } from '../constants';
 import iconLogo from '../assets/icon.png';
+import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadModelShow, setDownloadModelShow] = useState(false);
   const { user, logout, checkAndGetUserInfo } = useAuthStore();
-  const { currentBook, studyPlan, fetchStudyData } = useStudyStore();
+  const { currentBook, studyPlan, fetchStudyData, lastStudyStatistics } = useStudyStore();
+  const [studiedWordNum, setStudiedWordNum] = useState(0);
 
   // 获取用户昵称，优先选择微信用户，否则取第一个
   const getUserNickname = (): string => {
@@ -53,6 +55,12 @@ export default function Dashboard() {
     checkAndGetUserInfo();
     
     fetchStudyData();
+
+    const beginOfToday = new Date().setHours(0, 0, 0, 0);
+    if (lastStudyStatistics?.updateTime &&
+        lastStudyStatistics.updateTime > beginOfToday) {
+      setStudiedWordNum(lastStudyStatistics.words.length);
+    }
     
     // 获取用户单词本信息
     const fetchUserBooks = async () => {
@@ -67,7 +75,7 @@ export default function Dashboard() {
     fetchUserBooks();
   }, [fetchStudyData, checkAndGetUserInfo]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -76,111 +84,41 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div style={{
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      margin: 0,
-      lineHeight: 1.6,
-      backgroundColor: '#f8f9fa',
-      color: '#333'
-    }}>
-      <header className="navbar" style={{
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #e7e7e7',
-        padding: '1rem 0'
-      }}>
-        <div className="container" style={{
-          maxWidth: '960px',
-          margin: '0 auto',
-          padding: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+    <div className="dashboard-root">
+      <header className="navbar">
+        <div className="container">
           <img 
             src={iconLogo} 
             alt="Logo" 
             className="logo" 
-            style={{
-              height: '2rem',
-              width: 'auto',
-              cursor: 'pointer'
-            }} 
             onClick={() => navigate(ROUTES.HOME)}
           />
           <nav>
-            <ul style={{
-              margin: 0,
-              padding: 0,
-              listStyle: 'none',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <li style={{ marginLeft: '20px' }}>
+            <ul>
+              <li>
                 {/* 根据登录状态显示不同内容 */}
                 {
-                  <div className="user-profile" style={{
-                     position: 'relative',
-                     cursor: 'pointer'
-                   }} onMouseEnter={(e) => {
+                  <div className="user-profile" onMouseEnter={(e) => {
                      const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
                      if (dropdown) dropdown.style.display = 'block';
                    }} onMouseLeave={(e) => {
                      const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
                      if (dropdown) dropdown.style.display = 'none';
                    }}>
-                    <FontAwesomeIcon 
-                      icon={faUser} 
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        display: 'inline-block',
-                        verticalAlign: 'middle',
-                        backgroundColor: '#f0f0f0',
-                        padding: '10px',
-                        color: '#666'
-                      }} 
-                    />
-                    <span style={{
-                      verticalAlign: 'middle',
-                      marginLeft: '8px'
-                    }}>{getUserNickname()}</span>
-                    <div className="dropdown-content" style={{
-                      display: 'none',
-                      position: 'absolute',
-                      right: 0,
-                      backgroundColor: '#fff',
-                      minWidth: '160px',
-                      boxShadow: '0px 8px 16px 0px rgba(0,0,0,0.2)',
-                      zIndex: 1,
-                      borderRadius: '5px'
-                    }}>
-                      <Link to="/page/study-calendar" style={{
-                        color: 'black',
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        display: 'block'
-                      }} onMouseEnter={(e) => {
+                    <FontAwesomeIcon icon={faUser} />
+                    <span>{getUserNickname()}</span>
+                    <div className="dropdown-content">
+                      <Link to="/page/study-calendar" onMouseEnter={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
                       }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</Link>
-                      <a href="/page/vip-center" style={{
-                        color: 'black',
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        display: 'block'
-                      }} onMouseEnter={(e) => {
+                      <a href="/page/vip-center" onMouseEnter={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
                       }}><FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />会员中心</a>
-                      <a href="#" style={{
-                        color: 'black',
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        display: 'block'
-                      }} onMouseEnter={(e) => {
+                      <a href="#" onMouseEnter={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
@@ -188,22 +126,12 @@ export default function Dashboard() {
                         e.preventDefault();
                         setDownloadModelShow(true);
                       }}><FontAwesomeIcon icon={faDownload} style={{ marginRight: '8px' }} />插件下载</a>
-                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank" style={{
-                        color: 'black',
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        display: 'block'
-                      }} onMouseEnter={(e) => {
+                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank" onMouseEnter={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
                       }}><FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />反馈</a>
-                      <a href="#" style={{
-                        color: 'black',
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        display: 'block'
-                      }} onMouseEnter={(e) => {
+                      <a href="#" onMouseEnter={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
                       }} onMouseLeave={(e) => {
                         (e.target as HTMLElement).style.backgroundColor = 'transparent';
@@ -220,80 +148,35 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div style={{textAlign: 'center',marginTop: '1rem'}}>
+      <div className="search-wrap">
           <input 
             type="search" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            style={{
-              width: '50%',
-              maxWidth: '400px',
-              padding: '0.8rem 1.5rem',
-              fontSize: '1rem',
-              border: '1px solid #ced4da',
-              borderRadius: '50px',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-              transition: 'border-color 0.2s, box-shadow 0.2s'
-            }} 
             placeholder="输入需要查询的单词" 
           />            
       </div>
 
-      <main className="container" style={{
-        maxWidth: '960px',
-        margin: '0 auto',
-        padding: '20px'
-      }}>
+      <main className="container">
         <section className="study-review" style={{
-           backgroundColor: '#fff',
-           padding: '2rem',
-           marginTop: '1rem',
-           borderRadius: '8px',
-           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-           display: 'flex',
-           flexDirection: isMobile ? 'column' : 'row',
-           gap: '2rem',
-           justifyContent: 'flex-start',
-           alignItems: 'center'
+           flexDirection: isMobile ? 'column' : 'row'
          }}>
           <div className="book-info" style={{
-            width: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            
           }}>
             {currentBook?.img ? (
               <img 
                 src={currentBook.img} 
                 alt={currentBook.name || '单词书封面'}
-                style={{
-                  width: '140px',
-                  borderRadius: '4px',
-                  objectFit: 'cover'
-                }}
               />
             ) : (
-              <div style={{
-                width: '120px',
-                height: '150px',
-                backgroundColor: '#e9ecef',
-                borderRadius: '4px'
-              }}></div>
+              <div className="book-cover-placeholder"></div>
             )}
             <div className="book-details">
-              <h2 style={{
-                fontSize: '1.2rem',
-                margin: '0 0 0.5rem 0'
-              }}>{currentBook?.name || '雅思核心'}</h2>
-              <p style={{
-                margin: 0,
-                color: '#6c757d'
-              }}>{studyPlan?.learned_words_count} / {currentBook?.total_words_count}</p>
-              <span style={{
-                fontSize: '0.9rem',
-                color: '#6c757d'
-              }}>剩余 {currentBook && studyPlan ? Math.ceil((currentBook.total_words_count - studyPlan.learned_words_count) / (studyPlan.daily_plan_count || 1)) : 327} 天</span>
+              <h2>{currentBook?.name || '雅思核心'}</h2>
+              <p>{studyPlan?.learned_words_count} / {currentBook?.total_words_count}</p>
+              <span>剩余 {currentBook && studyPlan ? Math.ceil((currentBook.total_words_count - studyPlan.learned_words_count) / (studyPlan.daily_plan_count || 1)) : 327} 天</span>
             </div>
           </div>
           <div className="today-plan" style={{
@@ -301,144 +184,49 @@ export default function Dashboard() {
              borderTop: isMobile ? '1px solid #e7e7e7' : 'none',
              paddingLeft: isMobile ? '0' : '2rem',
              paddingTop: isMobile ? '2rem' : '0',
-             marginTop: isMobile ? '2rem' : '0',
-             textAlign: 'center'
+             marginTop: isMobile ? '2rem' : '0'
            }}>
-            <h3 style={{
-              marginTop: 0,
-              fontSize: '1.2rem'
-            }}>今日计划</h3>
-            <div className="plan-stats" style={{
-              display: 'flex',
-              gap: '2rem',
-              marginBottom: '1.5rem',
-              justifyContent: 'center'
-            }}>
+            <h3>今日计划</h3>
+            <div className="plan-stats">
               <div className="stat">
-                <p style={{
-                  margin: 0,
-                  color: '#6c757d'
-                }}>已新学</p>
-                <p className="count" style={{
-                  fontSize: '2rem',
-                  fontWeight: 'bold',
-                  color: '#333',
-                  margin: 0
-                }}>0 <span style={{
-                  fontSize: '1rem',
-                  fontWeight: 'normal',
-                  color: '#6c757d'
-                }}>/ {studyPlan?.daily_plan_count}</span></p>
+                <p>已新学</p>
+                <p className="count">{studiedWordNum} <span>/ {studyPlan?.daily_plan_count}</span></p>
               </div>
               <div className="stat">
-                <p style={{
-                  margin: 0,
-                  color: '#6c757d'
-                }}>已复习</p>
-                <p className="count" style={{
-                  fontSize: '2rem',
-                  fontWeight: 'bold',
-                  color: '#333',
-                  margin: 0
-                }}>0 <span style={{
-                  fontSize: '1rem',
-                  fontWeight: 'normal',
-                  color: '#6c757d'
-                }}>/ {studyPlan?.review_plan_count}</span></p>
+                <p>已复习</p>
+                <p className="count">0 <span>/ {studyPlan?.review_plan_count}</span></p>
               </div>
             </div>
-            <div className="plan-actions" style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'center'
-            }}>
+            <div className="plan-actions">
               <button 
                 className="btn btn-study" 
                 onClick={() => navigate(ROUTES.STUDY_VIEW)}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  backgroundColor: '#007bff',
-                  opacity: 1
-                }}>学习</button>
-              <button className="btn btn-review" disabled style={{
-                padding: '10px 20px',
-                borderRadius: '5px',
-                color: '#fff',
-                fontWeight: 'bold',
-                border: 'none',
-                cursor: 'not-allowed',
-                fontSize: '1rem',
-                backgroundColor: '#28a745',
-                opacity: 0.5
-              }}>复习</button>
+              >学习</button>
+              <button className="btn btn-review" disabled>复习</button>
             </div>
           </div>
         </section>
 
-        <section className="word-books" style={{
-          marginTop: '2rem'
-        }}>
-          <h2 style={{
-            fontSize: '1.5rem',
-            marginBottom: '1rem'
-          }}>单词本</h2>
-          <div className="word-book-list" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-            gap: '1.5rem'
-          }}>
+        <section className="word-books">
+          <h2>单词本</h2>
+          <div className="word-book-list">
             {userBooks.map((book) => (
               <Link 
                 key={book.user_book_id} 
                 to={`/page/wordbook/${book.user_book_id}`}
                 className="word-book-item" 
-                style={{
-                  backgroundColor: '#fff',
-                  padding: '1.5rem',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer'
-                }}
               >
                 {book.cover ? (
                   <img 
                     src={book.cover} 
                     alt={book.book_name}
-                    style={{
-                      width: '60px',
-                      height: '80px',
-                      borderRadius: '4px',
-                      objectFit: 'cover'
-                    }}
                   />
                 ) : (
-                  <div style={{
-                    width: '60px',
-                    height: '80px',
-                    backgroundColor: '#e9ecef',
-                    borderRadius: '4px'
-                  }}></div>
+                  <div className="wb-cover-placeholder"></div>
                 )}
                 <div className="word-book-details">
-                  <h3 style={{
-                    margin: '0 0 0.5rem 0',
-                    fontSize: '1.1rem'
-                  }}>{book.book_name}</h3>
-                  <p style={{
-                    margin: 0,
-                    color: '#6c757d'
-                  }}>共 {book.word_num} 词</p>
+                  <h3>{book.book_name}</h3>
+                  <p>共 {book.word_num} 词</p>
                 </div>
               </Link>
             ))}

@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { CollectModal, AudioIcon } from '../components';
 import { wordService } from '../services/wordService';
+import { useWordBookStore } from '../stores/wordBookStore';
 import styles from './StudyView.module.css';
 
 interface StudyBackCardProps {
@@ -27,7 +28,7 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({ wordCard, next }) => {
   // 检查单词是否已收藏
   const isWordCollected = () => {
     let topicId = wordCard?.word?.word?.dict.word_basic_info.topic_id;
-    return topicId && wordService.getAllWordIds().has(topicId);
+    return topicId && useWordBookStore.getState().isCollected(topicId);
   };
 
   // 处理星标点击

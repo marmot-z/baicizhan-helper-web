@@ -43,7 +43,8 @@ export interface StudyStatistcs {
   failMap: Record<number, number>;
   usedTimeMap: Record<number, number>;
   totalTime: number;
-  words: SearchWordResultV2[]
+  words: SearchWordResultV2[],
+  updateTime: number;
 }
 
 // 学习状态类型

@@ -103,13 +103,28 @@ export class Study {
       failMap: Object.fromEntries(this.failMap),
       usedTimeMap: Object.fromEntries(this.useTimeMap),
       totalTime: Date.now() - this.startTime,
-      words: this.processIterator.getWordBriefInfos()
+      words: this.processIterator.getWordBriefInfos(),
+      updateTime: Date.now(),
     };
     
-    // 存储学习统计信息到 studyStore
-    const { setLastStudyStatistics } = useStudyStore.getState();
-    setLastStudyStatistics(studyStatistics);
-    
+    // 保存学习统计信息
+    // 如果今天已学习过单词，合并统计数据
+    const { lastStudyStatistics } = useStudyStore.getState();
+    const beginOfToday = new Date().setHours(0, 0, 0, 0);    
+    if (lastStudyStatistics?.updateTime && lastStudyStatistics.updateTime > beginOfToday) {
+      studyStatistics.failMap = {
+        ...lastStudyStatistics.failMap,
+        ...studyStatistics.failMap,
+      };
+      studyStatistics.usedTimeMap = {
+        ...lastStudyStatistics.usedTimeMap,
+        ...studyStatistics.usedTimeMap,
+      };
+      studyStatistics.totalTime += lastStudyStatistics.totalTime;
+      studyStatistics.words = [...lastStudyStatistics.words, ...studyStatistics.words];
+    }
+
+    useStudyStore.getState().setLastStudyStatistics(studyStatistics);
     this.uploadDoneData();
   }
 

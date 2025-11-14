@@ -38,6 +38,7 @@ export const useStudyStore = create<StudyState>()(
       },
 
       setLastStudyStatistics: (statistics: StudyStatistcs) => {
+        statistics.updateTime = Date.now();
         set({ lastStudyStatistics: statistics });
       },
 
