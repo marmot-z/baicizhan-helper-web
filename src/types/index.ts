@@ -335,6 +335,7 @@ export interface TopicResourceV2 {
   dict_wiki: DictWiki;
   media: WordMedia;
   similar_words: SimilarWord[];
+  collected?: boolean;
 }
 
 // 搜索单词结果类型

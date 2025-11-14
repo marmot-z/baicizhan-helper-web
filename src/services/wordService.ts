@@ -3,26 +3,6 @@ import { useWordBookStore } from '../stores/wordBookStore';
 import { toast } from 'react-hot-toast';
 
 export class WordService {
-  // 获取所有单词本中的单词ID
-  getAllWordIds() {
-    const store = useWordBookStore.getState();
-    const wordBooks = store.wordBooks;
-    const allWordIds = new Set<number>();
-    Object.values(wordBooks).forEach((bookData: any) => {
-      bookData.words.forEach((wordItem: any) => {
-        allWordIds.add(wordItem.topic_id);
-      });
-    });
-    return allWordIds;
-  }
-
-  // 检查当前单词是否已收藏
-  isWordCollected(word: string) {
-    if (!word) return false;
-    const currentTopicId = parseInt(word);
-    const allWordIds = this.getAllWordIds();
-    return allWordIds.has(currentTopicId);
-  }
 
   // 加载用户单词本列表
   async loadUserBooks(word: string, setUserBooks: any, setSelectedBookId: any) {

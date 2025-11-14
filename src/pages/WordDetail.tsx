@@ -6,6 +6,7 @@ import { bookService } from '../services/bookService';
 import { wordService } from '../services/wordService';
 import { CollectModal, AudioIcon } from '../components';
 import type { TopicResourceV2, UserBookItem } from '../types';
+import { useWordBookStore } from '../stores/wordBookStore';
 
 const WordDetail: React.FC = () => {
   const { word } = useParams<{ word: string }>();
@@ -16,15 +17,6 @@ const WordDetail: React.FC = () => {
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
 
-  
-  // 检查当前单词是否已收藏
-  const isWordCollected = () => {
-    if (!word) return false;
-    const currentTopicId = parseInt(word);
-    const allWordIds = wordService.getAllWordIds();
-    return allWordIds.has(currentTopicId);
-  };
-  
   // 处理收藏图标点击事件
   const handleStarClick = async () => {
     if (!word) return;
@@ -54,6 +46,10 @@ const WordDetail: React.FC = () => {
     
     try {
       await wordService.saveCollectSettings(word, selectedBookId);
+      if (wordData) {
+        wordData.collected = !wordData.collected;
+        setWordData(wordData);
+      }
       setShowCollectModal(false);
     } catch (error) {
       // 错误处理已在wordService中完成
@@ -73,6 +69,7 @@ const WordDetail: React.FC = () => {
         setLoading(true);
         const topicId = parseInt(word);
         const data = await bookService.getWordDetail(topicId, true, false, true);
+        data.collected = await useWordBookStore.getState().isCollected(topicId);
         setWordData(data);
       } catch (err) {
         setError('获取单词详情失败');
@@ -159,7 +156,7 @@ const WordDetail: React.FC = () => {
                 style={{
                   width: '20px',
                   height: '20px',
-                  color: isWordCollected() ? '#007bff' : '#ccc',
+                  color: wordData.collected ? '#007bff' : '#ccc',
                   flexShrink: 0,
                   cursor: 'pointer'
                 }}
