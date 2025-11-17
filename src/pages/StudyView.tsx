@@ -153,11 +153,10 @@ const StudyView: React.FC = () => {
   const CDN_HOST = 'https://7n.bczcdn.com';
 
   useEffect(() => {
-    if (!wordCard) {
-      return;
-    }
+    if (!wordCard) return;
 
     const audios: HTMLAudioElement[] = [];
+    let canceled = false;
 
     const playAudiosSequentially = async () => {
       const audioUrls = [
@@ -166,15 +165,16 @@ const StudyView: React.FC = () => {
       ].filter(Boolean);
 
       for (const audioUrl of audioUrls) {
+        if (canceled) break;
+
         try {
           const audio = new Audio(CDN_HOST + audioUrl);
           audios.push(audio);
 
-          await new Promise((resolve, reject) => {
-            audio.onended = resolve;
-            audio.onerror = reject;
-            audio.play().catch(reject);
-          });
+          await audio.play();
+
+          if (canceled) break;
+
           await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (error) {
           console.error('音频播放失败:', error);
@@ -185,7 +185,11 @@ const StudyView: React.FC = () => {
     playAudiosSequentially();
 
     return () => {
-      audios.forEach((audio) => audio.pause());
+      canceled = true;
+      audios.forEach((audio) => {
+        audio.pause();
+        audio.src = '';
+      });
     };
   }, [wordCard?.word, wordCard?.showAnswer]);
 
