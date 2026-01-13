@@ -35,7 +35,7 @@ export class WordService {
 
   // 保存收藏设置
   async saveCollectSettings(word: string, selectedBookId: number | null) {
-    if (!word) return;
+    if (!word) return false;
     
     const currentTopicId = parseInt(word);
     const store = useWordBookStore.getState();

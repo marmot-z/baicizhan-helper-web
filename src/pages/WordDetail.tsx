@@ -46,9 +46,10 @@ const WordDetail: React.FC = () => {
     if (!word) return;
     
     try {
-      await wordService.saveCollectSettings(word, selectedBookId);
-      if (wordData) {
-        wordData.collected = !wordData.collected;
+      const success = await wordService.saveCollectSettings(word, selectedBookId);
+      if (success && wordData) {
+        wordData.collected = await useWordBookStore.getState().isCollected(wordData.dict.word_basic_info.topic_id);
+
         setWordData(wordData);
       }
       setShowCollectModal(false);
