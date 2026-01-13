@@ -403,3 +403,127 @@
   .studyFrontCard { height: 540px; }
   .studyFrontOptions { height: 240px; }
 }
+:global(.dark) .container {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+
+:global(.dark) .header {
+  color: #9ca3af;
+}
+
+:global(.dark) .studyFrontCard {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .imageContainer {
+  background-color: #1f2937;
+}
+
+:global(.dark) .pronunciationContainer,
+:global(.dark) .translation {
+  color: #9ca3af;
+}
+
+:global(.dark) .optionButton {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+}
+
+:global(.dark) .optionButton:hover,
+:global(.dark) .optionButton:focus {
+  background-color: #243041;
+  border-color: #4b5563;
+}
+
+:global(.dark) .optionButtonCorrect {
+  border-color: #22c55e;
+}
+
+:global(.dark) .optionButtonIncorrect {
+  border-color: #ef4444;
+}
+
+:global(.dark) .backCard {
+  background-color: #111827;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+:global(.dark) .backCard {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .backCard+.backCard {
+  margin-top: 1rem;
+}
+
+:global(.dark) .backWordTitle {
+  color: #e5e7eb;
+}
+
+:global(.dark) .backWordHeader {
+  border-bottom: 1px solid #374151;
+  padding-bottom: 0.5rem;
+}
+
+:global(.dark) .backPronunciation {
+  color: #9ca3af;
+}
+
+:global(.dark) .backSoundIcon {
+  color: #9ca3af;
+}
+
+:global(.dark) .backTranslation {
+  color: #9ca3af;
+}
+
+:global(.dark) .backTabButton {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+}
+
+:global(.dark) .backTabButtonActive {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+:global(.dark) .backTabContent {
+  border-top: 1px solid #1f2937;
+}
+
+:global(.dark) .backPhraseItem:not(:last-child) {
+  border-bottom: 1px solid #1f2937;
+}
+
+:global(.dark) .backMeaningItem:not(:last-child) {
+  border-bottom: 1px solid #1f2937;
+}
+
+:global(.dark) .backSynonymItem:not(:last-child) {
+  border-bottom: 1px solid #1f2937;
+}
+
+:global(.dark) .backSimilarWordItem:not(:last-child) {
+  border-bottom: 1px solid #1f2937;
+}
+
+:global(.dark) .backPhraseTranslation,
+:global(.dark) .backMeaningText,
+:global(.dark) .backSynonymText,
+:global(.dark) .backSimilarWordText {
+  color: #e5e7eb;
+}
+
+:global(.dark) .etymaLabel {
+  background-color: #374151;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+}

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
 import { ROUTES } from '../constants';
+import styles from './Login.module.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -106,124 +107,44 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      margin: 0,
-      lineHeight: 1.6,
-      backgroundColor: '#f8f9fa',
-      color: '#333',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      height: '100vh',
-      paddingTop: isMobile ? '5%' : '10%'
-    }}>
-      <div className="login-modal" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        padding: '20px'
-      }}>
-        <div className="login-container" style={{
-          backgroundColor: '#fff',
-          padding: isMobile ? '2rem 1.5rem' : '2rem 3rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          width: '100%',
-          maxWidth: '400px',
-          textAlign: 'center'
-        }}>
-          <h2 style={{
-            marginTop: 0,
-            marginBottom: '1.5rem',
-            fontSize: isMobile ? '1.5rem' : '1.8rem',
-            color: '#333'
-          }}>登录</h2>
+    <div className={`${styles.pageContainer} ${isMobile ? styles.pageContainerMobile : styles.pageContainerDesktop}`}>
+      <div className={styles.loginModal}>
+        <div className={`${styles.loginContainer} ${isMobile ? styles.loginContainerMobile : styles.loginContainerDesktop}`}>
+          <h2 className={`${styles.title} ${isMobile ? styles.titleMobile : styles.titleDesktop}`}>登录</h2>
           <form onSubmit={handleSubmit}>
-            <div className="form-group" style={{
-              marginBottom: '1.5rem'
-            }}>
+            <div className={styles.formGroup}>
               <input 
                 type="text" 
                 placeholder="手机号码" 
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box'
-                }}
+                className={styles.input}
               />
             </div>
-            <div className="form-group-inline" style={{
-              display: 'flex',
-              gap: '10px',
-              marginBottom: '1.5rem',
-              alignItems: 'center'
-            }}>
+            <div className={styles.formGroupInline}>
               <input 
                 type="text" 
                 placeholder="短信验证码" 
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                style={{
-                  flexGrow: 1,
-                  padding: '12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box'
-                }}
+                className={styles.codeInput}
               />
               <button 
                  type="button" 
-                 className="btn btn-send-code"
+                 className={styles.btnSendCode}
                  onClick={handleSendCode}
                  disabled={countdown > 0 || isLoading}
-                 style={{
-                   padding: '12px 15px',
-                   borderRadius: '5px',
-                   color: '#fff',
-                   fontWeight: 'bold',
-                   border: 'none',
-                   cursor: (countdown > 0 || isLoading) ? 'not-allowed' : 'pointer',
-                   fontSize: '0.9rem',
-                   width: 'auto',
-                   boxSizing: 'border-box',
-                   backgroundColor: (countdown > 0 || isLoading) ? '#6c757d' : '#28a745',
-                   whiteSpace: 'nowrap',
-                   opacity: (countdown > 0 || isLoading) ? 0.6 : 1
-                 }}
                >
                  {isLoading ? '发送中...' : countdown > 0 ? `${countdown}秒后重试` : '发送验证码'}
                </button>
             </div>
-            <div className="form-group" style={{
-              marginBottom: '1.5rem'
-            }}>
+            <div className={styles.formGroup}>
               <button 
                 type="submit" 
-                className="btn btn-login"
+                className={styles.btnLogin}
                 disabled={loginLoading || !phone || !code || code.length !== 6}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '5px',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  cursor: loginLoading || !phone || !code || code.length !== 6 ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  backgroundColor: loginLoading || !phone || !code || code.length !== 6 ? '#ccc' : '#007bff',
-                  opacity: loginLoading || !phone || !code || code.length !== 6 ? 0.6 : 1
-                }}
               >
                 {loginLoading ? '登录中...' : '登录'}
               </button>

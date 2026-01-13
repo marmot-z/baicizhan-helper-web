@@ -105,3 +105,56 @@
   background-color: #007bff;
   color: #fff;
 }
+
+.dark .modal-content {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  box-shadow: none;
+}
+
+.dark .modal-title {
+  color: #e5e7eb;
+}
+
+.dark .book-item:not(:last-child) {
+  border-bottom: 1px solid #374151;
+}
+
+.dark .book-item:hover {
+  background-color: #0b1224;
+}
+
+.dark .book-icon {
+  color: #cbd5e1;
+}
+
+.dark .book-name {
+  color: #e5e7eb;
+}
+
+.dark .star-selected {
+  color: #3b82f6;
+}
+
+.dark .star-unselected {
+  color: #9ca3af;
+}
+
+.dark .cancel-button {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark .save-button {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+.dark .cancel-button:hover {
+  background-color: #4b5563;
+}
+
+.dark .save-button:hover {
+  background-color: #2563eb;
+}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket, faCommentDots, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faCalendarDays, faCartShopping, faArrowRightFromBracket, faCommentDots, faDownload, faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
 import { useStudyStore } from '../stores/studyStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { bookService } from '../services/bookService';
 import ExtensionsDownloadModel from '../components/ExtensionsDownloadModel';
 import type { UserBindInfo, UserBookItem } from '../types';
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const { user, logout, checkAndGetUserInfo } = useAuthStore();
   const { currentBook, studyPlan, fetchStudyData, lastStudyStatistics } = useStudyStore();
   const [studiedWordNum, setStudiedWordNum] = useState(0);
+  const { theme, setTheme } = useSettingsStore();
 
   // 获取用户昵称，优先选择微信用户，否则取第一个
   const getUserNickname = (): string => {
@@ -98,47 +100,43 @@ export default function Dashboard() {
               <li>
                 {/* 根据登录状态显示不同内容 */}
                 {
-                  <div className="user-profile" onMouseEnter={(e) => {
-                     const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
-                     if (dropdown) dropdown.style.display = 'block';
-                   }} onMouseLeave={(e) => {
-                     const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
-                     if (dropdown) dropdown.style.display = 'none';
-                   }}>
-                    <FontAwesomeIcon icon={faUser} />
-                    <span>{getUserNickname()}</span>
+                  <div className="theme-bar">
+                    <button
+                      title={theme === 'dark' ? '切换为明亮' : '切换为暗黑'}
+                      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                      role="switch"
+                      aria-checked={theme === 'dark'}
+                      className="theme-switch"
+                    >
+                      <span className="theme-switch-inner">
+                        <span className="track">
+                          <span className="thumb" />
+                        </span>
+                        <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
+                      </span>
+                    </button>
+                    <div className="user-profile" onMouseEnter={(e) => {
+                       const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
+                       if (dropdown) dropdown.style.display = 'block';
+                     }} onMouseLeave={(e) => {
+                       const dropdown = e.currentTarget.querySelector('.dropdown-content') as HTMLElement;
+                       if (dropdown) dropdown.style.display = 'none';
+                     }}>
+                      <FontAwesomeIcon icon={faUser} />
+                      <span>{getUserNickname()}</span>
                     <div className="dropdown-content">
-                      <Link to="/page/study-calendar" onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
-                      }} onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</Link>
-                      <a href="/page/vip-center" onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
-                      }} onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}><FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />会员中心</a>
-                      <a href="#" onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
-                      }} onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }} onClick={(e) => {
+                      <Link to="/page/study-calendar"><FontAwesomeIcon icon={faCalendarDays} style={{ marginRight: '8px' }} />我的日历</Link>
+                      <a href="/page/vip-center"><FontAwesomeIcon icon={faCartShopping} style={{ marginRight: '8px' }} />会员中心</a>
+                      <a href="#" onClick={(e) => {
                         e.preventDefault();
                         setDownloadModelShow(true);
                       }}><FontAwesomeIcon icon={faDownload} style={{ marginRight: '8px' }} />插件下载</a>
-                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank" onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
-                      }} onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }}><FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />反馈</a>
-                      <a href="#" onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = '#f1f1f1';
-                      }} onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                      }} onClick={(e) => {
+                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank"><FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />反馈</a>
+                      <a href="#" onClick={(e) => {
                         e.preventDefault();
                         logout();
                       }}><FontAwesomeIcon icon={faArrowRightFromBracket} style={{ marginRight: '8px' }} />退出</a>
+                    </div>
                     </div>
                   </div>
                 }
@@ -153,7 +151,7 @@ export default function Dashboard() {
             type="search" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="输入需要查询的单词" 
           />            
       </div>

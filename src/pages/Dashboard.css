@@ -246,3 +246,118 @@
   margin: 0;
   color: #6c757d;
 }
+
+.dark .dashboard-root {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+.dark .navbar {
+  background-color: #111827;
+  border-bottom-color: #374151;
+}
+.dark .navbar .container {
+  color: #e5e7eb;
+}
+.dark .user-profile svg {
+  background-color: #374151;
+  color: #cbd5e1;
+}
+.dark .dropdown-content {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  box-shadow: none;
+  border: 1px solid #374151;
+}
+.dark .dropdown-content a {
+  color: #e5e7eb;
+}
+.dark .dropdown-content a:hover {
+  background-color: #0b1224;
+  color: #e5e7eb;
+}
+.dark .search-wrap input[type="search"] {
+  background-color: #111827;
+  border-color: #374151;
+  color: #e5e7eb;
+  box-shadow: none;
+}
+.dark .study-review {
+  background-color: #111827;
+  box-shadow: none;
+  border: 1px solid #374151;
+}
+.dark .book-cover-placeholder,
+.dark .wb-cover-placeholder {
+  background-color: #374151;
+}
+.dark .book-details p,
+.dark .book-details span,
+.dark .stat p,
+.dark .count span {
+  color: #9ca3af;
+}
+.dark .count {
+  color: #e5e7eb;
+}
+.dark .today-plan {
+  border-left-color: #374151 !important;
+  border-top-color: #374151 !important;
+}
+.dark .word-book-item {
+  background-color: #111827;
+  box-shadow: none;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+}
+
+.theme-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-switch {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+
+.theme-switch-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-switch .track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  transition: background .2s, border-color .2s;
+}
+
+.theme-switch[aria-checked="true"] .track {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.theme-switch .thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: left .2s;
+}
+
+.theme-switch[aria-checked="true"] .thumb {
+  left: 20px;
+  background: #60a5fa;
+}

@@ -1,0 +1,157 @@
+ .vipContainer {
+   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+   line-height: 1.6;
+ }
+ 
+ .inner {
+   max-width: 1100px;
+ }
+ 
+ .banner {
+   background-color: rgb(77 156 240);
+   padding: 0.5rem;
+   border-radius: 8px;
+   margin: 2rem 0;
+   color: white;
+   font-weight: bolder;
+   font-size: 1.2rem;
+ }
+ 
+ .goodsGrid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+   gap: 1.5rem;
+   margin-bottom: 2rem;
+ }
+ 
+ .card {
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  padding: 2rem;
+  transform: translateY(0);
+  box-shadow: none;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.purchaseBtn {
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 0;
+  font-size: 1.1rem;
+  font-weight: bolder;
+  color: white;
+  background-color: #007bff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.purchaseBtn:hover {
+  background-color: #0056b3;
+}
+
+.purchaseBtn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+:global(.dark) .vipContainer {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+
+:global(.dark) .card {
+  background-color: #1e293b;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+:global(.dark) .banner {
+  background-color: #1e40af;
+  color: #e5e7eb;
+}
+
+/* 表格暗黑模式适配 */
+:global(.dark) table thead {
+  background-color: #1f2937 !important;
+  color: #e5e7eb;
+}
+
+:global(.dark) table th,
+:global(.dark) table td {
+  border-bottom-color: #374151 !important;
+  color: #e5e7eb;
+}
+
+/* 分页控件暗黑模式 */
+:global(.dark) .vipContainer button:disabled {
+  opacity: 0.5;
+}
+
+:global(.dark) select,
+:global(.dark) input {
+  background-color: #1f2937;
+  border-color: #374151 !important;
+  color: #e5e7eb;
+}
+
+.paginationBar {
+  padding: 1rem;
+  border-top: 1px solid #e7e7e7;
+  background-color: #f8f9fa;
+}
+
+:global(.dark) .paginationBar {
+  background-color: #0b1224;
+  border-top-color: #374151;
+  color: #e5e7eb;
+}
+
+:global(.dark) .paginationBar button {
+  border-color: #374151 !important;
+}
+
+.floatingBanner {
+  top: 40%;
+  right: 20px;
+  position: fixed;
+  color: white;
+  width: 90px;
+  height: 80px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  text-decoration: none;
+  border: 1px solid #e7e7e7;
+  background-color: #ffffff;
+}
+
+.qrcodeIcon {
+  width: 30px;
+  height: 30px;
+  color: #666;
+}
+
+:global(.dark) .qrcodeIcon {
+  color: #9ca3af;
+}
+
+.floatingText {
+  color: #666;
+}
+
+:global(.dark) .floatingText {
+  color: #9ca3af;
+}
+
+.qrcodeBox {
+  background-color: transparent;
+}
+
+:global(.dark) .qrcodeBox {
+  background-color: transparent;
+}
+
+:global(.dark) .floatingBanner {
+  border-color: #374151;
+  background-color: #1f2937;
+}

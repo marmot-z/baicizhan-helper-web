@@ -190,3 +190,34 @@
   flex-shrink: 0;
   cursor: pointer;
 }
+
+:global(.dark) .container {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+:global(.dark) .header {
+  background-color: #111827;
+}
+:global(.dark) .wordList {
+  background-color: #111827;
+  border: 1px solid #374151;
+}
+:global(.dark) .coverPlaceholder {
+  background-color: #374151;
+}
+
+:global(.dark) .listHeader {
+  border-bottom-color: #374151;
+}
+
+:global(.dark) .wordItemWithBorder {
+  border-bottom-color: #374151;
+}
+
+:global(.dark) .bookCount {
+  color: #9ca3af;
+}
+
+:global(.dark) .wordMeaning {
+  color: #9ca3af;
+}

@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQrcode } from '@fortawesome/free-solid-svg-icons';
 import type { GoodsDTO, OrderInfoDTO } from '../types';
+import styles from './VipCenter.module.css';
 
 const VipCenter: React.FC = () => {
   const [goods, setGoods] = useState<GoodsDTO[]>([]);
@@ -168,10 +169,10 @@ const VipCenter: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', lineHeight: '1.6' }}>
-      <div className="mx-auto p-5" style={{ maxWidth: '1100px' }}>
+    <div className={`${styles.vipContainer} min-h-screen bg-gray-50 text-gray-800`}>
+      <div className={`mx-auto p-5 ${styles.inner}`}>
         {/* 公告横幅 */}
-        <div className="text-white text-center font-bold" style={{ backgroundColor: 'rgb(77 156 240)', padding: '0.5rem', borderRadius: '8px', margin: '2rem 0', color: 'white', fontWeight: 'bolder', fontSize: '1.2rem' }}>
+        <div className={`text-white text-center font-bold ${styles.banner}`}>
           <p className="m-0">🎁 还不是会员？立即申请 30 天免费试用，先体验再决定! 
             <button 
               onClick={handleTrialClick}
@@ -191,7 +192,7 @@ const VipCenter: React.FC = () => {
         </div>
 
         {/* 会员购买 */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <section className={styles.goodsGrid}>
           {loading ? (
             <div className="text-center" style={{ gridColumn: '1 / -1', padding: '2rem' }}>
               <p>加载中...</p>
@@ -204,7 +205,18 @@ const VipCenter: React.FC = () => {
             goods.map((item) => {
               const discount = calculateDiscount(item.price, item.realPrice);
               return (
-                <div key={item.id} className="bg-white text-center transition-all duration-300" style={{ border: '1px solid #e7e7e7', borderRadius: '8px', padding: '2rem', transform: 'translateY(0)', boxShadow: 'none', transition: 'transform 0.3s, box-shadow 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 8px 15px rgba(0,0,0,0.1)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <div
+                  key={item.id}
+                  className={`bg-white text-center transition-all duration-300 ${styles.card}`}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.boxShadow = '0 8px 15px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
                   <h3 className="m-0" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{item.name}</h3>
                   <p className="text-gray-500" style={{ marginBottom: '1.5rem' }}>{item.effectDays}天有效</p>
                   <div className="" style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>
@@ -219,26 +231,7 @@ const VipCenter: React.FC = () => {
                      )}
                   </div>
                   <button 
-                    className="text-white w-full border-none rounded font-bold cursor-pointer transition-colors duration-300" 
-                    style={{ 
-                      backgroundColor: purchaseLoading === item.id ? '#6c757d' : '#007bff', 
-                      padding: '12px 0', 
-                      fontSize: '1.1rem', 
-                      borderRadius: '5px', 
-                      color: 'white', 
-                      fontWeight: 'bolder',
-                      cursor: purchaseLoading === item.id ? 'not-allowed' : 'pointer'
-                    }} 
-                    onMouseEnter={(e) => {
-                      if (purchaseLoading !== item.id) {
-                        e.currentTarget.style.backgroundColor = '#0056b3';
-                      }
-                    }} 
-                    onMouseLeave={(e) => {
-                      if (purchaseLoading !== item.id) {
-                        e.currentTarget.style.backgroundColor = '#007bff';
-                      }
-                    }}
+                    className={styles.purchaseBtn}
                     onClick={() => handlePurchaseClick(item.id)}
                     disabled={purchaseLoading === item.id}
                   >
@@ -314,37 +307,33 @@ const VipCenter: React.FC = () => {
               </div>
               
               {/* 分页控件 */}
-              <div className="flex items-center justify-between" style={{ padding: '1rem', borderTop: '1px solid #e7e7e7', backgroundColor: '#f8f9fa' }}>
+              <div className={`${styles.paginationBar} flex items-center justify-between`}>
                 <div className="flex items-center gap-2">
                   <button
-                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
                     onClick={() => table.setPageIndex(0)}
                     disabled={!table.getCanPreviousPage()}
-                    style={{ backgroundColor: 'white', border: '1px solid #ddd' }}
                   >
                     {'<<'}
                   </button>
                   <button
-                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
-                    style={{ backgroundColor: 'white', border: '1px solid #ddd' }}
                   >
                     {'<'}
                   </button>
                   <button
-                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    style={{ backgroundColor: 'white', border: '1px solid #ddd' }}
                   >
                     {'>'}
                   </button>
                   <button
-                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
                     onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                     disabled={!table.getCanNextPage()}
-                    style={{ backgroundColor: 'white', border: '1px solid #ddd' }}
                   >
                     {'>>'}
                   </button>
@@ -395,18 +384,7 @@ const VipCenter: React.FC = () => {
       {/* 售后群悬浮图标 */}
       <a 
         href="#" 
-        className="fixed flex justify-center items-center no-underline transition-colors duration-300"
-        style={{ 
-          top: '40%', 
-          right: '20px', 
-          position: 'fixed',
-          color: 'white', 
-          width: '90px', 
-          height: '80px', 
-          borderRadius: '5px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-          textDecoration: 'none'
-        }}
+        className={`${styles.floatingBanner} fixed flex justify-center items-center no-underline transition-colors duration-300`}
         onClick={(e) => {
           e.preventDefault();
           window.open('http://www.baicizhan-helper.cn/qrcode', '_blank');
@@ -414,17 +392,13 @@ const VipCenter: React.FC = () => {
       >
         <div>
           <div 
-            className="bg-white flex items-center justify-center">
+            className={`${styles.qrcodeBox} flex items-center justify-center`}>
             <FontAwesomeIcon 
               icon={faQrcode} 
-              style={{
-                width: '30px',
-                height: '30px',
-                color: '#666'
-              }} 
+              className={styles.qrcodeIcon}
             />
           </div>
-          <span className="text-xs text-gray-500" style={{ color: '#666'}}>加入售后群</span>
+          <span className={`${styles.floatingText} text-xs text-gray-500`}>加入售后群</span>
         </div>
       </a>
 

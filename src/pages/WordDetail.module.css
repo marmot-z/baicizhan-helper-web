@@ -1,0 +1,275 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+}
+
+  .wordTitle {
+    font-size: 2.5rem;
+    margin: 0;
+    font-weight: normal;
+  }
+ 
+.containerWrapper {}
+.loadingWrapper {}
+.errorWrapper {}
+.paragraphCompact {
+  margin: 0.25rem 0;
+}
+.noMargin {
+  margin: 0;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.accentRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e7e7e7;
+  padding-bottom: 0.5rem;
+}
+
+.variantContainer {
+  position: relative;
+  padding-left: 20px;
+}
+
+.variantVerticalLine {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background-color: #e0e0e0;
+}
+
+.baseWordRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  position: relative;
+  margin-left: 0px;
+}
+
+.baseWordText {
+  font-weight: bold;
+  position: relative;
+}
+
+.blueDot {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background-color: #4a90e2;
+  border-radius: 50%;
+  display: block;
+}
+
+.variantRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.variantHorizontalLine {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  width: 10px;
+  height: 1px;
+  background-color: #e0e0e0;
+  display: block;
+}
+
+.variantLabel {
+  color: #888;
+  margin-right: 10px;
+}
+
+.variantLink {
+  font-size: 1.1em;
+  text-decoration: none;
+  color: #007bff;
+}
+
+.variantText {
+  font-weight: bold;
+}
+
+.sentenceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.sentenceText {
+  margin: 0;
+}
+
+.sentenceTrans {
+  margin: 0.25rem 0;
+}
+
+.sentenceImg {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.meaningItem {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.meaningItemLast {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.meaningText {
+  font-size: 1rem;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.phraseItem {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.phraseItemLast {
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+.phraseTrans {
+  margin: 0.25rem 0;
+  color: #666;
+}
+
+.synonymsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.synonymLink {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 1.1rem;
+}
+
+.enMeanGroup {
+  margin-bottom: 1rem;
+}
+
+.enMeanType {
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+}
+
+.enMeanList {
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+  .enMeanItem {
+    margin-bottom: 0.5rem;
+  }
+ 
+ @media (max-width: 600px) {
+   .container {
+     padding: 10px;
+   }
+   
+   .card {
+     padding: 1rem;
+   }
+   
+   .wordTitle {
+     font-size: 2rem;
+   }
+ }
+ 
+:global(.dark) .containerWrapper {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+}
+ 
+:global(.dark) .loadingWrapper,
+:global(.dark) .errorWrapper {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+ 
+ :global(.dark) .card {
+   background-color: #111827;
+   border-color: #374151;
+ }
+ 
+ :global(.dark) .sectionTitle {
+   border-bottom-color: #374151;
+ }
+ 
+ :global(.dark) .accentRow {
+   color: #9ca3af;
+ }
+ 
+ :global(.dark) .meaningText {
+   color: #e5e7eb;
+ }
+ 
+ :global(.dark) .variantVerticalLine {
+   background-color: #374151;
+ }
+ 
+ :global(.dark) .variantHorizontalLine {
+   background-color: #374151;
+ }
+ 
+ :global(.dark) .meaningItem {
+   border-bottom-color: #374151;
+ }
+ 
+ :global(.dark) .sentenceTrans {
+   color: #9ca3af;
+ }
+ 
+ :global(.dark) .phraseTrans {
+   color: #9ca3af;
+ }

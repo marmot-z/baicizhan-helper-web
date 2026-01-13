@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import './MyCalendar.css';
 import { studyService } from '../services/studyService';
 import type { CalendarDailyInfo, CalendarDailyWord } from '../types';
+import styles from './StudyCalendar.module.css';
 
 const StudyCalendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date()); // 2024年9月20日
@@ -61,10 +62,10 @@ const StudyCalendar: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f8f9fa', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', lineHeight: '1.6', color: '#333' }}>
-      <div className="mx-auto p-5" style={{ maxWidth: '800px' }}>
+    <div className={styles.container}>
+      <div className={styles.wrapper}>
         {/* 日历卡片 */}
-        <div className="flex justify-center mb-6">
+        <div className={styles.calendarWrapper}>
           <Calendar
               onChange={handleDateChange}
               value={selectedDate}
@@ -75,28 +76,31 @@ const StudyCalendar: React.FC = () => {
         </div>
 
         {/* 每日学习记录 */}
-        <section className="bg-white rounded-lg" style={{ padding: '1.5rem' }}>
-          <h2 className="font-bold" style={{ fontSize: '1.2rem', marginTop: '0', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #e7e7e7' }}>
+        <section className={styles.dailySection}>
+          <h2 className={styles.dateHeader}>
             {formatSelectedDate(selectedDate)}
           </h2>
           <div>
             {loading ? (
-              <div className="text-center py-4" style={{ color: '#6c757d' }}>
+              <div className={styles.message}>
                 加载中...
               </div>
             ) : dailyInfo && dailyInfo.words && dailyInfo.words.length > 0 ? (
               dailyInfo.words.map((wordData: CalendarDailyWord, index: number) => (
-                <div key={wordData.topic_id || index} className="flex items-center" style={{ padding: '0.75rem 0', borderBottom: index === dailyInfo.words.length - 1 ? 'none' : '1px solid #e7e7e7' }}>
-                  <span className="font-bold" style={{ marginRight: '1rem', flexShrink: 0 }}>
+                <div 
+                  key={wordData.topic_id || index} 
+                  className={`${styles.wordItem} ${index !== dailyInfo.words.length - 1 ? styles.wordItemWithBorder : ''}`}
+                >
+                  <span className={styles.wordText}>
                     {wordData.word}
                   </span>
-                  <span style={{ color: '#6c757d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span className={styles.meanText}>
                     {wordData.mean}
                   </span>
                 </div>
               ))
             ) : (
-              <div className="text-center py-4" style={{ color: '#6c757d' }}>
+              <div className={styles.message}>
                 {dailyInfo?.hint || '暂无学习内容'}
               </div>
             )}

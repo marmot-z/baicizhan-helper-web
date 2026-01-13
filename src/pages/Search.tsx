@@ -5,14 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { bookService } from '../services/bookService';
 import type { SearchWordResultV2 } from '../types';
 import { ROUTES } from '../constants';
-
-// 添加搜索结果项的聚焦样式
-const searchResultStyles = `
-  .search-result-item:focus {
-    border-bottom: 2px solid #03A9F4 !important;
-    outline: none;
-  }
-`;
+import styles from './Search.module.css';
 
 const Search: React.FC = () => {
   const navigate = useNavigate();
@@ -60,72 +53,31 @@ const Search: React.FC = () => {
   }, [location.search]);
 
   return (
-    <div style={{
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      margin: 0,
-      lineHeight: 1.6,
-      backgroundColor: '#fff',
-      color: '#333'
-    }}>
-      <style dangerouslySetInnerHTML={{ __html: searchResultStyles }} />
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '15px'
-      }}>
+    <div className={styles.pageContainer}>
+      <div className={styles.wrapper}>
         {/* Search Header */}
-        <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '15px',
-          padding: '10px 0',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '20px',
-            padding: '8px 12px'
-          }}>            
+        <header className={styles.header}>
+          <div className={styles.searchBar}>            
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="输入需要查询的单词"
-              style={{
-                flex: 1,
-                border: 'none',
-                background: 'transparent',
-                fontSize: '1rem',
-                padding: '0 8px',
-                outline: 'none'
-              }}
+              className={styles.searchInput}
             />
             <FontAwesomeIcon 
               icon={faMagnifyingGlass} 
               onClick={handleSearch}
-              style={{
-                fontSize: '1.2rem',
-                color: '#6c757d',
-                cursor: 'pointer'
-              }} 
+              className={styles.searchIcon}
             />
           </div>
         </header>
 
         {/* Search Results */}
-        <main style={{
-          marginTop: '1rem'
-        }}>
+        <main className={styles.main}>
           {isLoading ? (
-            <div style={{
-              padding: '2rem',
-              textAlign: 'center',
-              color: '#6c757d'
-            }}>
+            <div className={styles.loadingMessage}>
               搜索中...
             </div>
           ) : searchResults.length > 0 ? (
@@ -135,47 +87,23 @@ const Search: React.FC = () => {
                 tabIndex={0}
                 onClick={() => navigate(ROUTES.WORD_DETAIL.replace(':word', result.topic_id.toString()))}
                 onKeyDown={(e) => e.key === 'Enter' && navigate(ROUTES.WORD_DETAIL.replace(':word', result.topic_id.toString()))}
-                style={{
-                  padding: '1rem 0',
-                  borderBottom: index === searchResults.length - 1 ? 'none' : '1px solid #f0f0f0',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  outline: 'none'
-                }}
-                className="search-result-item"
+                className={`${styles.resultItem} ${index === searchResults.length - 1 ? styles.resultItemLast : ''} search-result-item`}
               >
-                <h2 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  margin: '0 0 0.25rem 0'
-                }}>
+                <h2 className={styles.title}>
                   {result.word}
                   {result.accent && (
-                    <span style={{
-                      fontSize: '0.9rem',
-                      color: '#6c757d',
-                      fontWeight: 'normal',
-                      marginLeft: '0.5rem'
-                    }}>
+                    <span className={styles.accent}>
                       {result.accent}
                     </span>
                   )}
                 </h2>
-                <p style={{
-                  margin: 0,
-                  color: '#555',
-                  fontSize: '0.95rem'
-                }}>
+                <p className={styles.meaning}>
                   {result.mean_cn}
                 </p>
               </div>
             ))
           ) : searchQuery && !isLoading ? (
-            <div style={{
-              padding: '2rem',
-              textAlign: 'center',
-              color: '#6c757d'
-            }}>
+            <div className={styles.loadingMessage}>
               未找到相关单词
             </div>
           ) : null}

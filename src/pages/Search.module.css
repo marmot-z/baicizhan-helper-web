@@ -1,0 +1,143 @@
+ .pageContainer {
+   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+   line-height: 1.6;
+   background-color: #fff;
+   color: #333;
+ }
+ 
+ .wrapper {
+   max-width: 800px;
+   margin: 0 auto;
+   padding: 15px;
+ }
+ 
+ .header {
+   display: flex;
+   align-items: center;
+   gap: 15px;
+   padding: 10px 0;
+   border-bottom: 1px solid #f0f0f0;
+ }
+ 
+.searchBar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  border-radius: 20px;
+  padding: 8px 12px;
+  border: 1px solid #f0f0f0;
+}
+ 
+ .searchInput {
+   flex: 1;
+   border: none;
+   background: transparent;
+   font-size: 1rem;
+   padding: 0 8px;
+   outline: none;
+ }
+ 
+ .searchIcon {
+   font-size: 1.2rem;
+   color: #6c757d;
+   cursor: pointer;
+   transition: color 0.2s ease;
+ }
+ .searchIcon:hover { color: #4b5563; }
+ 
+ .main {
+   margin-top: 1rem;
+ }
+ 
+ .loadingMessage {
+   padding: 2rem;
+   text-align: center;
+   color: #6c757d;
+ }
+ 
+ .resultItem {
+   padding: 1rem 0;
+   border-bottom: 1px solid #f0f0f0;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   outline: none;
+ }
+ .resultItem:hover { background-color: #f9fafb; }
+ .resultItem:focus-visible {
+   border-bottom: 2px solid #03A9F4;
+   outline: none;
+ }
+ 
+ .resultItemLast {
+   border-bottom: none;
+ }
+ 
+ .title {
+   font-size: 1.2rem;
+   font-weight: bold;
+   margin: 0 0 0.25rem 0;
+ }
+ 
+ .accent {
+   font-size: 0.9rem;
+   color: #6c757d;
+   font-weight: normal;
+   margin-left: 0.5rem;
+ }
+ 
+ .meaning {
+   margin: 0;
+   color: #555;
+   font-size: 0.95rem;
+ }
+ 
+ :global(.dark) .pageContainer {
+   background-color: #0f172a;
+   color: #e5e7eb;
+ }
+ :global(.dark) .header {
+   border-bottom-color: #374151;
+ }
+:global(.dark) .searchBar {
+  background-color: #111827;
+  border: 1px solid #374151;
+}
+:global(.dark) .searchInput {
+  color: #e5e7eb;
+}
+:global(.dark) .searchInput::placeholder {
+  color: #9ca3af;
+}
+:global(.dark) .searchIcon {
+  color: #9ca3af;
+}
+ :global(.dark) .searchBar:focus-within {
+   border-color: #60a5fa;
+   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+ }
+ :global(.dark) .searchIcon:hover {
+   color: #bfc5d1;
+ }
+ :global(.dark) .resultItem {
+   border-bottom-color: #374151;
+ }
+ :global(.dark) .resultItem:hover {
+   background-color: #0b1224;
+ }
+ :global(.dark) .resultItem:focus-visible {
+   border-bottom: 2px solid #60a5fa;
+   outline: none;
+ }
+ :global(.dark) .title {
+   color: #e5e7eb;
+ }
+ :global(.dark) .accent {
+   color: #9ca3af;
+ }
+ :global(.dark) .meaning {
+   color: #e5e7eb;
+ }
+ :global(.dark) .loadingMessage {
+   color: #9ca3af;
+ }

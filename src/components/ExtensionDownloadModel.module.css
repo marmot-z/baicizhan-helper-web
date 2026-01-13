@@ -91,3 +91,42 @@
     font-size: 12px;
     color: #595959
 }
+
+:global(.dark) .downloadModelContent {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    box-shadow: none;
+    color: #e5e7eb;
+}
+
+:global(.dark) .downloadModelHeader {
+    border-bottom: 1px solid #374151;
+}
+
+:global(.dark) .downloadModelHeaderTitle {
+    color: #e5e7eb;
+}
+
+:global(.dark) .downloadModelCloseButton {
+    color: #cbd5e1;
+}
+
+:global(.dark) .downloadModelBody {
+    color: #e5e7eb;
+}
+
+:global(.dark) .downloadModelFooter {
+    border-top: 1px solid #374151;
+}
+
+:global(.dark) .downloadModelFooterButtonIcon {
+    color: #cbd5e1;
+}
+
+:global(.dark) .downloadModelFooterButtonText {
+    color: #60a5fa;
+}
+
+:global(.dark) .downloadModelFooterButtonText2 {
+    color: #9ca3af;
+}

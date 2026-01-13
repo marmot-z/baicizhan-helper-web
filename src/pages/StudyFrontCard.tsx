@@ -66,47 +66,30 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
             ></AudioIcon>
           )}
         </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            margin: '0 0 0.5rem 0',
-          }}
-        >
-          {wordCard?.showSentence && (
-            <p
-              style={{
-                fontSize: '1.2rem',
-                margin: 0,
-              }}
-            >
-              {wordCard?.word.word.dict.sentences?.[0]?.sentence}
-            </p>
+        <div className={styles.sentenceContainer}>
+        {wordCard?.showSentence && (
+          <p className={styles.sentence}>
+            {wordCard?.word.word.dict.sentences?.[0]?.sentence}
+          </p>
+        )}
+        {wordCard?.showSentence &&
+          wordCard?.word.word.dict.sentences?.[0]?.audio_uri && (
+            <AudioIcon
+              id="sentenceAudio"
+              src={wordCard?.word.word.dict.sentences?.[0]?.audio_uri}
+            ></AudioIcon>
           )}
-          {wordCard?.showSentence &&
-            wordCard?.word.word.dict.sentences?.[0]?.audio_uri && (
-              <AudioIcon
-                id="sentenceAudio"
-                src={wordCard?.word.word.dict.sentences?.[0]?.audio_uri}
-              ></AudioIcon>
-            )}
-        </div>
-        {wordCard?.showTranslation && (
-          <p
-            style={{
-              color: '#6c757d',
-              marginBottom: '2rem',
-            }}
-          >
-            {wordCard?.word.word.dict.sentences?.[0]?.sentence_trans}
-          </p>
-        )}
-        {wordCard?.showEnglishTranslation && (
-          <p style={{ color: '#6c757d' }}>
-            {wordCard?.word.word.dict.en_means?.[0]?.mean}
-          </p>
-        )}
+      </div>
+      {wordCard?.showTranslation && (
+        <p className={styles.translation}>
+          {wordCard?.word.word.dict.sentences?.[0]?.sentence_trans}
+        </p>
+      )}
+      {wordCard?.showEnglishTranslation && (
+        <p className={styles.translation}>
+          {wordCard?.word.word.dict.en_means?.[0]?.mean}
+        </p>
+      )}
       </main>
 
       <footer className={styles.footer}>

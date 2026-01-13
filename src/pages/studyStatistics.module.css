@@ -162,8 +162,67 @@
         padding: 8px;
     }
 
-    .noDataMessage {
+  .noDataMessage {
         font-size: 16px;
         padding: 40px 15px;
     }
+}
+:global(.dark) .body {
+    background-color: #0f172a;
+    color: #e5e7eb;
+}
+
+:global(.dark) .container {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .statLabel {
+    color: #9ca3af;
+}
+
+:global(.dark) .statValue {
+    color: #60a5fa;
+}
+
+:global(.dark) .wordListTable th {
+    background-color: #1f2937;
+    color: #e5e7eb;
+    border-bottom: 1px solid #374151;
+}
+
+:global(.dark) .wordListTable td {
+    color: #e5e7eb;
+    border-bottom: 1px solid #1f2937;
+}
+
+:global(.dark) .visibleMeaning:hover {
+    background-color: #1f2937;
+}
+
+:global(.dark) .hiddenMeaning {
+    background-color: #374151;
+    color: transparent;
+}
+
+:global(.dark) .hiddenMeaning::after {
+    color: #9ca3af;
+}
+
+:global(.dark) .noDataMessage {
+    background-color: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .backButton {
+    background-color: #14532d;
+    color: #ffffff;
+    border: 1px solid #166534;
+}
+
+:global(.dark) .backButton:hover {
+    background-color: #0f3e22;
 }
