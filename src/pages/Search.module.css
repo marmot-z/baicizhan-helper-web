@@ -27,6 +27,7 @@
   border-radius: 20px;
   padding: 8px 12px;
   border: 1px solid #f0f0f0;
+  overflow: hidden;
 }
  
  .searchInput {
@@ -36,6 +37,9 @@
    font-size: 1rem;
    padding: 0 8px;
    outline: none;
+   -webkit-appearance: none;
+   appearance: none;
+   box-shadow: none;
  }
  
  .searchIcon {
@@ -105,6 +109,7 @@
 }
 :global(.dark) .searchInput {
   color: #e5e7eb;
+  background-color: transparent;
 }
 :global(.dark) .searchInput::placeholder {
   color: #9ca3af;
