@@ -14,6 +14,7 @@ import {
   StudyStatistics,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
+import MainLayout from '../layouts/MainLayout';
 
 // 路由配置
 export const router = createBrowserRouter([
@@ -30,36 +31,41 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: ROUTES.DASHBOARD,
     element: (
       <ProtectedRoute>
-        <Dashboard />
+        <MainLayout />
       </ProtectedRoute>
     ),
-  },
-  {
-    path: ROUTES.SEARCH,
-    element: (
-      <ProtectedRoute>
-        <Search />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: ROUTES.WORD_BOOK,
-    element: (
-      <ProtectedRoute>
-        <WordBook />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: ROUTES.STUDY_CALENDAR,
-    element: (
-      <ProtectedRoute>
-        <StudyCalendar />
-      </ProtectedRoute>
-    ),
+    children: [
+      {
+        path: ROUTES.DASHBOARD,
+        element: <Dashboard />,
+      },
+      {
+        path: ROUTES.SEARCH,
+        element: <Search />,
+      },
+      {
+        path: ROUTES.STUDY_CALENDAR,
+        element: <StudyCalendar />,
+      },
+      {
+        path: ROUTES.WORD_BOOK,
+        element: <WordBook />,
+      },
+      {
+        path: ROUTES.WORD_DETAIL,
+        element: <WordDetail />,
+      },
+      {
+        path: ROUTES.STUDY_STATISTICS,
+        element: <StudyStatistics />,
+      },
+      {
+        path: ROUTES.VIP_CENTER,
+        element: <VipCenter />,
+      },
+    ],
   },
   {
     path: ROUTES.STUDY_VIEW,
@@ -70,37 +76,13 @@ export const router = createBrowserRouter([
     ),
   },
   {
-          path: ROUTES.WORD_DETAIL,
-          element: (
-            <ProtectedRoute>
-              <WordDetail />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: ROUTES.VIP_CENTER,
-          element: (
-            <ProtectedRoute>
-              <VipCenter />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: ROUTES.PAYMENT_PAGE,
-          element: (
-            <ProtectedRoute>
-              <PaymentPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: ROUTES.STUDY_STATISTICS,
-          element: (
-            <ProtectedRoute>
-              <StudyStatistics />
-            </ProtectedRoute>
-          ),
-        },
+    path: ROUTES.PAYMENT_PAGE,
+    element: (
+      <ProtectedRoute>
+        <PaymentPage />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '*',
     element: <Navigate to={ROUTES.HOME} replace />,
