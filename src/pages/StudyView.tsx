@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
@@ -10,14 +10,19 @@ import { ROUTES } from '../constants';
 import StudyFrontCard from './StudyFrontCard';
 import StudyBackCard from './StudyBackCard';
 import styles from './StudyView.module.css';
+import { useStudyStrategy } from '../hooks/useStudyStrategy';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = (searchParams.get('mode') as 'learn' | 'review') || 'learn';
+  
   const [study, setStudy] = useState<Study | null>(null);
   const [wordCard, setWordCard] = useState<any | null>(null);
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
-  const { wordList } = useStudyStore();
+  
+  const { studyInstance, loading, error, init } = useStudyStrategy();
 
   const handleNext = async () => {
     await study?.pass();
@@ -45,65 +50,66 @@ const StudyView: React.FC = () => {
 
   // 初始化学习流程
   useEffect(() => {
-    const initStudy = async (studyPlans: SelectBookPlanInfo[]) => {
+    const startStudy = async () => {
+      // 如果已经有实例，跳过初始化
+      if (study) return;
+      
       try {
-        let currentStudyPlan = studyPlans[0];
-
-        if (!currentStudyPlan || !wordList.length) {
-          toast.loading('等待学习计划和单词列表加载...');
-          return;
+        const studyPlans = await studyService.getBookPlanInfo();
+        if (studyPlans && studyPlans.length > 0) {
+          setStudyPlan(studyPlans[0]);
+          await init(mode, studyPlans);
         }
+      } catch (err) {
+        console.error('获取学习计划失败:', err);
+      }
+    };
+    
+    startStudy();
+  }, [mode, init, study]);
 
-        // 设置学习计划状态
-        setStudyPlan(currentStudyPlan);
+  // 监听策略Hook返回的实例
+  useEffect(() => {
+    if (studyInstance) {
+      // 启动学习
+      // 注意：Hook 内部已经调用了 start()，这里只需同步状态
+      setStudy(studyInstance);
+      setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
+      setSelectedOptionIds([]);
+      
+      console.log(`学习模式: ${mode} 初始化完成`);
+    }
+  }, [studyInstance, mode]);
 
-        // 获取已学习的单词列表
-        const learnedWords = await studyService.getLearnedWords(
-          currentStudyPlan.book_id
-        );
-        const learnedTopicIds = new Set(
-          learnedWords.map((word) => word.topic_id)
-        );
-
-        // 从全部单词中筛选出未学习的单词
-        const unlearnedWords = wordList
-          .filter((word) => !learnedTopicIds.has(word.topic_id))
-          .slice(0, currentStudyPlan.daily_plan_count);
-
-        if (unlearnedWords.length === 0) {
-          toast.success('所有单词都已学习完成！');
-          return;
-        }
-
-        console.log(
-          `共有 ${wordList.length} 个单词，已学习 ${learnedWords.length} 个，待学习 ${unlearnedWords.length} 个`
-        );
-
-        const studyInstance = new Study(unlearnedWords);
-        await studyInstance.start();
-        setStudy(studyInstance);
-        setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
-        setSelectedOptionIds([]);
-      } catch (error) {
+  // 处理初始化错误
+  useEffect(() => {
+    if (error) {
+      // 区分不同错误类型进行提示
+      if (error.message.includes('未就绪')) {
+        toast.loading('等待数据加载...');
+      } else if (error.message.includes('已学习完成')) {
+        toast.success('所有单词都已学习完成！');
+      } else {
         console.error('初始化学习流程失败:', error);
+        toast.error('初始化失败: ' + error.message);
       }
-    };
+    }
+  }, [error]);
 
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (study && !study.completed) {
-        event.preventDefault();
-        event.returnValue = '退出该页面后，学习记录将不会上传';
-        return '你是否确定要退出学习？';
-      }
-    };
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (study && !study.completed) {
+      event.preventDefault();
+      event.returnValue = '退出该页面后，学习记录将不会上传';
+      return '你是否确定要退出学习？';
+    }
+  };
 
+  useEffect(() => {
     window.addEventListener('beforeunload', handleBeforeUnload);
-    studyService.getBookPlanInfo().then(initStudy);
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []);
+  }, [study]);
 
   // 监听学习完成状态，完成时跳转到统计页面
   // 退出前进行提示

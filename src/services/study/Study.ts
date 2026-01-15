@@ -18,12 +18,13 @@ export class Study {
   private wordStudyTime: number;
   private startTime: number;
   public completed: boolean;
+  private onUpload?: (study: Study) => void;
   
   /**
    * 构造函数
    * @param words 学习单词列表
    */
-  constructor(words: UserRoadMapElementV2[]) {
+  constructor(words: UserRoadMapElementV2[], onUpload?: (study: Study) => void) {
     this.processIterator = new ProcessIterator(words);
     this.currentWordCard = null;
     this.failMap = new Map();
@@ -32,6 +33,7 @@ export class Study {
     this.wordStudyTime = Date.now();
     this.completed = false;
     this.startTime = Date.now();
+    this.onUpload = onUpload;
   }
   
   public async start(): Promise<void> {  
@@ -54,6 +56,18 @@ export class Study {
 
   public getCurrentWord(): WordCard | null {
     return this.currentWordCard;
+  }
+
+  public getWords(): UserRoadMapElementV2[] {
+    return this.words;
+  }
+
+  public getFailMap(): Map<number, number> {
+    return this.failMap;
+  }
+
+  public getUseTimeMap(): Map<number, number> {
+    return this.useTimeMap;
   }
 
   public async pass(): Promise<void> {
@@ -125,6 +139,10 @@ export class Study {
     }
 
     useStudyStore.getState().setLastStudyStatistics(studyStatistics);
+    if (this.onUpload) {
+      this.onUpload(this);
+      return;
+    }
     this.uploadDoneData();
   }
 

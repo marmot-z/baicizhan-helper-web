@@ -39,4 +39,8 @@ export const studyService = {
       wordLevelId
     });
   },
+  
+  async updateReviewData(doneRecords: UserDoneWordRecord[]): Promise<void> {
+    console.log('[studyService] updateReviewData', doneRecords);
+  },
 };
