@@ -9,7 +9,7 @@ interface AuthState {
   user: UserBindInfo[] | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest, inviteCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   getUserInfo: () => Promise<void>;
   checkAndGetUserInfo: () => Promise<void>;
@@ -22,9 +22,9 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
-      login: async (credentials: LoginRequest) => {
+      login: async (credentials: LoginRequest, inviteCode?: string) => {
         try {
-          const token = await authService.login(credentials);                
+          const token = await authService.login(credentials, inviteCode);                
           
           // 登录成功后获取用户信息
           try {

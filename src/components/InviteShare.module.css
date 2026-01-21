@@ -1,0 +1,216 @@
+.floatBtn {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  cursor: pointer;
+  z-index: 999;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid #fff;
+}
+
+.floatBtn:hover {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.giftIcon {
+  font-size: 24px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.btnText {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Modal Styles */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  background-color: #fff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  padding: 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modalHeader {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+  padding: 24px 20px;
+  text-align: center;
+  color: white;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.modalSubtitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.modalBody {
+  padding: 24px;
+}
+
+.loadingContainer {
+  text-align: center;
+  padding: 20px 0;
+  color: #666;
+}
+
+.linkSection {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.linkInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: #495057;
+  outline: none;
+  width: 100%;
+}
+
+.copyBtn {
+  background-color: #FF6B6B;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.copyBtn:hover {
+  background-color: #FA5252;
+}
+
+.rules {
+  background-color: #FFF5F5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.rulesTitle {
+  font-weight: bold;
+  color: #E03131;
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.rulesList {
+  margin: 0;
+  padding-left: 20px;
+  color: #495057;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rulesList li {
+  margin-bottom: 4px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Dark Mode Support */
+:global(.dark) .modal {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+}
+
+:global(.dark) .linkSection {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+:global(.dark) .linkInput {
+  color: #e5e7eb;
+}
+
+:global(.dark) .rules {
+  background-color: #374151;
+}
+
+:global(.dark) .rulesTitle {
+  color: #FF6B6B;
+}
+
+:global(.dark) .rulesList {
+  color: #d1d5db;
+}
+
+:global(.dark) .loadingContainer {
+  color: #9ca3af;
+}

@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [countdown, setCountdown] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const INVITE_CODE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000;
 
   // 如果已经登录，重定向到仪表板
   React.useEffect(() => {
@@ -52,12 +53,25 @@ const Login: React.FC = () => {
 
     setLoginLoading(true);
     try {
-      // 使用authStore的login方法
-      await login({ phoneNum: phone, smsVerifyCode: code });
+      // 获取本地存储的邀请码和时间戳，并进行登录
+      let inviteCode = localStorage.getItem('invite_code');
+      const inviteTimestamp = localStorage.getItem('invite_timestamp');
+
+      if (inviteCode && inviteTimestamp) {
+        const isValid = Date.now() - parseInt(inviteTimestamp, 10) < INVITE_CODE_EXPIRE_TIME;
+        if (!isValid) {
+          inviteCode = null;
+        }
+      }
+
+      await login({ phoneNum: phone, smsVerifyCode: code }, inviteCode || undefined);
+      
+      // 清理邀请码相关信息
+      localStorage.removeItem('invite_code');
+      localStorage.removeItem('invite_timestamp');
       
       toast.success('登录成功');
       
-      // 跳转到首页或dashboard
       navigate(ROUTES.DASHBOARD);
     } catch (error) {
       console.error('登录失败:', error);

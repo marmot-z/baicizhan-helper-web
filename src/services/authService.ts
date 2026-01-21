@@ -9,9 +9,10 @@ export const authService = {
   },
 
   // 用户登录
-  async login(data: LoginRequest): Promise<string> {
+  async login(data: LoginRequest, inviteCode?: string): Promise<string> {
     const { phoneNum, smsVerifyCode } = data;
-    const response = await ApiService.post<string>(`/login/${phoneNum}/${smsVerifyCode}`);
+    const url = `/login/${phoneNum}/${smsVerifyCode}?inviteCode=${inviteCode??''}`
+    const response = await ApiService.post<string>(url);
     return response.data;
   },
 
@@ -19,5 +20,11 @@ export const authService = {
   async getUserInfo(): Promise<UserBindInfo[]> {
     const response = await ApiService.get<UserBindInfo[]>('/userInfo');
     return response.data;
+  },
+
+  // 获取用户邀请码
+  async getInviteCode(): Promise<string> {
+    const mockCode = 'SHARE_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    return mockCode;
   },
 };
