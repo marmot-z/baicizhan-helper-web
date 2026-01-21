@@ -45,7 +45,7 @@ export default function Header() {
           src={iconLogo}
           alt="Logo"
           className="logo"
-          onClick={() => navigate(ROUTES.HOME)}
+          onClick={() => navigate(ROUTES.DASHBOARD)}
         />
         <nav>
           <ul>
