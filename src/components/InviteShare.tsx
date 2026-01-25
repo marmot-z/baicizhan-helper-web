@@ -43,8 +43,11 @@ const InviteShare: React.FC = () => {
       console.error('Copy failed:', err);
       // 降级方案：选中输入框文本
       const input = document.getElementById('share-link-input') as HTMLInputElement;
-      if (input) {
-        input.select();
+      input.select();
+      const successful = document.execCommand('copy'); // 尝试执行复制命令
+      if (successful) {
+        toast.success('链接已复制，快去分享给好友吧！');
+      } else {        
         toast('请手动复制链接', { icon: '👉' });
       }
     }

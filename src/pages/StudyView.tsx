@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import type { SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
 import type { StudyOption } from '../services/study/types';
-import { useStudyStore } from '../stores/studyStore';
 import { studyService } from '../services/studyService';
 import { ROUTES } from '../constants';
 import StudyFrontCard from './StudyFrontCard';
@@ -22,7 +21,7 @@ const StudyView: React.FC = () => {
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
   
-  const { studyInstance, loading, error, init } = useStudyStrategy();
+  const { studyInstance, error, init } = useStudyStrategy();
 
   const handleNext = async () => {
     await study?.pass();
