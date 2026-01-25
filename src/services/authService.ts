@@ -24,7 +24,7 @@ export const authService = {
 
   // 获取用户邀请码
   async getInviteCode(): Promise<string> {
-    const mockCode = 'SHARE_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    return mockCode;
+    const response = await ApiService.get<string>('/inviteCode');
+    return response.data;
   },
 };

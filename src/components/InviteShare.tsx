@@ -29,7 +29,7 @@ const InviteShare: React.FC = () => {
 
   // 生成分享链接
   const shareUrl = inviteCode 
-    ? `${window.location.origin}/login?inviteCode=${inviteCode}`
+    ? `${window.location.origin}?inviteCode=${inviteCode}`
     : '正在生成专属链接...';
 
   // 复制功能
