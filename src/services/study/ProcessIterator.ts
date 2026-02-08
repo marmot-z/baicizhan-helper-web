@@ -1,9 +1,7 @@
 import { WordIterator } from './WordIterator';
-import type { StudyWord } from './types';
-import type { UserRoadMapElementV2, SearchWordResultV2 } from '../../types';
+import type { StudyUIModel } from './types';
+import type { SearchWordResultV2 } from '../../types';
 import { WordCard } from './WordCard';
-import { StudyUtils } from './StudyUtils';
-import { groupChineseMeanings } from '../../utils';
 
 /**
  * ProcessIterator类 - 学习流程迭代器
@@ -12,14 +10,14 @@ import { groupChineseMeanings } from '../../utils';
 export class ProcessIterator {
   private iterators: WordIterator[];
   private currentIteratorIndex: number;
-  private wordCache: Map<number, StudyWord>;
   private wordNum: number;
+  private allWords: StudyUIModel[];
   
   /**
    * 构造函数
    * @param words 学习单词列表
    */
-  constructor(words: UserRoadMapElementV2[]) {
+  constructor(words: StudyUIModel[]) {
     // 初始化三个环节的迭代器，每个环节使用相同的单词数组
     this.iterators = [
       new WordIterator('recognition', words),
@@ -27,8 +25,8 @@ export class ProcessIterator {
       new WordIterator('mastery', words) 
     ];    
     this.currentIteratorIndex = 0;
-    this.wordCache = new Map();
     this.wordNum = words.length;
+    this.allWords = words;
   }
   
   /**
@@ -59,7 +57,7 @@ export class ProcessIterator {
    * 获取下一个单词卡片
    * @returns 下一个单词卡片，如果没有则返回null
    */
-  public async next(): Promise<WordCard | null> {
+  public next(): WordCard | null {
     if (!this.hasNext()) {
       return null;
     }
@@ -75,25 +73,15 @@ export class ProcessIterator {
     
     // 获取下一个单词卡片
     if (currentIterator.hasNext()) {
-      let wordId: UserRoadMapElementV2 | null = currentIterator.next();
-      return wordId ? await this.getWordCardFromCache(wordId) : null;
+      const uiModel: StudyUIModel | null = currentIterator.next();
+      return uiModel ? new WordCard(uiModel, currentIterator.stage) : null;
     }
     
     return null;
   }
 
-  private async getWordCardFromCache(word: UserRoadMapElementV2): Promise<WordCard> {
-    let wordInfo: StudyWord | undefined = this.wordCache.get(word.topic_id);
-
-    if (!wordInfo) {
-      this.wordCache.set(word.topic_id, wordInfo = await StudyUtils.fetchWordInfo(word));
-    }
-
-    return new WordCard(word, wordInfo, this.iterators[this.currentIteratorIndex].stage);
-  }
-
-  public putback(wordId: UserRoadMapElementV2) : void {
-    this.iterators[this.currentIteratorIndex]?.putback(wordId);
+  public putback(word: StudyUIModel) : void {
+    this.iterators[this.currentIteratorIndex]?.putback(word);
   }
 
   public getProgress(): number {
@@ -105,18 +93,16 @@ export class ProcessIterator {
   public getWordBriefInfos(): SearchWordResultV2[] {
     const result: SearchWordResultV2[] = [];
     
-    // 遍历 wordCache 中的所有单词
-    this.wordCache.forEach((studyWord, topicId) => {
-      const wordBasicInfo = studyWord.word.dict.word_basic_info;            
-      const meansByType = groupChineseMeanings(studyWord.word.dict.chn_means);      
-      const meanCn = Array.from(meansByType.entries())
-        .map(([type, means]) => `${type}.${means.join('，')}`)
+    // 遍历 allWords 中的所有单词
+    this.allWords.forEach((uiModel) => {
+      const meanCn = uiModel.back.cnMeans
+        .map(m => `${m.type}.${m.text}`)
         .join('；');      
-      const accent = wordBasicInfo.accent_usa || wordBasicInfo.accent_uk || '';
+      const accent = uiModel.front.accent.us || uiModel.front.accent.uk || '';
       
       result.push({
-        word: wordBasicInfo.word,
-        topic_id: topicId,
+        word: uiModel.word,
+        topic_id: uiModel.topicId,
         mean_cn: meanCn,
         accent: accent
       });

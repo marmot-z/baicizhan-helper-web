@@ -1,26 +1,12 @@
-import type { StudyWord, StudyStage, StudyOption } from './types';
-import type { UserRoadMapElementV2 } from '../../types';
-
-function shuffle(array: Array<any>): Array<any> {
-  let i = array.length, j, temp;
-
-  while (--i > 0) {
-    j = Math.floor(Math.random() * (i + 1));
-    temp = array[j];
-    array[j] = array[i];
-    array[i] = temp;
-  }
-
-  return array;
-}
+import type { StudyStage, StudyOption, StudyUIModel } from './types';
+import { StudyUtils } from './StudyUtils';
 
 /**
  * WordCard类 - 表示单个单词的学习卡片
  * 负责管理单词的展示、答案检查和提示逻辑
  */
 export class WordCard {
-  public word: StudyWord;
-  public originInfo: UserRoadMapElementV2;
+  public uiModel: StudyUIModel;
   public stage: StudyStage;
   public showAnswer: boolean;
   public attemptCount: number;
@@ -29,13 +15,13 @@ export class WordCard {
   
   /**
    * 构造函数
-   * @param word 单词信息（包含选项）
+   * @param uiModel UI模型
+   * @param stage 学习阶段
    */
-  constructor(originInfo: UserRoadMapElementV2, word: StudyWord, stage: StudyStage) {
-    this.originInfo = originInfo;
+  constructor(uiModel: StudyUIModel, stage: StudyStage) {
     this.stage = stage;
-    this.word = word;
-    this.word.options = shuffle(this.word.options);
+    this.uiModel = uiModel;
+    // Options are lazy loaded, so we don't init them here
     this.attemptCount = 0;
     this.maxAttempts = 3;
     this.showAnswer = false;
@@ -63,11 +49,12 @@ export class WordCard {
   }
 
   public getId(): number {
-    return this.word.word.dict.word_basic_info.topic_id;
+    return this.uiModel.topicId;
   }
 
   public getOptions(): StudyOption[] {
-    return this.word.options;
+    const cached = StudyUtils.getCachedOptions(this.uiModel.topicId);
+    return cached || this.uiModel.front.options;
   }
 
   public showWord(): boolean {
@@ -101,10 +88,17 @@ export class WordCard {
     (this.stage === 'mastery' && this.clickedOptionIds.has(id));
   }
 
-  public toObject(): any {
-    let options = [];
+  public toObject(): object {
+    const options: { 
+      id: number; 
+      word: string; 
+      translation: string; 
+      isCorrect: boolean; 
+      showOptionWord: boolean; 
+      showOptionTranslation: boolean;
+    }[] = [];
     
-    for (let o of this.getOptions()) {
+    for (const o of this.getOptions()) {
       options.push({
         id: o.id,
         word: o.word,
@@ -116,7 +110,7 @@ export class WordCard {
     }
 
     return {
-      word: this.word as StudyWord,
+      uiModel: this.uiModel,
       showAnswer: this.showAnswer,
       showWord: this.showWord(),
       showSentence: this.showSentence(),

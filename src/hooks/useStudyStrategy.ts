@@ -46,7 +46,17 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
             throw new Error('所有单词都已学习完成');
           }
 
-          const instance = new Study(unlearnedWords);
+          // Fetch UI Models
+          const topicIds = unlearnedWords.map(w => w.topic_id);
+          const uiModels = await studyService.getXModeWordDetails(
+            currentStudyPlan.book_id,
+            topicIds
+          );
+
+          const instance = new Study(unlearnedWords, uiModels, {
+            planType: 'XModelNewStudy',
+            bookId: currentStudyPlan.book_id
+          });
           await instance.start();
           setStudyInstance(instance);
           setLoading(false);
@@ -89,8 +99,18 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
             throw new Error('未找到可复习的单词详情');
           }
 
+          // Fetch UI Models for review words
+          const topicIds = reviewWords.map(w => w.topic_id);
+          const uiModels = await studyService.getXModeWordDetails(
+            currentStudyPlan.book_id,
+            topicIds
+          );
+
           // 5. 初始化 Study 实例，注入复习上报策略
-          const instance = new Study(reviewWords, async (study) => {
+          const instance = new Study(reviewWords, uiModels, {
+            planType: 'XModelReview', // 暂定，区分于 Learn
+            bookId: currentStudyPlan.book_id
+          }, async (study) => {
             const words = study.getWords();
             const failMap = study.getFailMap();
             const useTimeMap = study.getUseTimeMap();
@@ -138,4 +158,3 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
     init,
   };
 };
-

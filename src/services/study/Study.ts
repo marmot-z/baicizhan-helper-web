@@ -2,7 +2,8 @@ import { ProcessIterator } from './ProcessIterator';
 import type { UserRoadMapElementV2, UserDoneWordRecord } from '../../types';
 import type { WordCard } from './WordCard';
 import { studyService } from '../studyService';
-import type { StudyStatistcs } from './types';
+import { StudyUtils } from './StudyUtils';
+import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 
 /**
@@ -15,29 +16,66 @@ export class Study {
   private failMap: Map<number, number>;
   private useTimeMap: Map<number, number>;
   private words: UserRoadMapElementV2[];
+  private context: StudyContext;
   private wordStudyTime: number;
   private startTime: number;
   public completed: boolean;
   private onUpload?: (study: Study) => void;
+  private listeners: Set<(wordCard: WordCard | null) => void>;
   
   /**
    * 构造函数
-   * @param words 学习单词列表
+   * @param words 学习单词列表(原始数据)
+   * @param uiModels UI模型列表(预加载数据)
+   * @param context 学习上下文
    */
-  constructor(words: UserRoadMapElementV2[], onUpload?: (study: Study) => void) {
-    this.processIterator = new ProcessIterator(words);
+  constructor(words: UserRoadMapElementV2[], uiModels: StudyUIModel[], context: StudyContext, onUpload?: (study: Study) => void) {
+    this.processIterator = new ProcessIterator(uiModels);
     this.currentWordCard = null;
     this.failMap = new Map();
     this.useTimeMap = new Map();
     this.words = words;
+    this.context = context;
     this.wordStudyTime = Date.now();
     this.completed = false;
     this.startTime = Date.now();
     this.onUpload = onUpload;
+    this.listeners = new Set();
+  }
+  
+  public subscribe(listener: (wordCard: WordCard | null) => void): () => void {
+    this.listeners.add(listener);
+    // 立即回调当前状态
+    listener(this.currentWordCard);
+    
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notify(): void {
+    this.listeners.forEach(listener => listener(this.currentWordCard));
   }
   
   public async start(): Promise<void> {  
     await this.process();
+  }
+
+  private getCurrentStrategyId(): string {
+    if (!this.currentWordCard) {
+      return 'q1';
+    }
+    
+    switch (this.currentWordCard.stage) {
+      case 'recognition':
+        return 'q1';
+      case 'understanding':
+        return 'q2';
+      case 'mastery':
+        return 'q3';
+      default:
+        return 'q1';
+    }
   }
 
   private async process(): Promise<void> {
@@ -50,8 +88,36 @@ export class Study {
       return;
     }    
 
-    this.currentWordCard = await this.processIterator.next();
+    this.currentWordCard = this.processIterator.next();
+    
+    // Progressive Option Loading: Check and load options if missing
+    if (this.currentWordCard) {
+      const topicId = this.currentWordCard.getId();
+      
+      // Report event: strategy_study_enter
+      studyService.reportEvent(
+        'strategy_study_enter',
+        JSON.stringify({
+          topic_id: topicId,
+          strategy_id: this.getCurrentStrategyId(),
+          plan_type: this.context.planType
+        }),
+        'study-detail-common'
+      ).catch(console.error);
+
+      if (!StudyUtils.getCachedOptions(topicId)) {
+        const wordInfo = this.words.find(w => w.topic_id === topicId);
+        if (wordInfo) {
+          // Fire and forget - notify when loaded to update UI
+          StudyUtils.loadOptionsForTopic(wordInfo, this.currentWordCard.uiModel).then(() => {
+            this.notify();
+          }).catch(console.error);
+        }
+      }
+    }
+
     this.wordStudyTime = Date.now();
+    this.notify();
   }
 
   public getCurrentWord(): WordCard | null {
@@ -70,12 +136,28 @@ export class Study {
     return this.useTimeMap;
   }
 
-  public async pass(): Promise<void> {
+  public async pass(choiceTopicId?: number): Promise<void> {
+    // Report event: choose_in_recite_click (correct)
+    if (choiceTopicId !== undefined && this.currentWordCard) {
+      studyService.reportEvent(
+        'choose_in_recite_click',
+        JSON.stringify({
+          topic_id: this.currentWordCard.getId(),
+          strategy_id: this.getCurrentStrategyId(),
+          choice_topic_id: choiceTopicId,
+          is_right: 1,
+          plan_type: this.context.planType
+        }),
+        'study-detail-common'
+      ).catch(console.error);
+    }
+
     // 当前为反面
     if (this.currentWordCard?.showAnswer) {
       // 选项全部错误时，展示答案，继续背该单词
       if (this.currentWordCard?.attemptCount == 0) {
         this.currentWordCard.showAnswer = false;
+        this.notify();
       } 
       // 下一个单词
       else {
@@ -92,6 +174,7 @@ export class Study {
       // 反面，显示反面
       else {
         this.currentWordCard?.pass();
+        this.notify();
       }
     }
   }
@@ -101,10 +184,25 @@ export class Study {
       return false;
     }
 
-    let failedTimes = this.failMap.get(this.currentWordCard.getId()) || 0;
+    // Report event: choose_in_recite_click (wrong)
+    studyService.reportEvent(
+      'choose_in_recite_click',
+      JSON.stringify({
+        topic_id: this.currentWordCard.getId(),
+        strategy_id: this.getCurrentStrategyId(),
+        choice_topic_id: optionId,
+        is_right: 0,
+        plan_type: this.context.planType
+      }),
+      'study-detail-common'
+    ).catch(console.error);
+
+    const failedTimes = this.failMap.get(this.currentWordCard.getId()) || 0;
     this.failMap.set(this.currentWordCard?.getId(), failedTimes + 1);
-    this.processIterator.putback(this.currentWordCard.originInfo);
-    return this.currentWordCard?.fail(optionId);    
+    this.processIterator.putback(this.currentWordCard.uiModel);
+    const result = this.currentWordCard?.fail(optionId);
+    this.notify();
+    return result;
   }
 
   public getProgress(): number {
@@ -113,6 +211,7 @@ export class Study {
   
   public complete(): void {
     this.completed = true;
+    this.notify();
     const studyStatistics: StudyStatistcs = {
       failMap: Object.fromEntries(this.failMap),
       usedTimeMap: Object.fromEntries(this.useTimeMap),
@@ -139,6 +238,39 @@ export class Study {
     }
 
     useStudyStore.getState().setLastStudyStatistics(studyStatistics);
+
+    // XMode 打卡逻辑
+    try {
+      const date = new Date().toISOString().split('T')[0];
+      const finalStats = useStudyStore.getState().lastStudyStatistics;
+      const totalCount = finalStats?.words.length || 0;
+      
+      // 只有在新词学习模式下才进行打卡，或者根据需求在所有模式下都打卡
+      // 这里根据之前的讨论，count 是今日学习新单词的总量
+      // 假设所有模式下学完都进行打卡同步进度
+      studyService.xModeDaka(totalCount, date).catch(console.error);
+    } catch (error) {
+      console.error('打卡逻辑执行失败:', error);
+    }
+    
+    // Report event: finish-normal-plan
+    studyService.reportEvent(
+      'finish-normal-plan',
+      JSON.stringify({
+        plan_type: this.context.planType
+      }),
+      'main-study'
+    ).catch(console.error);
+
+    // Report event: review_midpage_view
+    studyService.reportEvent(
+      'review_midpage_view',
+      JSON.stringify({
+        mode_type: 3
+      }),
+      'main-study'
+    ).catch(console.error);
+
     if (this.onUpload) {
       this.onUpload(this);
       return;

@@ -1,4 +1,4 @@
-import type { UserRoadMapElementV2 } from '../../types';
+import type { StudyUIModel } from './types';
 import type { StudyStage } from './types';
 
 /**
@@ -7,7 +7,7 @@ import type { StudyStage } from './types';
  * 实现迭代器模式，只提供 hasNext 和 next 方法
  */
 export class WordIterator {
-  private wordQueue: UserRoadMapElementV2[];
+  private wordQueue: StudyUIModel[];
   public stage: StudyStage;
   
   /**
@@ -15,7 +15,7 @@ export class WordIterator {
    * @param words 单词列表
    * @param stage 学习阶段
    */
-  constructor(stage: StudyStage, words: UserRoadMapElementV2[]) {    
+  constructor(stage: StudyStage, words: StudyUIModel[]) {    
     this.wordQueue = Array.from(words);
     this.stage = stage;
   }
@@ -32,7 +32,7 @@ export class WordIterator {
    * 获取下一个单词卡片并移动迭代器
    * @returns 下一个单词卡片，如果没有则返回null
    */
-  public next(): UserRoadMapElementV2 | null {
+  public next(): StudyUIModel | null {
     if (!this.hasNext()) {
       return null;
     }
@@ -40,12 +40,12 @@ export class WordIterator {
     return this.wordQueue.shift() || null;
   }
 
-  public putback(wordId: UserRoadMapElementV2): void {
-    if (this.wordQueue.includes(wordId)) {
+  public putback(word: StudyUIModel): void {
+    if (this.wordQueue.some(w => w.topicId === word.topicId)) {
       return;
     }
 
-    this.wordQueue.push(wordId);
+    this.wordQueue.push(word);
   }
 
   public getRemainNum(): number {

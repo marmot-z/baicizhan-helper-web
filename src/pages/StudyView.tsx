@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
-import type { StudyOption } from '../services/study/types';
+import type { StudyOption, StudyUIModel } from '../services/study/types';
 import { studyService } from '../services/studyService';
+import { StudyUtils } from '../services/study/StudyUtils';
 import { ROUTES } from '../constants';
 import StudyFrontCard from './StudyFrontCard';
 import StudyBackCard from './StudyBackCard';
 import styles from './StudyView.module.css';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
+import { useStudyState } from '../hooks/useStudyState';
+import { AudioSequencePlayer } from '../utils/audio';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -17,33 +20,63 @@ const StudyView: React.FC = () => {
   const mode = (searchParams.get('mode') as 'learn' | 'review') || 'learn';
   
   const [study, setStudy] = useState<Study | null>(null);
-  const [wordCard, setWordCard] = useState<any | null>(null);
+  const { wordCard, isCompleted } = useStudyState(study);
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
   
   const { studyInstance, error, init } = useStudyStrategy();
 
+  // Create UI Model from current word card
+  const uiModel: StudyUIModel | null = useMemo(() => {
+    return wordCard?.uiModel || null;
+  }, [wordCard]);
+
+  // 监听卡片核心状态变化，自动重置选项选中状态
+  // 替代手动在交互逻辑中重置
+  useEffect(() => {
+    setSelectedOptionIds([]);
+  }, [
+    uiModel?.topicId,
+    wordCard?.showAnswer
+  ]);
+
+  const shuffledOptions = useMemo(() => {
+    const rawOptions = uiModel 
+      ? (StudyUtils.getCachedOptions(uiModel.topicId) || uiModel.front.options) 
+      : (wordCard?.options as StudyOption[]);
+
+    if (!rawOptions) return [];
+
+    // Combine display config and shuffle
+    const optionsWithConfig = rawOptions.map((opt, i) => ({
+      ...opt,
+      showOptionWord: wordCard?.options?.[i]?.showOptionWord ?? true,
+      showOptionTranslation: wordCard?.options?.[i]?.showOptionTranslation ?? true
+    }));
+
+    // Fisher-Yates shuffle
+    const shuffled = [...optionsWithConfig];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled;
+  }, [uiModel?.topicId, wordCard?.id, (uiModel ? (StudyUtils.getCachedOptions(uiModel.topicId) || uiModel.front.options) : wordCard?.options)?.length]);
+
   const handleNext = async () => {
     await study?.pass();
-    setWordCard(study?.getCurrentWord()?.toObject() || null);
-    setSelectedOptionIds([]);
   };
 
   const handleOptionClick = async (id: number, isCorrect: boolean) => {
     setSelectedOptionIds(prev => [...prev, id]);
 
-    let fresh = false;
     if (isCorrect) {
-      await study?.pass();
-      fresh = true;
+      // 延迟 300ms 以展示绿色正确反馈
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await study?.pass(id);
     } else {
-      fresh = await study?.fail(id) || false;
-    }
-
-    setWordCard(study?.getCurrentWord()?.toObject() || null);
-
-    if (fresh) {
-      setSelectedOptionIds([]);
+      await study?.fail(id);
     }
   };
 
@@ -73,7 +106,6 @@ const StudyView: React.FC = () => {
       // 启动学习
       // 注意：Hook 内部已经调用了 start()，这里只需同步状态
       setStudy(studyInstance);
-      setWordCard(studyInstance.getCurrentWord()?.toObject() || null);
       setSelectedOptionIds([]);
       
       console.log(`学习模式: ${mode} 初始化完成`);
@@ -96,7 +128,7 @@ const StudyView: React.FC = () => {
   }, [error]);
 
   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    if (study && !study.completed) {
+    if (!isCompleted) {
       event.preventDefault();
       event.returnValue = '退出该页面后，学习记录将不会上传';
       return '你是否确定要退出学习？';
@@ -108,16 +140,16 @@ const StudyView: React.FC = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [study]);
+  }, [isCompleted]);
 
   // 监听学习完成状态，完成时跳转到统计页面
   // 退出前进行提示
   useEffect(() => {
-    if (study && study.completed) {
+    if (isCompleted) {
       toast.success('学习完成，学习记录已上传！');
       navigate(ROUTES.STUDY_STATISTICS);
     }
-  }, [study?.completed, navigate]);
+  }, [isCompleted, navigate]);
 
   // 添加键盘事件监听
   useEffect(() => {
@@ -135,15 +167,13 @@ const StudyView: React.FC = () => {
         return;
       }
 
-      const options = Object.values(wordCard.options) as StudyOption[];
-
       // 检查按键是否为1-4数字键
       if (['1', '2', '3', '4'].includes(key)) {
         const optionIndex = parseInt(key) - 1;
 
         // 确保选项存在
-        if (optionIndex >= 0 && optionIndex < options.length) {
-          handleOptionClick(options[optionIndex].id, options[optionIndex].isCorrect);
+        if (optionIndex >= 0 && optionIndex < shuffledOptions.length) {
+          handleOptionClick(shuffledOptions[optionIndex].id, shuffledOptions[optionIndex].isCorrect);
         }
       }
     };
@@ -153,63 +183,41 @@ const StudyView: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [wordCard, handleNext]);
-
-  const CDN_HOST = 'https://7n.bczcdn.com';
+  }, [wordCard, handleNext, shuffledOptions]);
 
   useEffect(() => {
     if (!wordCard) return;
 
-    const audios: HTMLAudioElement[] = [];
-    let canceled = false;
+    const player = new AudioSequencePlayer();
+    const audioUrls = [
+      uiModel?.front.accent.ukAudio,
+      wordCard?.showSentence && uiModel?.back.sentences[0]?.audio,
+    ];
 
-    const playAudiosSequentially = async () => {
-      const audioUrls = [
-        wordCard.word.word.dict.word_basic_info.accent_uk_audio_uri,
-        wordCard.showSentence && wordCard.word.word.dict.sentences?.[0]?.audio_uri,
-      ].filter(Boolean);
-
-      for (const audioUrl of audioUrls) {
-        if (canceled) break;
-
-        try {
-          const audio = new Audio(CDN_HOST + audioUrl);
-          audios.push(audio);
-
-          await audio.play();
-
-          if (canceled) break;
-
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (error) {
-          console.error('音频播放失败:', error);
-        }
-      }
-    };
-
-    playAudiosSequentially();
+    player.playSequence(audioUrls, 500);
 
     return () => {
-      canceled = true;
-      audios.forEach((audio) => {
-        audio.pause();
-        audio.src = '';
-      });
+      player.stop();
     };
-  }, [wordCard?.word, wordCard?.showAnswer]);
+  }, [wordCard?.word, wordCard?.showAnswer, wordCard?.showSentence, uiModel]);
 
   return (
     <div className={styles.container}>
       {wordCard ? (
         wordCard.showAnswer ? (
-          <StudyBackCard wordCard={wordCard} next={handleNext} />
+          <StudyBackCard 
+            uiModel={uiModel} 
+            next={handleNext} 
+          />
         ) : (
           <StudyFrontCard
+            uiModel={uiModel}
             wordCard={wordCard}
             studyPlan={studyPlan}
             study={study}
             selectedOptionIds={selectedOptionIds}
             optionClick={handleOptionClick}
+            options={shuffledOptions}
           />
         )
       ) : (

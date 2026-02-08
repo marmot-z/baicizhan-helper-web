@@ -385,6 +385,150 @@ export interface UserLearnedWordInfo {
   review_round: number;
 }
 
+// 信用状态接口
+export interface CreditStatus {
+  inExperiment: boolean;
+  reviewCreditObtained: boolean;
+  studyCreditObtained: boolean;
+}
+
+// X模式单词详情接口
+export interface XModeWordDetail {
+  resource: Resource;
+  wiki: Wiki;
+  xModeTopic: XModeTopic;
+  similarWordList: SimilarWordItem[];
+  collected: boolean;
+}
+
+export interface Resource {
+  word: Word;
+  mnemonic: Mnemonic;
+  cnMean: Mean[];
+  enMean: Mean[];
+  sentences: Sentence[];
+  phrases: Phrase[];
+  variant: Variant[];
+  derivations: Derivation[];
+  tvInfo: unknown;
+  synonyms: Synonym[];
+  antonyms: Synonym[];
+  similars: Similar[];
+}
+
+export interface Word {
+  topicId: number;
+  word: string;
+  wordSplit: string;
+  accentUs: string;
+  accentUk: string;
+  audioUs: string;
+  audioUk: string;
+  exam: unknown;
+}
+
+export interface Mnemonic {
+  type: number;
+  content: string;
+  imgContent: string;
+}
+
+export interface Mean {
+  mId: number;
+  meanType: string;
+  mean: string;
+  percent: unknown;
+}
+
+export interface Sentence {
+  sId: number;
+  sentenceEn: string;
+  translate: string;
+  audio: string;
+  audioUK: string;
+  image: string;
+  origin: unknown;
+  phrase: string;
+}
+
+export interface Phrase {
+  pId: number;
+  phrase: string;
+  mean: string;
+}
+
+export interface Variant {
+  vId: number;
+  type: string;
+  variant: string;
+}
+
+export interface Derivation {
+  dId: number;
+  word: string;
+  mean: string;
+}
+
+export interface Similar {
+  sId: number;
+  word: string;
+  meanType: string;
+  mean: string;
+}
+
+export interface Synonym {
+  sId: number;
+  word: string;
+}
+
+export interface Wiki {
+  cnMean: CnMeanInfo;
+  pages: Page[];
+  extension: Extension;
+}
+
+export interface CnMeanInfo {
+  examOrder: number[];
+  meanOrder: string[];
+}
+
+export interface Page {
+  meanId: number;
+  sentenceIds: number[];
+}
+
+export interface Extension {
+  order: number[];
+  bold: unknown[];
+}
+
+export interface XModeTopic {
+  id: number;
+  topicId: number;
+  bookId: number;
+  chnMean: string;
+  sentence: string;
+  sentenceTrans: string;
+  sentenceAudio: string;
+  sentenceImg: string;
+  video: string;
+  videoImg: string;
+  optionChn: OptionChn[];
+}
+
+export interface OptionChn {
+  text: string;
+}
+
+export interface SimilarWordItem {
+  topicId: number;
+  word: string;
+  meanType: string;
+  mean: string;
+  choose: boolean;
+  senId: number;
+}
+
 export interface UserDoneWordRecord {
   word_topic_id: number;
   current_score: number;

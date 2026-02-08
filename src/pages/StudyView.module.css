@@ -202,6 +202,12 @@
   margin: 0;
 }
 
+.backMnemonicImage {
+  max-width: 220px;
+  margin-top: 8px;
+  border-radius: 4px;
+}
+
 .backSentenceTranslation {
   margin: 0.25rem 0;
 }
