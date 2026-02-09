@@ -3,7 +3,11 @@ import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import styles from './InviteShare.module.css';
 
-const InviteShare: React.FC = () => {
+interface InviteShareProps {
+  children?: React.ReactNode;
+}
+
+const InviteShare: React.FC<InviteShareProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,15 +59,21 @@ const InviteShare: React.FC = () => {
 
   return (
     <>
-      {/* 悬浮球 */}
-      <div 
-        className={styles.floatBtn} 
-        onClick={() => setIsOpen(true)}
-        title="邀请好友送会员"
-      >
-        <span className={styles.giftIcon}>🎁</span>
-        <span className={styles.btnText}>邀请有礼</span>
-      </div>
+      {/* 触发器：如果有 children 则使用 children，否则显示默认悬浮球 */}
+      {children ? (
+        <div onClick={() => setIsOpen(true)} style={{ display: 'inline-block', cursor: 'pointer' }}>
+          {children}
+        </div>
+      ) : (
+        <div 
+          className={styles.floatBtn} 
+          onClick={() => setIsOpen(true)}
+          title="邀请好友送会员"
+        >
+          <span className={styles.giftIcon}>🎁</span>
+          <span className={styles.btnText}>邀请有礼</span>
+        </div>
+      )}
 
       {/* 模态框 */}
       {isOpen && (

@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import ExtensionsDownloadModel from './ExtensionsDownloadModel';
+import InviteShare from './InviteShare';
 import type { UserBindInfo } from '../types';
 import { ROUTES } from '../constants';
 import iconLogo from '../assets/icon.png';
@@ -50,10 +51,18 @@ export default function Header() {
         <nav>
           <ul>
             <li>
-              {
-                <div className="theme-bar">
+              <div className="theme-bar">
+                <InviteShare>
                   <button
-                    title={theme === 'dark' ? '切换为明亮' : '切换为暗黑'}
+                    title="邀请好友送会员"
+                    className="invite-btn"
+                  >
+                    <span style={{ marginRight: '4px' }}>🎁</span>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold' }}>邀请好友送会员</span>
+                  </button>
+                </InviteShare>
+                <button
+                  title={theme === 'dark' ? '切换为明亮' : '切换为暗黑'}
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     role="switch"
                     aria-checked={theme === 'dark'}
@@ -115,7 +124,6 @@ export default function Header() {
                     </div>
                   </div>
                 </div>
-              }
             </li>
           </ul>
         </nav>

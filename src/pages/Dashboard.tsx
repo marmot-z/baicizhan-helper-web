@@ -5,7 +5,6 @@ import { useStudyStore } from '../stores/studyStore';
 import { bookService } from '../services/bookService';
 import type { UserBookItem } from '../types';
 import { ROUTES } from '../constants';
-import InviteShare from '../components/InviteShare';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -152,9 +151,6 @@ export default function Dashboard() {
           </div>
         </section>
       </main>
-
-      {/* 邀请有礼悬浮窗 */}
-      <InviteShare />
     </div>
   );
 }

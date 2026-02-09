@@ -168,6 +168,7 @@
   color: #495057;
   font-size: 0.9rem;
   line-height: 1.5;
+  display: block;
 }
 
 .rulesList li {
@@ -209,6 +210,7 @@
 
 :global(.dark) .rulesList {
   color: #d1d5db;
+  display: block;
 }
 
 :global(.dark) .loadingContainer {

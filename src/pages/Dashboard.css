@@ -201,6 +201,32 @@
   opacity: 0.5;
 }
 
+/* Invite Button */
+.invite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 12px;
+  font-size: 16px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+.invite-btn:hover {
+  color: #FF6B6B;
+}
+
+.dark .invite-btn {
+  color: #e5e7eb;
+}
+
+.dark .invite-btn:hover {
+  color: #FF8E53;
+}
+
 /* Word books */
 .word-books {
   margin-top: 2rem;
