@@ -1,5 +1,5 @@
-import type { StudyWord, StudyOption, StudyUIModel, StudyMedia, StudyAccent, StudySentence, StudyMean, StudyPhrase, StudyVariant, StudyRelatedWord } from './types';
-import type { TopicResourceV2, UserRoadMapElementV2, XModeWordDetail, SimilarWordItem, Mean } from '../../types';
+import type {StudyOption, StudyUIModel, StudyMedia, StudyAccent, StudySentence, StudyMean, StudyPhrase, StudyVariant, StudyRelatedWord } from './types';
+import type { TopicResourceV2, UserRoadMapElementV2, XModeWordDetail } from '../../types';
 import {bookService} from '../bookService'
 
 /**
