@@ -12,6 +12,8 @@ import {
   VipCenter,
   PaymentPage,
   StudyStatistics,
+  StudyMidView,
+  SpellView,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -62,6 +64,10 @@ export const router = createBrowserRouter([
         element: <StudyStatistics />,
       },
       {
+        path: ROUTES.STUDY_MID,
+        element: <StudyMidView />,
+      },
+      {
         path: ROUTES.VIP_CENTER,
         element: <VipCenter />,
       },
@@ -72,6 +78,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <StudyView />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.SPELL_VIEW,
+    element: (
+      <ProtectedRoute>
+        <SpellView />
       </ProtectedRoute>
     ),
   },

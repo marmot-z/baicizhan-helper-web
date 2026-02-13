@@ -142,14 +142,15 @@ const StudyView: React.FC = () => {
     };
   }, [isCompleted]);
 
-  // 监听学习完成状态，完成时跳转到统计页面
+  // 监听学习完成状态，完成时跳转到中间页面
   // 退出前进行提示
   useEffect(() => {
     if (isCompleted) {
       toast.success('学习完成，学习记录已上传！');
-      navigate(ROUTES.STUDY_STATISTICS);
+      const words = study?.getAllWords() || [];
+      navigate(ROUTES.STUDY_MID, { state: { words } });
     }
-  }, [isCompleted, navigate]);
+  }, [isCompleted, navigate, study]);
 
   // 添加键盘事件监听
   useEffect(() => {

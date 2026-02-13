@@ -90,6 +90,10 @@ export class ProcessIterator {
     return (total - remain - 1) / total;
   }
 
+  public getAllWords(): StudyUIModel[] {
+    return this.allWords;
+  }
+
   public getWordBriefInfos(): SearchWordResultV2[] {
     const result: SearchWordResultV2[] = [];
     

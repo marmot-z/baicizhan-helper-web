@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背单词练习页 - 更新版</title>
+    <style>
+        /* 全局背景：采用原图深邃的调色 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d1117; 
+            font-family: -apple-system, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #ffffff;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 550px;
+            gap: 12px; /* 调整间距使提示文字更靠近图片 */
+        }
+
+        /* 0. 顶部提示文字样式 */
+        .top-hint {
+            font-size: 13px;
+            color: #8b949e; /* 柔和的灰色 */
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        /* 1. 图片卡片 */
+        .image-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #161b22;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+        }
+
+        /* 2. 输入框 */
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 18px;
+            margin-top: 8px; /* 与图片的额外间距 */
+            font-size: 22px;
+            background-color: #1c2128;
+            border: 2px solid #30363d;
+            border-radius: 14px;
+            color: #58a6ff;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #1f6feb;
+            background-color: #21262d;
+            box-shadow: 0 0 15px rgba(31, 111, 235, 0.15);
+        }
+
+        /* 3. 中文句子提示块 */
+        .chinese-hint {
+            width: 100%;
+            padding: 22px;
+            background-color: rgba(22, 27, 34, 0.6);
+            border-radius: 14px;
+            text-align: center;
+            font-size: 17px;
+            color: #c9d1d9;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            line-height: 1.5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-hint">
+            需拼写 5 词
+        </div>
+
+        <div class="image-container">
+            <img src="https://images.unsplash.com/photo-1454165833767-027ffea9e78b?q=80&w=1000&auto=format&fit=crop" alt="Learning Theme">
+        </div>
+
+        <input type="text" class="input-field" placeholder="Type the English word..." autofocus>
+
+        <div class="chinese-hint">
+            v. 开始，着手；上船，登机
+        </div>
+    </div>
+
+</body>
+</html>

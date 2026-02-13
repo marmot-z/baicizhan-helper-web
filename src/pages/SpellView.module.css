@@ -1,0 +1,214 @@
+.containerPage {
+    margin: 0;
+    padding: 0;
+    background-color: #f8fafc; 
+    font-family: -apple-system, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #1e293b;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* 主容器 */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 550px;
+    gap: 12px;
+}
+
+/* 0. 顶部提示文字样式 */
+.topHint {
+    font-size: 16px;
+    color: #64748b; 
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    font-weight: 300;
+}
+
+/* 1. 图片卡片 */
+.imageContainer {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #ffffff;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.mediaElement {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.95;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* 2. 输入框 */
+.inputField {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 18px;
+    margin-top: 8px;
+    font-size: 22px;
+    background-color: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    color: #2563eb;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.inputField.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+}
+
+.inputField:focus {
+    border-color: #3b82f6;
+    background-color: #ffffff;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+.inputField.error:focus {
+    border-color: #ef4444;
+}
+
+.chineseHint {
+    width: 100%;
+    padding: 22px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 14px;
+    text-align: center;
+    font-size: 17px;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    line-height: 1.5;
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.chineseHint.error {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+/* 暗黑模式适配 */
+:global(.dark) .containerPage {
+    background-color: #0d1117; 
+    color: #ffffff;
+}
+
+:global(.dark) .topHint {
+    color: #8b949e;
+}
+
+:global(.dark) .imageContainer {
+    background-color: #161b22;
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+:global(.dark) .imageContainer img {
+    opacity: 0.85;
+}
+
+:global(.dark) .inputField {
+    background-color: #1c2128;
+    border-color: #30363d;
+    color: #58a6ff;
+}
+
+:global(.dark) .inputField:focus {
+    border-color: #1f6feb;
+    background-color: #21262d;
+    box-shadow: 0 0 15px rgba(31, 111, 235, 0.15);
+}
+
+:global(.dark) .chineseHint {
+    background-color: rgba(22, 27, 34, 0.6);
+    color: #c9d1d9;
+    border-color: rgba(255, 255, 255, 0.03);
+}
+
+.actionRow {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.audioBtn {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 20px;
+}
+
+.audioBtn:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+    border-color: #cbd5e1;
+}
+
+.submitBtn {
+    flex: 1;
+    height: 56px;
+    border-radius: 14px;
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+:global(.dark) .audioBtn {
+    background-color: #1c2128;
+    border-color: #30363d;
+    color: #8b949e;
+}
+
+:global(.dark) .audioBtn:hover {
+    background-color: #21262d;
+    color: #58a6ff;
+    border-color: #444c56;
+}
+
+:global(.dark) .submitBtn {
+    background-color: #1f6feb;
+}
+
+:global(.dark) .submitBtn:hover {
+    background-color: #388bfd;
+}

@@ -1,0 +1,180 @@
+.container {
+  margin: 0;
+  padding: 0;
+  height: calc(100vh - 64px); /* 减去 Header 约 64px 的高度 */
+  width: 100%; /* 使用 100% 替代 100vw 避免水平滚动条 */
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: #f8f9fa; /* 与 Dashboard 背景一致 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.container::before {
+  content: "✨";
+  position: absolute;
+  font-size: 100px;
+  opacity: 0.1;
+  top: 10%;
+  left: 10%;
+  transform: rotate(-20deg);
+  color: #007bff; /* 调整为品牌蓝色的装饰 */
+}
+
+.celebrationCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+  z-index: 10;
+}
+
+.illustration {
+  width: 280px;
+  height: 280px;
+  position: relative;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.1));
+  animation: bounce 2s infinite ease-in-out;
+}
+
+.titleEn {
+  font-size: 64px;
+  font-weight: 900;
+  font-style: italic;
+  color: #007bff; /* 使用品牌蓝色 */
+  margin: 0;
+  letter-spacing: 2px;
+  text-shadow: 2px 4px 0px rgba(0, 0, 0, 0.05);
+}
+
+.titleCn {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333333; /* 与全站文字颜色一致 */
+  margin: 20px 0 10px 0;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #666666; /* 次要文字颜色 */
+  margin-bottom: 80px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 320px;
+}
+
+.btnMain {
+  background-color: #007bff; /* 使用品牌蓝色 */
+  color: #ffffff;
+  border: none;
+  padding: 16px 0;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btnMain:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.2);
+  background-color: #0069d9;
+}
+
+.btnLink {
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btnLink:hover {
+  color: #333333;
+  text-decoration: underline;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Dark Mode Support */
+:global(.dark) .container {
+  background: #0f172a; /* 对齐项目标准深蓝灰 */
+  color: #ffffff;
+}
+
+:global(.dark) .container::before {
+  opacity: 0.05;
+}
+
+:global(.dark) .glowOverlay {
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0) 70%);
+  pointer-events: none;
+}
+
+/* SVG colors in dark mode - 调整为蓝色系适配 */
+:global(.dark) .illustration svg circle[fill="#FFD700"] {
+  fill: #3b82f6;
+  opacity: 0.2;
+}
+:global(.dark) .illustration svg path[fill="#FFA500"] {
+  fill: #60a5fa; /* 亮蓝色 */
+}
+:global(.dark) .illustration svg rect[fill="#FFD700"] {
+  fill: #3b82f6;
+}
+
+:global(.dark) .titleEn {
+  color: #3b82f6; /* 对齐品牌蓝 */
+}
+
+:global(.dark) .titleCn {
+  color: #e5e7eb; /* Slate 200 */
+}
+
+:global(.dark) .subtitle {
+  color: #9ca3af; /* Slate 400 */
+}
+
+:global(.dark) .btnMain {
+  background-color: #3b82f6; /* 对齐品牌蓝 */
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+:global(.dark) .btnMain:hover {
+  background-color: #2563eb;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+:global(.dark) .btnLink {
+  color: #9ca3af;
+}
+
+:global(.dark) .btnLink:hover {
+  color: #ffffff;
+}

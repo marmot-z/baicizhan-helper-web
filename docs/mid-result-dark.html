@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习达成 - 极简暗黑版</title>
+    <style>
+        /* 全局背景：炭黑色 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, "Noto Sans SC", "PingFang SC", sans-serif;
+            background-color: #121212; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* 柔和的中心背景光晕 */
+        .glow-overlay {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(255, 191, 0, 0.05) 0%, rgba(18, 18, 18, 0) 70%);
+            pointer-events: none;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            z-index: 10;
+        }
+
+        /* 1. 顶部图标：琥珀色调线框风格 */
+        .icon-box {
+            width: 140px;
+            height: 180px;
+            border: 2px solid #d4a017;
+            border-radius: 16px;
+            position: relative;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(212, 160, 23, 0.1);
+            background: rgba(212, 160, 23, 0.02);
+            animation: float 4s infinite ease-in-out;
+        }
+
+        /* 图标内部的星星 */
+        .icon-box::after {
+            content: "★";
+            font-size: 60px;
+            color: #d4a017;
+            text-shadow: 0 0 15px rgba(212, 160, 23, 0.5);
+        }
+
+        /* 2. 文案部分 */
+        .well-done {
+            font-size: 56px;
+            font-weight: 800;
+            font-style: italic;
+            color: #ffbf00; /* 纯正琥珀金 */
+            margin: 0;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .main-title {
+            font-size: 32px;
+            font-weight: 500;
+            margin: 20px 0 10px 0;
+            color: #e0e0e0;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #888888;
+            margin-bottom: 60px;
+            letter-spacing: 1px;
+        }
+
+        /* 3. 按钮组 */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 280px;
+        }
+
+        /* 主按钮：亮色对比 */
+        .btn-primary {
+            background-color: #ffbf00;
+            color: #121212;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(255, 191, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: #ffd54f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 191, 0, 0.3);
+        }
+
+        /* 次级按钮：深色半透明 */
+        .btn-secondary {
+            background-color: #2a2a2a;
+            color: #aaaaaa;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #333333;
+            color: #ffffff;
+        }
+
+        /* 浮动动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glow-overlay"></div>
+
+    <div class="container">
+        <div class="icon-box">
+            </div>
+
+        <h1 class="well-done">Well Done!</h1>
+        <div class="main-title">今日学习计划完成</div>
+        <div class="subtitle">爱「拼」才会赢，单词记更清</div>
+
+        <div class="button-group">
+            <button class="btn-primary">继续拼写</button>
+            <button class="btn-secondary">跳过</button>
+        </div>
+    </div>
+
+</body>
+</html>

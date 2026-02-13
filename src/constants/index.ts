@@ -13,6 +13,8 @@ export const ROUTES = {
   VIP_CENTER: '/page/vip-center',
   PAYMENT_PAGE: '/page/payment',
   STUDY_STATISTICS: '/page/study-statistics',
+  STUDY_MID: '/page/study-mid',
+  SPELL_VIEW: '/page/spell-view',
 } as const;
 
 // API端点常量

@@ -78,6 +78,20 @@ export class Study {
     }
   }
 
+  private reportWikiShow(): void {
+    if (!this.currentWordCard) return;
+    studyService.reportEvent(
+      'topic_wiki_show',
+      JSON.stringify({
+        topic_id: this.currentWordCard.getId(),
+        book_id: this.words[0]?.word_level_id || 0,
+        channel: 'study_mainstream',
+        plan_type: this.context.planType
+      }),
+      'study-detail-common'
+    ).catch(console.error);
+  }
+
   private async process(): Promise<void> {
     if (this.currentWordCard) {
       this.useTimeMap.set(this.currentWordCard.getId(), Date.now() - this.wordStudyTime);
@@ -128,6 +142,10 @@ export class Study {
     return this.words;
   }
 
+  public getAllWords(): StudyUIModel[] {
+    return this.processIterator.getAllWords();
+  }
+
   public getFailMap(): Map<number, number> {
     return this.failMap;
   }
@@ -174,6 +192,7 @@ export class Study {
       // 反面，显示反面
       else {
         this.currentWordCard?.pass();
+        this.reportWikiShow();
         this.notify();
       }
     }
@@ -201,6 +220,9 @@ export class Study {
     this.failMap.set(this.currentWordCard?.getId(), failedTimes + 1);
     this.processIterator.putback(this.currentWordCard.uiModel);
     const result = this.currentWordCard?.fail(optionId);
+    if (result) {
+      this.reportWikiShow();
+    }
     this.notify();
     return result;
   }

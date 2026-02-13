@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完成学习计划</title>
+    <style>
+        /* 核心背景：使用明亮的蓝色渐变，并模拟彩带纸屑效果 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #1e90ff 0%, #0070f3 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* 防止背景装饰导致滚动 */
+        }
+
+        /* 装饰性背景元素（模拟原图中的彩屑） */
+        body::before {
+            content: "✨";
+            position: absolute;
+            font-size: 100px;
+            opacity: 0.1;
+            top: 10%;
+            left: 10%;
+            transform: rotate(-20deg);
+        }
+
+        /* 主容器 */
+        .celebration-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            z-index: 10;
+        }
+
+        /* 1. 插画部分（奖杯与剪贴板） */
+        .illustration {
+            width: 280px;
+            height: 280px;
+            position: relative;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.2));
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        /* 2. 主标题：Well Done! */
+        .title-en {
+            font-size: 64px;
+            font-weight: 900;
+            font-style: italic;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: 2px;
+            text-shadow: 2px 4px 0px rgba(0,0,0,0.1);
+        }
+
+        /* 3. 中文说明 */
+        .title-cn {
+            font-size: 32px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 20px 0 10px 0;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 80px;
+        }
+
+        /* 4. 按钮组 */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 320px;
+        }
+
+        .btn-main {
+            background-color: #ffffff;
+            color: #0070f3;
+            border: none;
+            padding: 16px 0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-link:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        /* 奖杯浮动动画 */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="celebration-card">
+        <div class="illustration">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="40" width="100" height="110" rx="10" fill="#f8f9fa"/>
+                <path d="M60 60h80v70H60z" fill="#e9ecef"/>
+                <circle cx="100" cy="90" r="50" fill="#FFD700"/>
+                <path d="M100 50 L115 85 L150 85 L122 105 L132 140 L100 120 L68 140 L78 105 L50 85 L85 85 Z" fill="#FFA500"/>
+                <rect x="70" y="140" width="60" height="10" fill="#FFD700"/>
+            </svg>
+        </div>
+
+        <h1 class="title-en">Well Done!</h1>
+        
+        <div class="title-cn">今日学习计划完成</div>
+        <div class="subtitle">爱「拼」才会赢，单词记更清</div>
+
+        <div class="button-group">
+            <button class="btn-main">继续拼写</button>
+            <button class="btn-link">跳过</button>
+        </div>
+    </div>
+
+</body>
+</html>

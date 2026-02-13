@@ -10,3 +10,5 @@ export { default as VipCenter } from './VipCenter';
 export { default as WordBook } from './WordBook';
 export { default as WordDetail } from './WordDetail';
 export { default as StudyStatistics } from './studyStatistics';
+export { default as StudyMidView } from './StudyMidView';
+export { default as SpellView } from './SpellView';
