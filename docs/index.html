@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百词斩助手 - 网页划词翻译与Anki制卡神器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9', // 主品牌蓝
+                            600: '#0284c7',
+                            teal: '#14b8a6', // 辅助青色
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    animation: {
+                        'breathing-glow': 'breathe 3s ease-in-out infinite',
+                        'shine': 'shine 1.5s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        breathe: {
+                            '0%, 100%': { boxShadow: '0 0 20px rgba(14, 165, 233, 0.2)' },
+                            '50%': { boxShadow: '0 0 50px rgba(14, 165, 233, 0.6)' },
+                        },
+                        shine: {
+                            '0%': { left: '-100%' },
+                            '100%': { left: '100%' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* 滚动动画初始状态 */
+        .reveal-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal-section.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 浏览器样机外壳 */
+        .browser-mockup {
+            border-top: 24px solid #f1f5f9;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .browser-mockup::before {
+            content: '';
+            position: absolute;
+            top: -16px;
+            left: 16px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ef4444; /* 红点 */
+            box-shadow: 20px 0 0 #f59e0b, 40px 0 0 #22c55e; /* 黄点和绿点 */
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-700 antialiased">
+
+    <nav id="navbar" class="fixed w-full top-0 z-50 h-16 flex items-center transition-all duration-300 border-b border-transparent">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <span class="text-xl font-bold text-slate-800 tracking-tight">百词斩助手</span>
+            </a>
+
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
+                <a href="#features" class="hover:text-brand-600 transition">核心功能</a>
+                <a href="#details" class="hover:text-brand-600 transition">使用教程</a>
+                <a href="#download" class="hover:text-brand-600 transition">下载插件</a>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button id="loginBtn" class="px-5 py-2 text-sm font-medium text-brand-600 border border-brand-200 rounded-full hover:bg-brand-50 transition">
+                    登录
+                </button>
+                
+                <div id="userProfile" class="hidden relative group cursor-pointer">
+                    <img src="https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="用户头像">
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa-regular fa-calendar mr-2"></i>我的日历</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-crown mr-2 text-yellow-500"></i>会员中心</a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-500 hover:bg-gray-50">退出登录</a>
+                    </div>
+                </div>
+            </div>
+
+            <button class="md:hidden text-slate-600 focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+    </nav>
+
+    <header id="download" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-white">
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-12">
+                
+                <div class="lg:w-1/2 text-center lg:text-left">
+                    <div class="inline-block px-3 py-1 mb-6 text-xs font-semibold tracking-wider text-brand-600 uppercase bg-blue-100 rounded-full">
+                        New v3.0 版本发布
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-extrabold leading-tight mb-6">
+                        网页阅读不再卡顿，<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-teal">百词斩助手</span> 助您沉浸学英语
+                    </h1>
+                    <p class="text-lg text-slate-500 mb-10 max-w-xl mx-auto lg:mx-0">
+                        划词即译、一键制卡、云端同步。让您的每一次网页浏览，都成为积累词汇的绝佳机会。
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <a href="#" class="group relative flex items-center justify-center gap-3 px-8 py-4 bg-brand-600 text-white rounded-xl shadow-lg hover:bg-brand-500 hover:-translate-y-1 transition-all duration-300">
+                            <i class="fa-brands fa-chrome text-2xl"></i>
+                            <div class="text-left">
+                                <div class="text-xs opacity-90">Chrome 商店下载</div>
+                                <div class="font-bold text-lg">立即添加</div>
+                            </div>
+                            <div class="absolute -top-3 -right-3 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                10w+用户
+                            </div>
+                        </a>
+                        <a href="#" class="group flex items-center justify-center gap-3 px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-brand-300 hover:text-brand-600 transition-all duration-300">
+                            <i class="fa-brands fa-edge text-2xl"></i>
+                            <div class="text-left">
+                                <div class="text-xs opacity-70">Edge 商店下载</div>
+                                <div class="font-bold text-lg">获取插件</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="mt-6 text-sm text-slate-400 flex items-center justify-center lg:justify-start gap-4">
+                        <span><i class="fa-solid fa-check text-green-500 mr-1"></i> 永久免费</span>
+                        <span><i class="fa-solid fa-shield-halved text-green-500 mr-1"></i> 安全无毒</span>
+                        <span><i class="fa-solid fa-bolt text-green-500 mr-1"></i> 极速响应</span>
+                    </div>
+                </div>
+
+                <div class="lg:w-1/2 w-full relative">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-blue-400/30 rounded-full blur-[60px] animate-pulse"></div>
+                    
+                    <div class="browser-mockup bg-white animate-breathing-glow transform transition hover:scale-[1.02] duration-500">
+                        <img src="https://placehold.co/800x500/f8fafc/cbd5e1?text=Product+Demo+GIF+(800x500)" alt="插件功能演示" class="w-full h-auto rounded-b-lg object-cover">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">为什么选择百词斩助手？</h2>
+                <p class="text-slate-500">不仅是翻译工具，更是您的个性化英语学习私教</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="group p-8 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">毫秒级响应</h3>
+                    <p class="text-slate-500 leading-relaxed">优化的查询引擎，鼠标划过即刻显示释义，不打断您的阅读心流。</p>
+                </div>
+
+                <div class="group p-8 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-14 h-14 bg-teal-50 rounded-xl flex items-center justify-center text-brand-teal text-2xl mb-6 group-hover:bg-brand-teal group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">多端云同步</h3>
+                    <p class="text-slate-500 leading-relaxed">网页收藏的单词自动同步至百词斩 APP，利用碎片时间高效复习。</p>
+                </div>
+
+                <div class="group p-8 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-14 h-14 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 text-2xl mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">Anki 深度集成</h3>
+                    <p class="text-slate-500 leading-relaxed">支持一键导出单词、例句和发音到 Anki，打造您的专属记忆卡片。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="details" class="py-20 overflow-hidden bg-slate-50">
+        <div class="container mx-auto px-6 space-y-24">
+            
+            <div class="reveal-section flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                <div class="lg:w-1/2 relative group">
+                    <div class="absolute inset-0 bg-brand-200 rounded-2xl rotate-3 group-hover:rotate-1 transition-transform opacity-30"></div>
+                    <div class="browser-mockup bg-white relative z-10">
+                         <img src="https://placehold.co/600x400/e2e8f0/64748b?text=Context+Translation+Screenshot" alt="划词翻译界面" class="w-full rounded-b-lg shadow-lg">
+                    </div>
+                </div>
+                <div class="lg:w-1/2">
+                    <h3 class="text-3xl font-bold text-slate-800 mb-6">划词即译，<span class="text-brand-600">阅读无障碍</span></h3>
+                    <p class="text-lg text-slate-600 mb-6 leading-relaxed">
+                        无需复制粘贴，只需轻轻滑动鼠标，详细的单词释义、发音、例句即刻呈现。支持英英释义，帮助您建立英语思维。
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-sm text-slate-600">🇺🇸 美式/🇬🇧 英式发音</span>
+                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-sm text-slate-600">🖼️ 图文例句</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal-section flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
+                <div class="lg:w-1/2 relative group">
+                    <div class="absolute inset-0 bg-purple-200 rounded-2xl -rotate-3 group-hover:-rotate-1 transition-transform opacity-30"></div>
+                    <div class="browser-mockup bg-white relative z-10">
+                        <img src="https://placehold.co/600x400/e2e8f0/64748b?text=Anki+Export+Feature" alt="Anki导出界面" class="w-full rounded-b-lg shadow-lg">
+                    </div>
+                </div>
+                <div class="lg:w-1/2">
+                    <h3 class="text-3xl font-bold text-slate-800 mb-6">一键制卡，<span class="text-purple-600">数据自由</span></h3>
+                    <p class="text-lg text-slate-600 mb-6 leading-relaxed">
+                        学习不止于浏览。将遇到的生词一键导出为 Anki 卡片格式（.apkg），包含上下文例句，让记忆更有场景感。
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-sm text-slate-600">💾 支持 .apkg 格式</span>
+                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-sm text-slate-600">📝 自定义模板</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="py-24 bg-brand-600 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+            <i class="fa-solid fa-quote-left absolute top-10 left-10 text-9xl text-white"></i>
+            <i class="fa-solid fa-quote-right absolute bottom-10 right-10 text-9xl text-white"></i>
+        </div>
+
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <h2 class="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">准备好开启高效背词之旅了吗？</h2>
+            <p class="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">加入数万名英语学习者的行列，让每一次网页浏览都变得有意义。</p>
+            
+            <button class="relative overflow-hidden group bg-white text-brand-600 font-bold text-xl py-4 px-10 rounded-full shadow-2xl hover:bg-slate-50 transition-transform active:scale-95">
+                <span class="relative z-10">立即免费开始</span>
+                <div class="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] animate-shine"></div>
+            </button>
+            <p class="mt-4 text-sm text-blue-200 opacity-80">适用于 Chrome, Edge, Firefox 等主流浏览器</p>
+        </div>
+    </section>
+
+    <footer class="bg-slate-900 text-slate-400 py-16">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-slate-800 pb-12 mb-12">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="text-white text-2xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-brand-500"></i> 百词斩助手
+                    </div>
+                    <p class="text-sm leading-relaxed mb-6">
+                        致力于为英语学习者提供最便捷的网页阅读与单词记忆工具。
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-brand-500 hover:text-white transition"><i class="fa-brands fa-weixin"></i></a>
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-brand-500 hover:text-white transition"><i class="fa-brands fa-weibo"></i></a>
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-brand-500 hover:text-white transition"><i class="fa-brands fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6">产品</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="#" class="hover:text-white transition">功能介绍</a></li>
+                        <li><a href="#" class="hover:text-white transition">更新日志</a></li>
+                        <li><a href="#" class="hover:text-white transition">Chrome 插件</a></li>
+                        <li><a href="#" class="hover:text-white transition">Edge 插件</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6">支持</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="#" class="hover:text-white transition">使用帮助 / FAQ</a></li>
+                        <li><a href="#" class="hover:text-white transition">Anki 配置指南</a></li>
+                        <li><a href="#" class="hover:text-white transition">反馈建议</a></li>
+                        <li><a href="#" class="hover:text-white transition">隐私政策</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6">联系我们</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><i class="fa-regular fa-envelope mr-2"></i> support@baicizhan-helper.cn</li>
+                        <li><i class="fa-solid fa-location-dot mr-2"></i> 中国 · 成都</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center text-xs">
+                <p>&copy; 2023-2024 百词斩助手. All rights reserved.</p>
+                <p class="mt-2 md:mt-0">蜀ICP备XXXXXXXX号-1</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 1. Sticky Header Logic
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                navbar.classList.add('bg-white/90', 'backdrop-blur-md', 'shadow-sm', 'border-gray-100');
+                navbar.classList.remove('border-transparent');
+            } else {
+                navbar.classList.remove('bg-white/90', 'backdrop-blur-md', 'shadow-sm', 'border-gray-100');
+                navbar.classList.add('border-transparent');
+            }
+        });
+
+        // 2. Scroll Animations (Intersection Observer)
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // 只触发一次
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // 3. Login Toggle Demo (仅用于演示)
+        const loginBtn = document.getElementById('loginBtn');
+        const userProfile = document.getElementById('userProfile');
+
+        loginBtn.addEventListener('click', () => {
+            loginBtn.classList.add('hidden');
+            userProfile.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

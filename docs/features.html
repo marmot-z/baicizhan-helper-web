@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>百词斩助手 Web - 功能文档</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.2em;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    header p {
+      opacity: 0.9;
+      font-size: 1.1em;
+    }
+
+    main {
+      padding: 40px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.5em;
+      color: #667eea;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #667eea;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-item {
+      background: #f8f9ff;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+
+    .feature-item h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+
+    .feature-item p {
+      color: #666;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .feature-card {
+      background: #fafafa;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #e0e0e0;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+    }
+
+    .feature-card h3 {
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+
+    .feature-card p {
+      color: #666;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin-bottom: 8px;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .tech-item {
+      background: #f0f0f0;
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    footer {
+      background: #f8f9ff;
+      padding: 20px 40px;
+      text-align: center;
+      color: #666;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>百词斩助手 Web</h1>
+      <p>功能使用说明文档</p>
+    </header>
+
+    <main>
+      <section class="section">
+        <h2 class="section-title">核心功能</h2>
+        <div class="feature-list">
+          <div class="feature-card">
+            <span class="badge">功能一</span>
+            <h3>选词翻译</h3>
+            <p>在浏览网页时，只需选中任意单词，即可立即弹出该单词的详细释义窗口。无需跳转页面，一键查词，让英语阅读更加顺畅。</p>
+          </div>
+          <div class="feature-card">
+            <span class="badge">功能二</span>
+            <h3>单词搜索</h3>
+            <p>内置强大的搜词功能，输入单词即可快速查询单词的完整释义、音标、例句等信息。支持模糊搜索，帮助您快速找到想了解的单词。</p>
+          </div>
+          <div class="feature-card">
+            <span class="badge">功能三</span>
+            <h3>收藏同步</h3>
+            <p>遇到生词一键收藏，数据自动同步到百词斩APP，实现Web端与移动端的无缝衔接，随时随地复习你收藏的单词。</p>
+          </div>
+          <div class="feature-card">
+            <span class="badge">功能四</span>
+            <h3>Anki 导出</h3>
+            <p>支持将收藏的单词批量导出为Anki卡片格式，深度整合Anki复习系统，使用您熟悉的工具进行个性化学习。</p>
+          </div>
+          <div class="feature-card">
+            <span class="badge">功能五</span>
+            <h3>在线学习</h3>
+            <p>直接在浏览器中进行单词学习和复习，采用卡片式学习模式，支持键盘快捷键操作，搭配自动音频播放，打造沉浸式学习体验。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">技术栈</h2>
+        <div class="tech-stack">
+          <span class="tech-item">React</span>
+          <span class="tech-item">TypeScript</span>
+          <span class="tech-item">Tailwind CSS</span>
+          <span class="tech-item">Zustand</span>
+          <span class="tech-item">React Router</span>
+          <span class="tech-item">Vite</span>
+          <span class="tech-item">Axios</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      百词斩助手 Web - 功能文档
+    </footer>
+  </div>
+</body>
+</html>
