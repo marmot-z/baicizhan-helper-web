@@ -1,3 +1,21 @@
+/* 导出为独立白底文档，强制深色文字/边框，不受页面暗黑主题 .dark * 影响 */
+#pdf-root {
+  color: #1a1a1a !important;
+  background-color: #fff !important;
+}
+
+#pdf-root * {
+  color: #1a1a1a !important;
+}
+
+#pdf-root .pdf-page {
+  background-color: white !important;
+}
+
+#pdf-root .pdf-col-meaning {
+  color: #555 !important;
+}
+
 .pdf-page {
   width: 210mm;
   height: 297mm;
@@ -37,7 +55,7 @@
 
 /* 固定高度，与首页/后续页无关，保证每页左右表行与虚线一致对齐 */
 .pdf-main-container {
-  border: 2px solid #333;
+  border: 2px solid #333 !important;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -53,12 +71,12 @@
 }
 
 .pdf-left-table {
-  border-right: 2px solid #333;
+  border-right: 2px solid #333 !important;
 }
 
 .pdf-table th,
 .pdf-table td {
-  border-bottom: 1px dashed #ccc;
+  border-bottom: 1px dashed #ccc !important;
   padding: 0 10px;
   vertical-align: middle;
   box-sizing: border-box;
@@ -78,8 +96,8 @@
 }
 
 .pdf-table th {
-  background-color: #fff;
-  border-bottom: 2px solid #333;
+  background-color: #fff !important;
+  border-bottom: 2px solid #333 !important;
   font-size: 16px;
   text-align: left;
   height: 50px;
@@ -88,13 +106,13 @@
 .pdf-col-no {
   width: 45px;
   text-align: center;
-  border-right: 1px dashed #ccc;
+  border-right: 1px dashed #ccc !important;
 }
 
 .pdf-col-word {
   width: 110px;
   font-weight: bold;
-  border-right: 1px dashed #ccc;
+  border-right: 1px dashed #ccc !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,8 +120,8 @@
 
 .pdf-col-meaning {
   font-size: 12px;
-  color: #555;
-  border-right: 1px dashed #ccc;
+  color: #555 !important;
+  border-right: 1px dashed #ccc !important;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -128,8 +146,8 @@
 .pdf-check-box {
   width: 20px;
   height: 20px;
-  border: 1px solid #ccc;
-  background-color: #f2f2f2;
+  border: 1px solid #ccc !important;
+  background-color: #f2f2f2 !important;
   margin: 0 auto;
 }
 

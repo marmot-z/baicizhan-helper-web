@@ -123,25 +123,16 @@ export async function exportWordBookToPdf(
     return;
   }
   const html = buildPdfHtml(bookTitle, words, pdfStyles);
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '0';
-  container.style.top = '0';
-  container.style.width = '210mm';
-  container.style.minHeight = '297mm';
-  container.style.background = 'white';
-  container.style.zIndex = '-1';
-  container.style.pointerEvents = 'none';
-  container.style.overflow = 'hidden';
-  container.innerHTML = html;
-  document.body.appendChild(container);
-  const pdfRoot = (container.querySelector('#pdf-root') ?? container.firstElementChild) as HTMLElement | null;
-  if (pdfRoot && pdfRoot !== container) {
-    document.body.appendChild(pdfRoot);
-  }
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('style', 'position:fixed;left:-9999px;width:210mm;height:297mm;border:0;visibility:hidden');
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument!;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head></head><body>${html}</body></html>`);
+  doc.close();
 
   try {
-    const pageElements = Array.from((pdfRoot ?? container).querySelectorAll('.pdf-page')) as HTMLElement[];
+    const pageElements = Array.from(doc.body.querySelectorAll('.pdf-page')) as HTMLElement[];
     if (pageElements.length === 0) return;
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
@@ -156,7 +147,6 @@ export async function exportWordBookToPdf(
     }
     pdf.save(`${bookTitle}-单词表.pdf`);
   } finally {
-    if (pdfRoot && pdfRoot.parentNode) pdfRoot.remove();
-    if (container.parentNode) container.remove();
+    if (iframe.parentNode) iframe.remove();
   }
 }
