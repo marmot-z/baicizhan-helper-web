@@ -6,6 +6,8 @@ import { AudioIcon } from '../components';
 import toast from 'react-hot-toast';
 import type { UserBookItem, UserBookWordDetail } from '../types';
 import ExtensionsDownloadModel from '../components/ExtensionsDownloadModel';
+import { exportWordBookToPdf } from '../utils/wordBookPdf';
+import pdfStyles from '../utils/wordBookPdf.css?raw';
 import styles from './WordBook.module.css';
 
 const WordBook: React.FC = () => {
@@ -19,7 +21,8 @@ const WordBook: React.FC = () => {
   const [selectedWords, setSelectedWords] = useState<Record<number, string>>({});
   const selectWordsRef = useRef(selectedWords);
   const [downloadModelShow, setDownloadModelShow] = useState(false);
-  
+  const [isPdfExporting, setIsPdfExporting] = useState(false);
+
   const { getWordBook, setWordBook, clearExpiredData } = useWordBookStore();
 
   const sortOptions = ['时间顺序', '时间逆序', '字母顺序', '字母逆序'];
@@ -155,6 +158,23 @@ const WordBook: React.FC = () => {
     setDownloadModelShow(false);
   }
 
+  async function handleExportPdf() {
+    if (sortedWords.length === 0) {
+      toast.error('暂无单词可导出');
+      return;
+    }
+    setIsPdfExporting(true);
+    try {
+      await exportWordBookToPdf(bookTitle, sortedWords, pdfStyles);
+      toast.success('导出成功');
+    } catch (e) {
+      console.error('导出 PDF 失败', e);
+      toast.error('导出失败，请重试');
+    } finally {
+      setIsPdfExporting(false);
+    }
+  }
+
   return (
     <div>
       <div className={styles.container}>
@@ -175,6 +195,14 @@ const WordBook: React.FC = () => {
               <p className={styles.bookCount}>单词数：{wordCount}</p>
               <div className={styles.buttonGroup}>
                 <button disabled className={styles.disabledButton}>学习</button>
+                <button
+                  type="button"
+                  className={styles.exportPdfButton}
+                  disabled={isPdfExporting || sortedWords.length === 0}
+                  onClick={handleExportPdf}
+                >
+                  {isPdfExporting ? '生成中…' : '导出 PDF'}
+                </button>
               </div>
             </div>
           </header>

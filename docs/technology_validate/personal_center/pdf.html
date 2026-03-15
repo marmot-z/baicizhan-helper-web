@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Classic Vocabulary List - Optimized</title>
+    <style>
+        /* 页面基础设置 */
+        body {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 40px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* A4 纸张容器 */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background-color: white;
+            padding: 40px 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 1. & 4. 顶部标题区域调整 */
+        header {
+            margin-bottom: 30px; /* 增加与表格的间距 */
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-style: italic;
+            margin: 0 0 15px 0; /* 增加标题下边距 */
+            font-weight: 800;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* 1. 外部边框粗细及圆角 */
+        .main-container {
+            border: 2px solid #333; /* 加粗外边框 */
+            border-radius: 12px;    /* 四个角圆角 */
+            overflow: hidden;       /* 确保内容不溢出圆角 */
+            display: flex;
+        }
+
+        /* 表格通用样式 */
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 固定布局有助于对齐 */
+        }
+
+        /* 左右两列中间的分割线 */
+        .left-table {
+            border-right: 2px solid #333;
+        }
+
+        /* 2. 内部线条改为虚线 */
+        th, td {
+            border-bottom: 1px dashed #ccc; /* 内部横向虚线 */
+            padding: 0 10px;
+            height: 45px; /* 3. 固定高度确保左右对齐 */
+            vertical-align: middle;
+            box-sizing: border-box;
+        }
+
+        /* 表头特殊处理 */
+        th {
+            background-color: #fff;
+            border-bottom: 2px solid #333; /* 表头下方的实线 */
+            font-size: 16px;
+            text-align: left;
+            height: 50px;
+        }
+
+        /* 列宽控制 */
+        .col-no { width: 45px; text-align: center; border-right: 1px dashed #ccc; }
+        .col-word { width: 110px; font-weight: bold; border-right: 1px dashed #ccc; word-wrap: break-word; }
+        .col-meaning { font-size: 12px; color: #555; border-right: 1px dashed #ccc; overflow: hidden; text-overflow: ellipsis; }
+        .col-check { width: 35px; border-right: none; }
+
+        /* 复选框 */
+        .check-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            background-color: #f2f2f2;
+            margin: 0 auto;
+        }
+
+        /* 页脚 */
+        .brand {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .footer {
+            text-align: right;
+            margin-top: -20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <header>
+        <h1>Classic Vocabulary List</h1>
+        <div class="meta-info">
+            <span>Title: 收藏的单词</span>
+            <span>Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <table class="left-table">
+            <thead>
+                <tr>
+                    <th class="col-no">No.</th>
+                    <th class="col-word">Word</th>
+                    <th class="col-meaning">Meaning</th>
+                    <th class="col-check"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-no">1</td>
+                    <td class="col-word">intimate</td>
+                    <td class="col-meaning">adj. 亲密的，密切的；详细的；亲密的...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">2</td>
+                    <td class="col-word">captain</td>
+                    <td class="col-meaning">n. 船长，机长；上校，上尉，长官；队长...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">3</td>
+                    <td class="col-word">former</td>
+                    <td class="col-meaning">adj. 前任的；前者的；以前的；前；过去...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">4</td>
+                    <td class="col-word">inclusion</td>
+                    <td class="col-meaning">n. 包含；内含物；包容性（普惠）；包含物</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">5</td>
+                    <td class="col-word">cope</td>
+                    <td class="col-meaning">n. 长袍；斗篷状覆盖物；墙帽；vi. 处理...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-no">No.</th>
+                    <th class="col-word">Word</th>
+                    <th class="col-meaning">Meaning</th>
+                    <th class="col-check"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-no">22</td>
+                    <td class="col-word">halve</td>
+                    <td class="col-meaning">v. 二等分；平分；减半；【化】减半，二等分</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">23</td>
+                    <td class="col-word">pursuit</td>
+                    <td class="col-meaning">n. 追求，寻找；追赶，跟踪；事业；消遣...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">24</td>
+                    <td class="col-word">take...into</td>
+                    <td class="col-meaning">phr. 把...考虑在内</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">25</td>
+                    <td class="col-word">disperse</td>
+                    <td class="col-meaning">v. 使散开；分散，散开；(使) 散开；传播</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+                <tr>
+                    <td class="col-no">26</td>
+                    <td class="col-word">dimmed</td>
+                    <td class="col-meaning">v. 使昏暗 (dim 的过去式和过去分词)...</td>
+                    <td class="col-check"><div class="check-box"></div></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="brand">百词斩</div>
+    <div class="footer">- 1</div>
+</div>
+
+</body>
+</html>
