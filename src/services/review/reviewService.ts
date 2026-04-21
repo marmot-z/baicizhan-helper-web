@@ -36,7 +36,7 @@ export const reviewService = {
     const roadmapMap = new Map(roadmapWords.map((word) => [word.topic_id, word]));
     const targetCount = reviewPlanCount || 10;
     const sortedLearnedWords = [...learnedWords].sort(
-      (left, right) => right.update_days - left.update_days
+      (left, right) => left.done_times - right.done_times
     );
     const reviewWords = sortedLearnedWords
       .slice(0, targetCount)
