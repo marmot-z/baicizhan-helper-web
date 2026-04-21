@@ -1,13 +1,15 @@
 // import React from 'react'; // React 17+ 不需要显式导入
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { UserBindInfo } from '../types';
 import collectWordGif from '../assets/collect-word-min.gif';
-import iconImg from '../assets/icon.png';
 import searchImg from '../assets/search.png';
 import collectImg from '../assets/collect.png';
-import studyImg from '../assets/study.png';
 import ankiImg from '../assets/anki.png';
+import studyImg from '../assets/study.png';
+import iconImg from '../assets/icon.png';
 
 export default function Home() {
   const { user, isAuthenticated } = useAuthStore();
@@ -59,6 +61,30 @@ export default function Home() {
               listStyle: 'none',
               display: 'flex'
             }}>
+              <li style={{ marginLeft: '20px' }}>
+                <a
+                  href="https://github.com/marmot-z/baicizhan-helper-web"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="查看 GitHub 开源仓库"
+                  title="GitHub"
+                  style={{
+                    color: '#333',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.opacity = '0.75';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.opacity = '1';
+                  }}
+                >
+                  <FontAwesomeIcon icon={faGithub} style={{ fontSize: '20px' }} />
+                </a>
+              </li>
               <li style={{ marginLeft: '20px' }}>
                 <a href="https://gitee.com/mamotz/baicizhan-helper/wikis/%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C" style={{
                   textDecoration: 'none',
