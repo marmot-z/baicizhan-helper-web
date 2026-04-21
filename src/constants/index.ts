@@ -15,6 +15,7 @@ export const ROUTES = {
   STUDY_STATISTICS: '/page/study-statistics',
   STUDY_MID: '/page/study-mid',
   SPELL_VIEW: '/page/spell-view',
+  REVIEW_VIEW: '/page/review',
 } as const;
 
 // API端点常量
@@ -42,6 +43,8 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth-token',
   USER_PREFERENCES: 'user-preferences',
   THEME: 'theme',
+  /** 从复习完成页跳转统计页时写入，用于刷新后 state 丢失时的兜底提示 */
+  STUDY_STATS_REVIEW_NAV: 'study-statistics-review-nav',
 } as const;
 
 // 主题常量

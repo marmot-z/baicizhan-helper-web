@@ -9,10 +9,12 @@ interface StudyState {
   studyPlan: SelectBookPlanInfo | null;
   wordList: UserRoadMapElementV2[];
   lastStudyStatistics: StudyStatistcs | null;
+  lastReviewStatistics: StudyStatistcs | null;
   setCurrentBook: (book: UserBookBasicInfo) => void;
   setStudyPlan: (plan: SelectBookPlanInfo) => void;
   setWordList: (words: UserRoadMapElementV2[]) => void;
   setLastStudyStatistics: (statistics: StudyStatistcs) => void;
+  setLastReviewStatistics: (statistics: StudyStatistcs) => void;
   fetchStudyData: () => Promise<void>;
   clearStudyData: () => void;
 }
@@ -24,6 +26,7 @@ export const useStudyStore = create<StudyState>()(
       studyPlan: null,
       wordList: [],
       lastStudyStatistics: null,
+      lastReviewStatistics: null,
 
       setCurrentBook: (book: UserBookBasicInfo) => {
         set({ currentBook: book });
@@ -40,6 +43,11 @@ export const useStudyStore = create<StudyState>()(
       setLastStudyStatistics: (statistics: StudyStatistcs) => {
         statistics.updateTime = Date.now();
         set({ lastStudyStatistics: statistics });
+      },
+
+      setLastReviewStatistics: (statistics: StudyStatistcs) => {
+        statistics.updateTime = Date.now();
+        set({ lastReviewStatistics: statistics });
       },
 
       fetchStudyData: async () => {
@@ -82,7 +90,13 @@ export const useStudyStore = create<StudyState>()(
       },
 
       clearStudyData: () => {
-        set({ currentBook: null, studyPlan: null, wordList: [], lastStudyStatistics: null });
+        set({
+          currentBook: null,
+          studyPlan: null,
+          wordList: [],
+          lastStudyStatistics: null,
+          lastReviewStatistics: null,
+        });
       },
     }),
     {
@@ -91,6 +105,7 @@ export const useStudyStore = create<StudyState>()(
         currentBook: state.currentBook,
         wordList: state.wordList,
         lastStudyStatistics: state.lastStudyStatistics,
+        lastReviewStatistics: state.lastReviewStatistics,
       }),
     }
   )

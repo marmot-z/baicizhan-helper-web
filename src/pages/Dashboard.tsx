@@ -13,8 +13,10 @@ export default function Dashboard() {
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { checkAndGetUserInfo } = useAuthStore();
-  const { currentBook, studyPlan, fetchStudyData, lastStudyStatistics } = useStudyStore();
+  const { currentBook, studyPlan, fetchStudyData, lastStudyStatistics, lastReviewStatistics } =
+    useStudyStore();
   const [studiedWordNum, setStudiedWordNum] = useState(0);
+  const [reviewedWordNum, setReviewedWordNum] = useState(0);
 
   // 处理搜索功能
   const handleSearch = () => {
@@ -41,6 +43,15 @@ export default function Dashboard() {
     if (lastStudyStatistics?.updateTime &&
         lastStudyStatistics.updateTime > beginOfToday) {
       setStudiedWordNum(lastStudyStatistics.words.length);
+    } else {
+      setStudiedWordNum(0);
+    }
+
+    if (lastReviewStatistics?.updateTime &&
+        lastReviewStatistics.updateTime > beginOfToday) {
+      setReviewedWordNum(lastReviewStatistics.words.length);
+    } else {
+      setReviewedWordNum(0);
     }
     
     // 获取用户单词本信息
@@ -54,7 +65,14 @@ export default function Dashboard() {
     };
     
     fetchUserBooks();
-  }, [fetchStudyData, checkAndGetUserInfo]);
+  }, [
+    fetchStudyData,
+    checkAndGetUserInfo,
+    lastStudyStatistics?.updateTime,
+    lastStudyStatistics?.words.length,
+    lastReviewStatistics?.updateTime,
+    lastReviewStatistics?.words.length,
+  ]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -112,7 +130,7 @@ export default function Dashboard() {
               </div>
               <div className="stat">
                 <p>已复习</p>
-                <p className="count">0 <span>/ {studyPlan?.review_plan_count}</span></p>
+                <p className="count">{reviewedWordNum} <span>/ {studyPlan?.review_plan_count}</span></p>
               </div>
             </div>
             <div className="plan-actions">
@@ -120,7 +138,13 @@ export default function Dashboard() {
                 className="btn btn-study" 
                 onClick={() => navigate(ROUTES.STUDY_VIEW)}
               >学习</button>
-              <button className="btn btn-review" disabled>复习</button>
+              <button
+                className="btn btn-review"
+                onClick={() => navigate(ROUTES.REVIEW_VIEW)}
+                disabled={!studyPlan?.review_plan_count}
+              >
+                复习
+              </button>
             </div>
           </div>
         </section>

@@ -10,6 +10,7 @@ import { ROUTES } from '../constants';
 import StudyFrontCard from './StudyFrontCard';
 import StudyBackCard from './StudyBackCard';
 import styles from './StudyView.module.css';
+import StudyLoadingState from '../components/study/StudyLoadingState';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
 import { useStudyState } from '../hooks/useStudyState';
 import { AudioSequencePlayer } from '../utils/audio';
@@ -222,7 +223,10 @@ const StudyView: React.FC = () => {
           />
         )
       ) : (
-        <div>加载中...</div>
+        <StudyLoadingState
+          title="正在准备学习内容..."
+          subtitle="单词资料与选项加载完成后，会自动进入学习页面。可使用 1-4 快捷选择选项，单词详情页可按空格进入下一个。"
+        />
       )}
     </div>
   );

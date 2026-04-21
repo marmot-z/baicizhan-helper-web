@@ -10,9 +10,18 @@ import styles from './StudyView.module.css';
 interface StudyBackCardProps {
   uiModel: StudyUIModel | null;
   next: () => void;
+  /** 底部主按钮文案，默认「下一个」 */
+  nextLabel?: string;
+  /** 是否展示收藏入口与收藏弹窗，默认 true */
+  showCollect?: boolean;
 }
 
-const StudyBackCard: React.FC<StudyBackCardProps> = ({ uiModel, next }) => {
+const StudyBackCard: React.FC<StudyBackCardProps> = ({
+  uiModel,
+  next,
+  nextLabel = '下一个',
+  showCollect = true,
+}) => {
   const [activeTab, setActiveTab] = useState('');
   const [showCollectModal, setShowCollectModal] = useState(false);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
@@ -54,7 +63,7 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({ uiModel, next }) => {
 
   // 处理星标点击
   const handleStarClick = async () => {
-    if (!topicId) return;
+    if (!showCollect || !topicId) return;
 
     // 总是显示收藏模态框
     await loadUserBooks();
@@ -132,16 +141,18 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({ uiModel, next }) => {
             <h1 className={styles.backWordTitle}>
               {word}
             </h1>
-            <FontAwesomeIcon
-              icon={faStar}
-              className={styles.backStarIcon}
-              onClick={handleStarClick}
-              style={{
-                color: isWordCollected() ? '#007bff' : '#d3d3d3',
-                cursor: 'pointer',
-              }}
-              title="收藏/取消收藏"
-            />
+            {showCollect && (
+              <FontAwesomeIcon
+                icon={faStar}
+                className={styles.backStarIcon}
+                onClick={handleStarClick}
+                style={{
+                  color: isWordCollected() ? '#007bff' : '#d3d3d3',
+                  cursor: 'pointer',
+                }}
+                title="收藏/取消收藏"
+              />
+            )}
           </div>
           <div className={styles.backPronunciation}>
             {accentUk && (
@@ -340,19 +351,21 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({ uiModel, next }) => {
 
         <footer className={styles.backStudyFooter}>
           <button onClick={next} className={styles.backNextButton}>
-            下一个
+            {nextLabel}
           </button>
         </footer>
       </div>
 
-      <CollectModal
-        showModal={showCollectModal}
-        userBooks={userBooks}
-        selectedBookId={selectedBookId}
-        onToggleBookSelection={toggleBookSelection}
-        onCancel={handleCancelCollect}
-        onSave={handleSaveCollect}
-      />
+      {showCollect && (
+        <CollectModal
+          showModal={showCollectModal}
+          userBooks={userBooks}
+          selectedBookId={selectedBookId}
+          onToggleBookSelection={toggleBookSelection}
+          onCancel={handleCancelCollect}
+          onSave={handleSaveCollect}
+        />
+      )}
     </>
   );
 };

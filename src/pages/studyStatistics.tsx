@@ -2,20 +2,30 @@ import React, { useState } from 'react';
 import { useStudyStore } from '../stores/studyStore';
 import celebrationImage from '../assets/celebrate.jpeg';
 import styles from './studyStatistics.module.css';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import type { StudyStatistcs } from '../services/study/types';
 
 interface StudyStatisticsProps {
   // 可以根据需要添加props
 }
 
+interface StudyStatisticsLocationState {
+  source?: 'review';
+  statisticsOverride?: StudyStatistcs;
+  from?: string;
+}
+
 const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { lastStudyStatistics } = useStudyStore();
   const [visibleMeanings, setVisibleMeanings] = useState<Set<string>>(new Set());
+  const routeState = location.state as StudyStatisticsLocationState | null;
+  const statistics = routeState?.statisticsOverride ?? lastStudyStatistics;
 
   // 如果没有学习记录，显示提示信息
-  if (!lastStudyStatistics) {
+  if (!statistics) {
     return (
       <div className={styles.body}>
         <div className={styles.container}>
@@ -28,13 +38,13 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
   }
 
   // 计算学习统计数据
-  const totalWords = lastStudyStatistics.words.length;
-  const failedWords = Object.values(lastStudyStatistics.failMap).reduce((sum, count) => sum + count, 0);
+  const totalWords = statistics.words.length;
+  const failedWords = Object.values(statistics.failMap).reduce((sum, count) => sum + count, 0);
   const correctWords = totalWords - failedWords;
   const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
   
   // 计算总学习时间（毫秒转换为分:秒格式）
-  const totalTime = lastStudyStatistics.totalTime;
+  const totalTime = statistics.totalTime;
   const minutes = Math.floor(totalTime / 60000);
   const seconds = Math.floor((totalTime % 60000) / 1000);
   const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -57,8 +67,8 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
         <div className={styles.wordListContainer}>
           <table className={styles.wordListTable}>
             <tbody>
-              {lastStudyStatistics.words.map((word, index) => {
-                const failCount = lastStudyStatistics.failMap[word.topic_id] || 0;
+              {statistics.words.map((word, index) => {
+                const failCount = statistics.failMap[word.topic_id] || 0;
                 const wordId = String(word.topic_id || `word-${index}`);
                 const isVisible = visibleMeanings.has(wordId);
                 

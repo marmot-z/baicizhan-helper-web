@@ -1,0 +1,707 @@
+.pageShell {
+  min-height: 100vh;
+  padding: 10px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+.choicePage {
+  min-height: 100vh;
+  padding: 10px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+.choiceContainer {
+  width: 100%;
+  max-width: 800px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.choiceHeader {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.choiceSubHeader {
+  text-align: center;
+  margin: -0.1rem 0 0.6rem;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.choiceCard {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 2rem 2rem 1rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  min-height: 540px;
+  overflow: hidden;
+}
+
+.choiceImageContainer {
+  height: 300px;
+  background-color: #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.choiceMedia {
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  object-fit: cover;
+  display: block;
+}
+
+.choiceWordBlock {
+  text-align: center;
+}
+
+.choicePronunciationRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.choiceSentenceContainer {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.choiceSentence {
+  font-size: 1.2rem;
+  margin: 0;
+  color: #212529;
+}
+
+.choiceTranslation {
+  color: #6c757d;
+  margin: 0.25rem 0 2rem;
+  line-height: 1.6;
+}
+
+.choiceFooter {
+  padding: 0 1rem;
+}
+
+.choiceOptions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  min-height: 240px;
+}
+
+.stageCard,
+.detailCard,
+.summaryCard,
+.placeholderCard {
+  width: 100%;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 2rem 2rem 1rem;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.placeholderPage {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px;
+  background: #f8f9fa;
+}
+
+.stageHeader {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.stageSubHeader {
+  text-align: center;
+  margin: -0.1rem 0 0.6rem;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.heroPanel {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e9ecef;
+  margin-bottom: 0.5rem;
+  min-height: 260px;
+}
+
+.heroMedia {
+  width: 100%;
+  height: 260px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  object-fit: cover;
+  display: block;
+}
+
+.wordBlock {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.wordTitle,
+.summaryTitle {
+  margin: 0;
+  color: #212529;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pronunciationRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.sentenceText,
+.hintText,
+.meaningText,
+.infoText,
+.infoSubText {
+  margin: 0.25rem 0 0;
+  color: #212529;
+  line-height: 1.6;
+}
+
+.hintText,
+.infoSubText {
+  color: #6c757d;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-height: 220px;
+}
+
+.optionButton {
+  min-height: 100px;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  background: #f8f9fa;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+  color: #212529;
+  text-align: center;
+  align-items: center;
+}
+
+.optionButton:hover:not(:disabled) {
+  border-color: #ced4da;
+  background: #f1f3f5;
+}
+
+.optionButton:disabled {
+  cursor: default;
+}
+
+.optionButtonCorrect {
+  border: 2px solid #388e3c;
+}
+
+.optionButtonIncorrect {
+  border: 2px solid #c62828;
+}
+
+.optionWord {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.optionTranslation {
+  font-size: 1rem;
+  color: #495057;
+}
+
+.loadingBox {
+  grid-column: 1 / -1;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #e7e7e7;
+}
+
+.detailWordRow {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.detailContainer {
+  width: 100%;
+  max-width: 800px;
+}
+
+.detailSectionCard {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detailWordHeader {
+  margin-bottom: 0.75rem;
+}
+
+.detailWordTitle {
+  font-size: 2.5rem;
+  margin: 0;
+  color: #212529;
+}
+
+.detailPronunciation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  color: #6c757d;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.detailTranslation {
+  margin-top: 0.5rem;
+}
+
+.detailSectionTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: #212529;
+}
+
+.detailSectionText {
+  margin: 0.25rem 0;
+  color: #212529;
+  line-height: 1.6;
+}
+
+.detailSectionSubText {
+  margin: 0.25rem 0;
+  color: #6c757d;
+  line-height: 1.6;
+}
+
+.detailSectionImage {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.detailFooter {
+  padding: 0 1rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.detailNextButton {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 0;
+  width: 100%;
+  max-width: 400px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.detailNextButton:hover {
+  background-color: #0056b3;
+}
+
+.meaningBlock {
+  margin-bottom: 18px;
+}
+
+.infoPanel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.infoTitle {
+  margin: 0 0 10px;
+  color: #212529;
+  font-size: 1.2rem;
+}
+
+.detailImage {
+  width: 100%;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+.spellInput {
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 1.2rem;
+  text-align: center;
+  color: #212529;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.spellInput:focus {
+  border-color: #6c757d;
+}
+
+.spellInputError {
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.12);
+}
+
+.spellHintCard {
+  border-radius: 16px;
+  background: #f8f9fa;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  border: 1px solid #e7e7e7;
+}
+
+.spellHintCardError {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.primaryButton {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #007bff;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.primaryButton:hover {
+  background: #0056b3;
+}
+
+.summaryTop {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.summarySubtitle {
+  color: #6c757d;
+  margin-top: 10px;
+}
+
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summaryStatItem {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 18px 14px;
+  text-align: center;
+  border: 1px solid #e7e7e7;
+}
+
+.summaryStatValue {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.summaryStatLabel {
+  display: block;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 6px;
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #212529;
+  border: 1px solid #e7e7e7;
+}
+
+.summaryMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.summaryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.secondaryButton {
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background: #fff;
+  color: #212529;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem 1.2rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+@media (max-width: 768px) {
+  .pageShell,
+  .placeholderPage {
+    padding: 8px;
+  }
+
+  .stageCard,
+  .detailCard,
+  .summaryCard,
+  .placeholderCard {
+    padding: 1.5rem 1.5rem 1rem;
+    border-radius: 12px;
+  }
+
+  .heroMedia {
+    height: 220px;
+  }
+
+  .optionsGrid,
+  .summaryStats {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryRow,
+  .stageHeader {
+    flex-direction: column;
+  }
+
+  .summaryMeta {
+    align-items: flex-start;
+  }
+
+  .wordTitle,
+  .summaryTitle {
+    font-size: 2.25rem;
+  }
+
+  .detailSectionCard {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .detailWordTitle {
+    font-size: 2rem;
+  }
+}
+
+:global(.dark) .pageShell,
+:global(.dark) .choicePage,
+:global(.dark) .placeholderPage {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+
+:global(.dark) .choiceCard,
+:global(.dark) .stageCard,
+:global(.dark) .detailCard,
+:global(.dark) .summaryCard,
+:global(.dark) .placeholderCard,
+:global(.dark) .detailSectionCard,
+:global(.dark) .infoPanel {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .choiceHeader,
+:global(.dark) .choiceSubHeader,
+:global(.dark) .stageHeader,
+:global(.dark) .stageSubHeader,
+:global(.dark) .pronunciationRow,
+:global(.dark) .hintText,
+:global(.dark) .infoSubText,
+:global(.dark) .summarySubtitle,
+:global(.dark) .summaryStatLabel,
+:global(.dark) .summaryMeta,
+:global(.dark) .detailPronunciation,
+:global(.dark) .detailSectionSubText {
+  color: #9ca3af;
+}
+
+:global(.dark) .choicePronunciationRow,
+:global(.dark) .choiceTranslation,
+:global(.dark) .wordTitle,
+:global(.dark) .summaryTitle,
+:global(.dark) .sentenceText,
+:global(.dark) .meaningText,
+:global(.dark) .infoText,
+:global(.dark) .optionWord,
+:global(.dark) .optionTranslation,
+:global(.dark) .summaryStatValue,
+:global(.dark) .summaryRow,
+:global(.dark) .detailWordTitle,
+:global(.dark) .detailSectionTitle,
+:global(.dark) .detailSectionText {
+  color: #e5e7eb;
+}
+
+:global(.dark) .choiceSentence {
+  color: #e5e7eb;
+}
+
+:global(.dark) .choiceImageContainer,
+:global(.dark) .choiceMedia,
+:global(.dark) .heroPanel,
+:global(.dark) .heroMedia {
+  background-color: #111827;
+}
+
+:global(.dark) .optionButton,
+:global(.dark) .loadingBox,
+:global(.dark) .spellHintCard,
+:global(.dark) .summaryStatItem,
+:global(.dark) .summaryRow {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+:global(.dark) .optionButton:hover:not(:disabled) {
+  background-color: #243041;
+  border-color: #4b5563;
+}
+
+:global(.dark) .optionButtonCorrect {
+  border-color: #22c55e;
+}
+
+:global(.dark) .optionButtonIncorrect {
+  border-color: #ef4444;
+}
+
+:global(.dark) .spellInput {
+  background-color: #111827;
+  color: #e5e7eb;
+  border-color: #374151;
+}
+
+:global(.dark) .spellInput:focus {
+  border-color: #60a5fa;
+}
+
+:global(.dark) .spellInputError {
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+}
+
+:global(.dark) .spellHintCardError {
+  border-color: #7f1d1d;
+  background: #1f1515;
+}
+
+:global(.dark) .primaryButton,
+:global(.dark) .detailNextButton {
+  background-color: #2563eb;
+}
+
+:global(.dark) .primaryButton:hover,
+:global(.dark) .detailNextButton:hover {
+  background-color: #1d4ed8;
+}
+
+:global(.dark) .secondaryButton {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+:global(.dark) .secondaryButton:hover {
+  background-color: #374151;
+  border-color: #6b7280;
+}

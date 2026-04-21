@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
-import styles from './SpellView.module.css';
 import { SpellStudy } from '../services/study/SpellStudy';
 import type { StudyUIModel } from '../services/study/types';
 import { useStudyStore } from '../stores/studyStore';
-import { AudioSequencePlayer } from '../utils/audio';
 import { ROUTES } from '../constants';
+import SpellPracticePanel from '../components/spell/SpellPracticePanel';
 
 const SpellView: React.FC = () => {
   const navigate = useNavigate();
@@ -71,23 +68,17 @@ const SpellView: React.FC = () => {
     }
   }, [stats.isCompleted, navigate]);
 
-  const handlePlayAudio = useCallback(() => {
-    if (!currentWord?.front.accent.ukAudio) return;
-    const player = new AudioSequencePlayer();
-    player.playSequence([currentWord.front.accent.ukAudio]);
-  }, [currentWord]);
-
   const handleSubmit = useCallback(() => {
     spellStudy.check(inputValue);
   }, [spellStudy, inputValue]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (value: string) => {
     // 如果当前是错误状态，再次输入时清空原内容
     if (spellStudy.isWrong) {
       spellStudy.isWrong = false; // 重置错误状态
-      setInputValue(e.target.value.slice(-1)); // 只保留当前输入的最后一个字符
+      setInputValue(value.slice(-1)); // 只保留当前输入的最后一个字符
     } else {
-      setInputValue(e.target.value);
+      setInputValue(value);
     }
   };
 
@@ -96,57 +87,20 @@ const SpellView: React.FC = () => {
   }
 
   return (
-    <div className={styles.containerPage}>
-      <div className={styles.container}>
-        <div className={styles.topHint}>
-          需拼写 {stats.remainingInRound + stats.retryCount + 1} 词
-        </div>
-
-        <div className={styles.imageContainer}>
-          {isVideo ? (
-            <video
-              className={styles.mediaElement}
-              src={finalMediaUrl}
-              poster={finalPosterUrl}
-              muted
-              playsInline
-              loop
-              autoPlay
-            />
-          ) : (
-            <div
-              className={styles.mediaElement}
-              style={{
-                backgroundImage: `url(${finalMediaUrl})`,
-              }}
-            ></div>
-          )}
-        </div>
-
-        <input 
-          type="text" 
-          className={`${styles.inputField} ${spellStudy.isWrong ? styles.error : ''}`} 
-          placeholder="Type the English word..." 
-          autoFocus 
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        />
-
-        <div className={`${styles.chineseHint} ${spellStudy.isWrong ? styles.error : ''}`}>
-          {spellStudy.isWrong ? currentWord.word : currentWord.front.chnMean}
-        </div>
-
-        <div className={styles.actionRow}>
-          <button className={styles.audioBtn} onClick={handlePlayAudio}>
-            <FontAwesomeIcon icon={faVolumeUp} />
-          </button>
-          <button className={styles.submitBtn} onClick={handleSubmit}>
-            提交
-          </button>
-        </div>
-      </div>
-    </div>
+    <SpellPracticePanel
+      topHint={`需拼写 ${stats.remainingInRound + stats.retryCount + 1} 词`}
+      mediaUrl={finalMediaUrl}
+      posterUrl={finalPosterUrl}
+      isVideo={Boolean(isVideo)}
+      pageAlign="top"
+      inputValue={inputValue}
+      isWrong={spellStudy.isWrong}
+      hintText={spellStudy.isWrong ? currentWord.word : currentWord.front.chnMean}
+      audioSrc={currentWord.front.accent.ukAudio}
+      inputPlaceholder="Type the English word..."
+      onInputChange={handleInputChange}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

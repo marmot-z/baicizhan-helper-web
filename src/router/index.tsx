@@ -14,6 +14,7 @@ import {
   StudyStatistics,
   StudyMidView,
   SpellView,
+  ReviewPage,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -86,6 +87,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <SpellView />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.REVIEW_VIEW,
+    element: (
+      <ProtectedRoute>
+        <ReviewPage />
       </ProtectedRoute>
     ),
   },
