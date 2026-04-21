@@ -35,6 +35,7 @@ const ReviewPage: React.FC = () => {
   const flowRef = useRef<ReviewFlow | null>(null);
   const reviewWordsRef = useRef<StudyUIModel[]>([]);
   const spellWordTopicIdRef = useRef<number | null>(null);
+  const choiceSentenceReadyRef = useRef(false);
   const [snapshot, setSnapshot] = useState<ReviewSnapshot>({
     stage: 'loading',
     totalWords: 0,
@@ -140,7 +141,7 @@ const ReviewPage: React.FC = () => {
   }, [snapshot.choiceState, snapshot.detailState, snapshot.spellState]);
 
   useEffect(() => {
-    if (!activeWord) {
+    if (!activeWord || snapshot.stage === 'choice') {
       return;
     }
 
@@ -150,7 +151,44 @@ const ReviewPage: React.FC = () => {
     return () => {
       player.stop();
     };
-  }, [activeWord]);
+  }, [activeWord, snapshot.stage]);
+
+  useEffect(() => {
+    const choiceState = snapshot.choiceState;
+    const isInitialChoiceReady =
+      snapshot.stage === 'choice' &&
+      choiceState != null &&
+      !choiceState.isOptionsLoading &&
+      choiceState.attemptCount === 0;
+
+    if (!isInitialChoiceReady) {
+      choiceSentenceReadyRef.current = false;
+      return;
+    }
+
+    if (choiceSentenceReadyRef.current) {
+      return;
+    }
+
+    choiceSentenceReadyRef.current = true;
+    const player = new AudioSequencePlayer();
+    player.playSequence(
+      [
+        choiceState.word.front.accent.ukAudio,
+        choiceState.word.back.sentences[0]?.audio,
+      ],
+      400
+    );
+
+    return () => {
+      player.stop();
+    };
+  }, [
+    snapshot.stage,
+    snapshot.choiceState?.word.topicId,
+    snapshot.choiceState?.isOptionsLoading,
+    snapshot.choiceState?.attemptCount,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -84,6 +84,7 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
             {showSentence && sentence?.en ? (
               <div className={styles.choiceSentenceContainer}>
                 <p className={styles.choiceSentence}>{sentence.en}</p>
+                {sentence.audio && <AudioIcon src={sentence.audio} />}
               </div>
             ) : null}
             {showTranslation && sentence?.cn && (
