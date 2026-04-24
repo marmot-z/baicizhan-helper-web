@@ -57,6 +57,22 @@ export const studyService = {
     return response.data;
   },
 
+  // 上报完成当日计划事件
+  async reportFinishDailyPlan(
+    bookId: number,
+    totalWordsCount: number,
+    newWordsCount: number,
+    bookFinished: boolean,
+  ): Promise<void> {
+    const params = new URLSearchParams();
+    params.append('bookId', bookId.toString());
+    params.append('totalWordsCount', totalWordsCount.toString());
+    params.append('newWordsCount', newWordsCount.toString());
+    params.append('bookFinished', String(bookFinished));
+
+    await ApiService.post(`/study/reportFinishDailyPlan?${params.toString()}`);
+  },
+
   // 报告系统事件
   async reportEvent(eventId: string, extraInfo: string, statGroup: string): Promise<void> {
     const params = new URLSearchParams();

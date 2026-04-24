@@ -67,7 +67,8 @@ const ReviewPage: React.FC = () => {
       try {
         const initData = await reviewService.initializeReviewWords(
           studyPlan.book_id,
-          studyPlan.review_plan_count,
+          // studyPlan.review_plan_count,
+          5,
           wordList
         );
 

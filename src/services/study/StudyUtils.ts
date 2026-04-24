@@ -8,6 +8,31 @@ import {bookService} from '../bookService'
  */
 export class StudyUtils {
   public static optionsCache: Map<number, StudyOption[]> = new Map();
+  public static buildOptionsFromSimilarWordList(
+    detail: XModeWordDetail
+  ): StudyOption[] {
+    const distractors = (detail.similarWordList || [])
+      .slice(0, 3)
+      .map((item) => ({
+        id: item.topicId,
+        word: item.word,
+        translation: `${item.meanType}${item.mean}`,
+        isCorrect: false,
+      }));
+
+    if (!distractors.length) {
+      return [];
+    }
+
+    return distractors.concat([
+      {
+        id: detail.resource.word.topicId,
+        word: detail.resource.word.word,
+        translation: detail.xModeTopic?.chnMean || '',
+        isCorrect: true,
+      },
+    ]);
+  }
   public static getRandomizedOptions(topicId: number): StudyOption[] | undefined {
     const options = this.optionsCache.get(topicId);
     if (!options) return undefined;
@@ -70,6 +95,11 @@ export class StudyUtils {
   ): StudyUIModel {
     const { resource, xModeTopic } = detail;
     const { word } = resource;
+    const options = this.buildOptionsFromSimilarWordList(detail);
+
+    if (options.length) {
+      this.optionsCache.set(word.topicId, options);
+    }
 
     // 1. FrontCard - Media
     let media: StudyMedia | null = null;
@@ -187,7 +217,7 @@ export class StudyUtils {
       front: {
         media,
         accent,
-        options: [], // To be filled by lazy loader
+        options,
         chnMean: xModeTopic?.chnMean || '',
       },
       back: {

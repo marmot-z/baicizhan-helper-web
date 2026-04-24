@@ -123,12 +123,16 @@ export class Study {
       ).catch(console.error);
 
       if (!StudyUtils.getCachedOptions(topicId)) {
+        if (this.currentWordCard.uiModel.front.options.length) {
+          StudyUtils.setCachedOptions(topicId, this.currentWordCard.uiModel.front.options);
+        } else {
         const wordInfo = this.words.find(w => w.topic_id === topicId);
         if (wordInfo) {
           // Fire and forget - notify when loaded to update UI
           StudyUtils.loadOptionsForTopic(wordInfo, this.currentWordCard.uiModel).then(() => {
             this.notify();
           }).catch(console.error);
+        }
         }
       }
     }
@@ -297,6 +301,7 @@ export class Study {
     ).catch(console.error);
 
     this.writeStudyRecordsToLocal();
+    this.reportFinishDailyPlan();
 
     if (this.onUpload) {
       this.onUpload(this);
@@ -354,5 +359,22 @@ export class Study {
     const store = useStudyStore.getState();
     store.loadLocalLearnRecords(this.context.bookId);
     store.recomputeHomeState(this.context.bookId);
+  }
+
+  private reportFinishDailyPlan(): void {
+    const { homeState } = useStudyStore.getState();
+    const currentBook = useStudyStore.getState().currentBook;
+    const bookFinished =
+      homeState.unlearnedWords.length === 0 &&
+      (currentBook ? currentBook.id === this.context.bookId : true);
+
+    studyService
+      .reportFinishDailyPlan(
+        this.context.bookId,
+        this.words.length,
+        this.words.length,
+        bookFinished,
+      )
+      .catch(console.error);
   }
 }

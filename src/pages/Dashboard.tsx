@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { checkAndGetUserInfo } = useAuthStore();
-  const { currentBook, studyPlan, fetchStudyData, lastStudyStatistics, lastReviewStatistics } =
+  const { currentBook, studyPlan, fetchStudyData, homeState, lastStudyStatistics, lastReviewStatistics } =
     useStudyStore();
   const [studiedWordNum, setStudiedWordNum] = useState(0);
   const [reviewedWordNum, setReviewedWordNum] = useState(0);
@@ -130,7 +130,7 @@ export default function Dashboard() {
               </div>
               <div className="stat">
                 <p>已复习</p>
-                <p className="count">{reviewedWordNum} <span>/ {studyPlan?.review_plan_count}</span></p>
+                <p className="count">{reviewedWordNum} <span>/ {homeState.reviewingPoolCount}</span></p>
               </div>
             </div>
             <div className="plan-actions">

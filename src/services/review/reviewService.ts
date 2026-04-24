@@ -1,5 +1,4 @@
 import { studyService } from '../studyService';
-import { StudyUtils } from '../study/StudyUtils';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import { applyReviewCorrect, applyReviewWrong, studyRecordStore } from '../study';
 import { toUserDoneWordRecord } from '../study/uploadAdapter';
@@ -70,15 +69,9 @@ export const reviewService = {
 
   async getChoiceOptions(
     word: StudyUIModel,
-    roadmapMap: Map<number, UserRoadMapElementV2>
+    _roadmapMap: Map<number, UserRoadMapElementV2>
   ): Promise<StudyOption[]> {
-    const cached = StudyUtils.getCachedOptions(word.topicId);
-    if (cached?.length) {
-      return cached;
-    }
-
-    const roadmapWord = roadmapMap.get(word.topicId);
-    if (!roadmapWord) {
+    if (!word.front.options.length) {
       return [
         {
           id: word.topicId,
@@ -89,7 +82,7 @@ export const reviewService = {
       ];
     }
 
-    return StudyUtils.loadOptionsForTopic(roadmapWord, word);
+    return word.front.options;
   },
 
   shuffleOptions(options: StudyOption[]): StudyOption[] {
@@ -239,5 +232,11 @@ export const reviewService = {
         ?.word_level_id ?? 0;
 
     await studyService.updateDoneData(uploadedRecords, wordLevelId);
+    await studyService.reportFinishDailyPlan(
+      context.bookId,
+      records.length,
+      0,
+      store.homeState.unlearnedWords.length === 0,
+    );
   },
 };
