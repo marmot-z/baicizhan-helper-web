@@ -1,7 +1,10 @@
 import { studyService } from '../studyService';
 import { StudyUtils } from '../study/StudyUtils';
 import type { StudyOption, StudyUIModel } from '../study/types';
+import { applyReviewCorrect, applyReviewWrong, studyRecordStore } from '../study';
+import { toUserDoneWordRecord } from '../study/uploadAdapter';
 import type { UserRoadMapElementV2 } from '../../types';
+import { useStudyStore } from '../../stores/studyStore';
 import type {
   ReviewContext,
   ReviewDisplayPhase,
@@ -19,10 +22,12 @@ export const reviewService = {
   async initializeReviewWords(
     bookId: number,
     reviewPlanCount: number,
-    roadmapWords: UserRoadMapElementV2[]
+    _roadmapWords: UserRoadMapElementV2[]
   ): Promise<ReviewInitData> {
-    const learnedWords = await studyService.getLearnedWords(bookId);
-    if (!learnedWords.length) {
+    await useStudyStore.getState().syncCurrentBookState(bookId);
+    const { homeState, syncedBookId } = useStudyStore.getState();
+
+    if (syncedBookId !== bookId) {
       return {
         words: [],
         roadmapMap: new Map(),
@@ -33,15 +38,8 @@ export const reviewService = {
       };
     }
 
-    const roadmapMap = new Map(roadmapWords.map((word) => [word.topic_id, word]));
     const targetCount = reviewPlanCount || 10;
-    const sortedLearnedWords = [...learnedWords].sort(
-      (left, right) => left.done_times - right.done_times
-    );
-    const reviewWords = sortedLearnedWords
-      .slice(0, targetCount)
-      .map((item) => roadmapMap.get(item.topic_id))
-      .filter((item): item is UserRoadMapElementV2 => Boolean(item));
+    const reviewWords = homeState.unreviewedWords.slice(0, targetCount);
 
     if (!reviewWords.length) {
       return {
@@ -179,7 +177,67 @@ export const reviewService = {
     );
   },
 
-  async finishReview(records: ReviewWordRecord[]): Promise<void> {
-    console.log('[reviewService] finishReview', records);
+  async finishReview(records: ReviewWordRecord[], context: ReviewContext): Promise<void> {
+    const updatedAt = Date.now();
+    const nextRecords = records.map((reviewRecord) => {
+      const existingRecord = studyRecordStore.getRecord(context.bookId, reviewRecord.topicId);
+      const usedTime =
+        reviewRecord.completedAt && reviewRecord.reviewStartedAt
+          ? Math.max(0, reviewRecord.completedAt - reviewRecord.reviewStartedAt)
+          : 0;
+
+      const nextScore =
+        reviewRecord.errorCount === 0
+          ? Math.max(existingRecord?.topicScore ?? 0, 5)
+          : Math.min(Math.max(existingRecord?.topicScore ?? 0, 0), 4);
+
+      const input = {
+        bookId: context.bookId,
+        topicId: reviewRecord.topicId,
+        usedTime,
+        doNumDelta: 1,
+        errNumDelta: reviewRecord.errorCount,
+        now: reviewRecord.completedAt ?? updatedAt,
+        isFirstDoAtToday: false,
+        nextScore,
+        nextSpanDays: existingRecord?.topicDay ?? 0,
+        nextReviewRound:
+          reviewRecord.errorCount === 0
+            ? (existingRecord?.reviewRound ?? 0) + 1
+            : existingRecord?.reviewRound ?? 0,
+      };
+
+      if (reviewRecord.errorCount === 0) {
+        return applyReviewCorrect(existingRecord, input);
+      }
+
+      return applyReviewWrong(existingRecord, input);
+    });
+
+    studyRecordStore.upsertRecords(context.bookId, nextRecords);
+    const store = useStudyStore.getState();
+    store.loadLocalLearnRecords(context.bookId);
+    store.recomputeHomeState(context.bookId);
+
+    const uploadedRecords = records
+      .map((reviewRecord) =>
+        studyRecordStore.getRecord(context.bookId, reviewRecord.topicId),
+      )
+      .filter((record) => record != null)
+      .map((record) => toUserDoneWordRecord(record));
+
+    if (!uploadedRecords.length) {
+      console.warn('No local review records found for upload.');
+      return;
+    }
+
+    const { wordList, wordListBookId } = store;
+    const currentRoadmap =
+      wordListBookId === context.bookId ? wordList : [];
+    const wordLevelId =
+      currentRoadmap.find((word) => records.some((record) => record.topicId === word.topic_id))
+        ?.word_level_id ?? 0;
+
+    await studyService.updateDoneData(uploadedRecords, wordLevelId);
   },
 };

@@ -14,7 +14,7 @@ interface UseStudyStrategyResult {
 }
 
 export const useStudyStrategy = (): UseStudyStrategyResult => {
-  const { wordList } = useStudyStore();
+  const { wordList, syncCurrentBookState } = useStudyStore();
   const [studyInstance, setStudyInstance] = useState<Study | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -26,20 +26,19 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
 
       try {
         const currentStudyPlan = studyPlans[0];
-        if (!currentStudyPlan || !wordList.length) {
-          throw new Error('学习计划或单词列表未就绪');
+        if (!currentStudyPlan) {
+          throw new Error('学习计划未就绪');
         }
 
         if (mode === 'learn') {
-          const learnedWords = await studyService.getLearnedWords(
-            currentStudyPlan.book_id
-          );
-          const learnedTopicIds = new Set(
-            learnedWords.map((word) => word.topic_id)
-          );
+          await syncCurrentBookState(currentStudyPlan.book_id);
+          const { homeState, syncedBookId } = useStudyStore.getState();
 
-          const unlearnedWords: UserRoadMapElementV2[] = wordList
-            .filter((word) => !learnedTopicIds.has(word.topic_id))
+          if (syncedBookId !== currentStudyPlan.book_id) {
+            throw new Error('当前书学习状态同步未完成');
+          }
+
+          const unlearnedWords: UserRoadMapElementV2[] = homeState.unlearnedWords
             .slice(0, currentStudyPlan.daily_plan_count);
 
           if (!unlearnedWords.length) {
@@ -64,6 +63,11 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
         }
 
         if (mode === 'review') {
+          const latestWordList = useStudyStore.getState().wordList;
+          if (!latestWordList.length) {
+            throw new Error('学习计划或单词列表未就绪');
+          }
+
           // 1. 获取已学单词
           const learnedWords = await studyService.getLearnedWords(
             currentStudyPlan.book_id
@@ -84,7 +88,7 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
 
           // 4. 从全局 wordList 中查找对应的完整信息（复用 options）
           // 建立 topic_id -> word 映射以提高查找效率
-          const wordMap = new Map(wordList.map((w) => [w.topic_id, w]));
+          const wordMap = new Map(latestWordList.map((w) => [w.topic_id, w]));
           
           const reviewWords: UserRoadMapElementV2[] = [];
           
@@ -148,7 +152,7 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
         setLoading(false);
       }
     },
-    [wordList]
+    [syncCurrentBookState, wordList]
   );
 
   return {

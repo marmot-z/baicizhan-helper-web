@@ -3,11 +3,29 @@ import { persist } from 'zustand/middleware';
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 import type { StudyStatistcs } from '../services/study/types';
+import {
+  applyDayTransition,
+  calculateHomeState,
+  studyRecordStore,
+} from '../services/study';
+import {
+  createEmptyHomeState,
+  createRecordMap,
+  type StudyHomeState,
+  type TopicLearnRecordMap,
+} from '../types/studyRecord';
+
+const inflightBookSyncs = new Map<number, Promise<void>>();
 
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
   studyPlan: SelectBookPlanInfo | null;
   wordList: UserRoadMapElementV2[];
+  wordListBookId: number | null;
+  learnRecords: TopicLearnRecordMap;
+  homeState: StudyHomeState;
+  syncingBookId: number | null;
+  syncedBookId: number | null;
   lastStudyStatistics: StudyStatistcs | null;
   lastReviewStatistics: StudyStatistcs | null;
   setCurrentBook: (book: UserBookBasicInfo) => void;
@@ -15,8 +33,84 @@ interface StudyState {
   setWordList: (words: UserRoadMapElementV2[]) => void;
   setLastStudyStatistics: (statistics: StudyStatistcs) => void;
   setLastReviewStatistics: (statistics: StudyStatistcs) => void;
+  loadLocalLearnRecords: (bookId: number) => TopicLearnRecordMap;
+  recomputeHomeState: (bookId: number) => StudyHomeState;
+  syncCurrentBookState: (bookId?: number) => Promise<void>;
   fetchStudyData: () => Promise<void>;
   clearStudyData: () => void;
+}
+
+type StudyStoreSet = (partial: Partial<StudyState>) => void;
+type StudyStoreGet = () => StudyState;
+
+async function syncBookState(
+  set: StudyStoreSet,
+  get: StudyStoreGet,
+  bookId: number,
+): Promise<void> {
+  const existingTask = inflightBookSyncs.get(bookId);
+  if (existingTask) {
+    return existingTask;
+  }
+
+  const task = (async () => {
+    set({ syncingBookId: bookId });
+
+    const localRecords = studyRecordStore.getAllRecords(bookId);
+    const transitionedRecords = localRecords.map((record) =>
+      applyDayTransition(record),
+    );
+    const hasDayTransitionChanges = transitionedRecords.some(
+      (record, index) => record !== localRecords[index],
+    );
+
+    if (hasDayTransitionChanges) {
+      studyRecordStore.upsertRecords(bookId, transitionedRecords);
+    }
+
+    const effectiveLocalRecords = hasDayTransitionChanges
+      ? transitionedRecords
+      : localRecords;
+    let nextRecordMap = createRecordMap(effectiveLocalRecords);
+    set({ learnRecords: nextRecordMap });
+
+    let roadmap = get().wordList;
+    if (get().wordListBookId !== bookId || roadmap.length === 0) {
+      roadmap = await studyService.getRoadmap(bookId);
+      set({ wordList: roadmap, wordListBookId: bookId });
+    }
+
+    try {
+      const remoteLearnedWords = await studyService.getLearnedWords(bookId);
+      studyRecordStore.mergeRemoteLearnedWords(bookId, remoteLearnedWords);
+      nextRecordMap = createRecordMap(studyRecordStore.getAllRecords(bookId));
+    } catch (error) {
+      console.error(`Failed to sync learned words for book ${bookId}:`, error);
+    }
+
+    const currentPlan = get().studyPlan?.book_id === bookId ? get().studyPlan : null;
+    const homeState = calculateHomeState({
+      records: nextRecordMap,
+      roadmap,
+      learnPlanCount: currentPlan?.daily_plan_count ?? 0,
+      reviewPlanCount: currentPlan?.review_plan_count ?? 0,
+      increasedCount: 0,
+    });
+
+    set({
+      learnRecords: nextRecordMap,
+      homeState,
+      syncedBookId: bookId,
+    });
+  })().finally(() => {
+    inflightBookSyncs.delete(bookId);
+    if (get().syncingBookId === bookId) {
+      set({ syncingBookId: null });
+    }
+  });
+
+  inflightBookSyncs.set(bookId, task);
+  return task;
 }
 
 export const useStudyStore = create<StudyState>()(
@@ -25,19 +119,27 @@ export const useStudyStore = create<StudyState>()(
       currentBook: null,
       studyPlan: null,
       wordList: [],
+      wordListBookId: null,
+      learnRecords: {},
+      homeState: createEmptyHomeState(),
+      syncingBookId: null,
+      syncedBookId: null,
       lastStudyStatistics: null,
       lastReviewStatistics: null,
 
       setCurrentBook: (book: UserBookBasicInfo) => {
         set({ currentBook: book });
+        void get().syncCurrentBookState(book.id);
       },
 
       setStudyPlan: (plan: SelectBookPlanInfo) => {
         set({ studyPlan: plan });
+        void get().syncCurrentBookState(plan.book_id);
       },
 
       setWordList: (words: UserRoadMapElementV2[]) => {
-        set({ wordList: words });
+        const planBookId = get().studyPlan?.book_id ?? null;
+        set({ wordList: words, wordListBookId: planBookId });
       },
 
       setLastStudyStatistics: (statistics: StudyStatistcs) => {
@@ -48,6 +150,36 @@ export const useStudyStore = create<StudyState>()(
       setLastReviewStatistics: (statistics: StudyStatistcs) => {
         statistics.updateTime = Date.now();
         set({ lastReviewStatistics: statistics });
+      },
+
+      loadLocalLearnRecords: (bookId: number) => {
+        const records = createRecordMap(studyRecordStore.getAllRecords(bookId));
+        set({ learnRecords: records });
+        return records;
+      },
+
+      recomputeHomeState: (bookId: number) => {
+        const roadmap = get().wordListBookId === bookId ? get().wordList : [];
+        const currentPlan = get().studyPlan?.book_id === bookId ? get().studyPlan : null;
+        const homeState = calculateHomeState({
+          records: get().learnRecords,
+          roadmap,
+          learnPlanCount: currentPlan?.daily_plan_count ?? 0,
+          reviewPlanCount: currentPlan?.review_plan_count ?? 0,
+          increasedCount: 0,
+        });
+        set({ homeState });
+        return homeState;
+      },
+
+      syncCurrentBookState: async (bookId?: number) => {
+        const targetBookId =
+          bookId ?? get().studyPlan?.book_id ?? get().currentBook?.id;
+        if (!targetBookId) {
+          return;
+        }
+
+        await syncBookState(set, get, targetBookId);
       },
 
       fetchStudyData: async () => {
@@ -65,11 +197,16 @@ export const useStudyStore = create<StudyState>()(
               let { wordList } =  get();
 
               // 无单词列表则拉取
-              if (!wordList || !wordList.length) {
+              if (
+                !wordList ||
+                !wordList.length ||
+                get().wordListBookId !== userPlan.book_id
+              ) {
                 const roadmapData = await studyService.getRoadmap(userPlan.book_id);
-                set({ wordList: roadmapData });
+                set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
               }
 
+              await get().syncCurrentBookState(userPlan.book_id);
               return;
             } else {
               // 不匹配或无缓存，重新拉取单词书信息
@@ -80,9 +217,11 @@ export const useStudyStore = create<StudyState>()(
                 
                 // 获取单词列表
                 const roadmapData = await studyService.getRoadmap(userPlan.book_id);
-                set({ wordList: roadmapData });
+                set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
               }
             }
+
+            await get().syncCurrentBookState(userPlan.book_id);
           }
         } catch (error) {
           console.error('Failed to fetch study data:', error);
@@ -94,6 +233,11 @@ export const useStudyStore = create<StudyState>()(
           currentBook: null,
           studyPlan: null,
           wordList: [],
+          wordListBookId: null,
+          learnRecords: {},
+          homeState: createEmptyHomeState(),
+          syncingBookId: null,
+          syncedBookId: null,
           lastStudyStatistics: null,
           lastReviewStatistics: null,
         });
@@ -103,7 +247,12 @@ export const useStudyStore = create<StudyState>()(
       name: 'study-storage',
       partialize: (state) => ({
         currentBook: state.currentBook,
+        studyPlan: state.studyPlan,
         wordList: state.wordList,
+        wordListBookId: state.wordListBookId,
+        learnRecords: state.learnRecords,
+        homeState: state.homeState,
+        syncedBookId: state.syncedBookId,
         lastStudyStatistics: state.lastStudyStatistics,
         lastReviewStatistics: state.lastReviewStatistics,
       }),

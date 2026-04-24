@@ -3,6 +3,9 @@ import type { UserRoadMapElementV2, UserDoneWordRecord } from '../../types';
 import type { WordCard } from './WordCard';
 import { studyService } from '../studyService';
 import { StudyUtils } from './StudyUtils';
+import { applyStudyCorrect } from './recordReducers';
+import { studyRecordStore } from './recordStore';
+import { toUserDoneWordRecord } from './uploadAdapter';
 import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 
@@ -293,6 +296,8 @@ export class Study {
       'main-study'
     ).catch(console.error);
 
+    this.writeStudyRecordsToLocal();
+
     if (this.onUpload) {
       this.onUpload(this);
       return;
@@ -301,26 +306,53 @@ export class Study {
   }
 
   private uploadDoneData(): void {
-    const doneWordRecords: UserDoneWordRecord[] = this.words.map(word => {
-      const wrongTimes = this.failMap.get(word.topic_id) || 0;
-      const usedTime = this.useTimeMap.get(word.topic_id) || 0;
-      
-      return {
-        word_topic_id: word.topic_id,
-        current_score: 0, // 默认分数
-        span_days: 0, // 默认间隔天数
-        used_time: usedTime, // 默认用时
-        done_times: 1, // 固定为1
-        wrong_times: wrongTimes, // 从statistics map中获取
-        is_first_do_at_today: 1, // 默认为今天首次完成
-        tag_id: word.tag_id,
-        spell_score: 0, // 默认拼写分数
-        listening_score: 0, // 默认听力分数
-        chn_score: 0, // 默认中文分数
-        review_round: 0 // 默认复习轮次
-      };
-    });
+    const doneWordRecords: UserDoneWordRecord[] = this.words
+      .map((word) =>
+        studyRecordStore.getRecord(this.context.bookId, word.topic_id),
+      )
+      .filter((record) => record != null)
+      .map((record) => toUserDoneWordRecord(record));
+
+    if (!doneWordRecords.length) {
+      console.warn('No local study records found for upload.');
+      return;
+    }
     
     studyService.updateDoneData(doneWordRecords, this.words[0]?.word_level_id || 0);
+  }
+
+  private writeStudyRecordsToLocal(): void {
+    if (!this.words.length) {
+      return;
+    }
+
+    const now = Date.now();
+    const updatedRecords = this.words.map((word) => {
+      const existingRecord = studyRecordStore.getRecord(
+        this.context.bookId,
+        word.topic_id,
+      );
+      const wrongTimes = this.failMap.get(word.topic_id) || 0;
+      const usedTime = this.useTimeMap.get(word.topic_id) || 0;
+
+      return applyStudyCorrect(existingRecord, {
+        bookId: this.context.bookId,
+        topicId: word.topic_id,
+        tagId: word.tag_id,
+        usedTime,
+        doNumDelta: 1,
+        errNumDelta: wrongTimes,
+        now,
+        isFirstDoAtToday: true,
+        nextScore: Math.max(existingRecord?.topicScore ?? 0, 0),
+        nextSpanDays: existingRecord?.topicDay ?? 0,
+        nextReviewRound: existingRecord?.reviewRound ?? 0,
+      });
+    });
+
+    studyRecordStore.upsertRecords(this.context.bookId, updatedRecords);
+    const store = useStudyStore.getState();
+    store.loadLocalLearnRecords(this.context.bookId);
+    store.recomputeHomeState(this.context.bookId);
   }
 }

@@ -483,6 +483,6 @@ export class ReviewFlow {
     });
 
     await reviewService.reportReviewFinished().catch(console.error);
-    await reviewService.finishReview(records).catch(console.error);
+    await reviewService.finishReview(records, this.context).catch(console.error);
   }
 }
