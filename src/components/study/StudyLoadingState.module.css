@@ -1,5 +1,7 @@
 .page {
   min-height: 100vh;
+  min-width: 0;
+  width: 100%;
   padding: 24px 12px;
   background: #f8f9fa;
   display: flex;
@@ -9,6 +11,7 @@
 }
 
 .card {
+  min-width: 0;
   width: 100%;
   max-width: 560px;
   background: #fff;
@@ -34,6 +37,7 @@
   color: #1f2937;
   font-size: 1.35rem;
   font-weight: 700;
+  overflow-wrap: break-word;
 }
 
 .subtitle {
@@ -41,6 +45,8 @@
   color: #6b7280;
   font-size: 0.98rem;
   line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: break-word;
 }
 
 @keyframes spin {
