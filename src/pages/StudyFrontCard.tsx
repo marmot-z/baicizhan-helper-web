@@ -26,7 +26,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
 }) => {
   // Prefer uiModel if available, fallback to legacy wordCard (or handle hybrid)
   // For this refactor step, we assume uiModel will be passed.
-  
+
   if (!uiModel) return null;
 
   // Data access directly from StudyUIModel

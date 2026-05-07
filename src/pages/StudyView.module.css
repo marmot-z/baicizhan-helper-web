@@ -453,6 +453,17 @@
   border-color: #ef4444;
 }
 
+/* 点击后按钮仍带 :focus，需盖过上一段 .optionButton:focus 的 border-color，否则错选红框被灰边遮住 */
+:global(.dark) .optionButtonCorrect:hover,
+:global(.dark) .optionButtonCorrect:focus {
+  border-color: #22c55e;
+}
+
+:global(.dark) .optionButtonIncorrect:hover,
+:global(.dark) .optionButtonIncorrect:focus {
+  border-color: #ef4444;
+}
+
 :global(.dark) .backCard {
   background-color: #111827;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
