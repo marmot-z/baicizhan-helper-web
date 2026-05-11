@@ -1,0 +1,611 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(167, 139, 250, 0.12), transparent 24%),
+    #f0eff5;
+  color: #1a1838;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.backButton {
+  border: 1px solid #e2e0ec;
+  background: #fff;
+  color: #888;
+  border-radius: 999px;
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+
+.title {
+  margin: 0;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: #aaa;
+  font-size: 0.82rem;
+}
+
+.bookCard,
+.summaryCard,
+.formCard,
+.infoCard,
+.placeholderCard {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #ebe9f5;
+}
+
+.bookCard {
+  padding: 1.15rem 1.35rem;
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.bookCoverImage,
+.bookCover {
+  width: 54px;
+  height: 68px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.55rem 0.6rem;
+}
+
+.bookMeta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bookName {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.bookDesc {
+  margin: 0.3rem 0 0;
+  color: #b0adc0;
+  line-height: 1.55;
+  font-size: 0.78rem;
+}
+
+.bookCount {
+  margin: 0.35rem 0 0;
+  color: #c0bdd5;
+  font-size: 0.78rem;
+}
+
+.currentBadge {
+  margin-top: 0.55rem;
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: #eeeaff;
+  color: #5b4fcf;
+  border: 1px solid #ccc8f5;
+  padding: 0.24rem 0.72rem;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tileTag {
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 1;
+}
+
+.coverDeco,
+.coverDecoSmall {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.coverDeco {
+  width: 50px;
+  height: 50px;
+  right: -14px;
+  bottom: -14px;
+}
+
+.coverDecoSmall {
+  width: 30px;
+  height: 30px;
+  right: -4px;
+  bottom: -4px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.coverOrange {
+  background: linear-gradient(140deg, #f5920c, #df5f00);
+}
+
+.coverGold {
+  background: linear-gradient(140deg, #e8b830, #c98f08);
+}
+
+.coverGreen {
+  background: linear-gradient(140deg, #1db585, #0a7f5a);
+}
+
+.coverBlue {
+  background: linear-gradient(140deg, #3a8fd8, #1a60a8);
+}
+
+.coverPurple {
+  background: linear-gradient(140deg, #9b59b6, #6c3483);
+}
+
+.coverRose {
+  background: linear-gradient(140deg, #e74c3c, #a93226);
+}
+
+.planBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.5rem;
+  margin-top: 1.65rem;
+  align-items: start;
+}
+
+.planMain,
+.rightPanel {
+  display: grid;
+  gap: 1rem;
+}
+
+.summaryCard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  background: transparent;
+  border: none;
+}
+
+.summaryItem {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #ebe9f5;
+  padding: 1rem 1.1rem;
+}
+
+.summaryLabel {
+  display: block;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c0bdd5;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+}
+
+.summaryValue {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #1a1838;
+  word-break: break-word;
+}
+
+.summaryHighlight {
+  color: #5b4fcf;
+  font-size: 1.05rem;
+  padding-top: 0.18rem;
+}
+
+.summaryUnit {
+  margin-left: 0.38rem;
+  font-size: 0.9rem;
+  color: #c0bdd5;
+  font-weight: 500;
+}
+
+.formCard {
+  padding: 1.35rem;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.95rem;
+}
+
+.formTitle,
+.infoCardTitle {
+  margin: 0 0 0.95rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c0bdd5;
+}
+
+.label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.inputShell {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #f6f5fc;
+  border: 1.5px solid #e6e3f5;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.inputShell:focus-within {
+  border-color: #a59fe8;
+}
+
+.inputShellError {
+  border-color: #ef4444;
+}
+
+.stepButton {
+  width: 40px;
+  height: 44px;
+  border: none;
+  background: none;
+  font-size: 1.25rem;
+  color: #b0adc8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepButton:hover {
+  background: #eeeaff;
+  color: #5b4fcf;
+}
+
+.stepDivider {
+  width: 1px;
+  height: 24px;
+  background: #e6e3f5;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  width: auto;
+  border: none;
+  outline: none;
+  background: none;
+  color: #1a1838;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.errorText {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.8rem;
+}
+
+.submitButton {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+  background: linear-gradient(135deg, #6356e8, #4f46e5);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.submitButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.infoCard {
+  padding: 1.25rem;
+}
+
+.progressWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.progressTrack {
+  color: #ece9f8;
+}
+
+.progressValue {
+  color: #5b4fcf;
+}
+
+.progressText {
+  font-size: 1.35rem;
+  font-weight: 700;
+  fill: #1a1838;
+  font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+}
+
+.progressHint {
+  font-size: 0.7rem;
+  fill: #c0bdd5;
+  font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.timelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.timelineItem:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  width: 1px;
+  height: calc(100% - 6px);
+  background: #e8e6f5;
+}
+
+.timelineDot {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  margin-top: 1px;
+  flex-shrink: 0;
+  border: 2.5px solid #e8e6f5;
+  background: #f0eff5;
+}
+
+.timelineDotDone {
+  background: #5b4fcf;
+  border-color: #5b4fcf;
+}
+
+.timelineDotNow {
+  border-color: #5b4fcf;
+  background: #fff;
+  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 8px #5b4fcf;
+}
+
+.timelineLabel {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.timelineLabelActive {
+  color: #5b4fcf;
+  font-weight: 500;
+}
+
+.timelineDate {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: #c0bdd5;
+}
+
+.todayBox {
+  background: #f4f2ff;
+  border: 1px solid #dddaf8;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+}
+
+.todayLabel {
+  margin: 0 0 0.3rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a59fe8;
+  font-weight: 600;
+}
+
+.todayValue {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #1a1838;
+  font-weight: 500;
+}
+
+.todayValue span {
+  color: #5b4fcf;
+  font-weight: 700;
+}
+
+.placeholderCard {
+  padding: 2rem;
+  text-align: center;
+  color: #888;
+}
+
+@media (max-width: 960px) {
+  .planBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .header,
+  .bookCard {
+    flex-direction: column;
+  }
+
+  .wrapper {
+    padding: 1.35rem 1rem 2.5rem;
+  }
+
+  .summaryCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+:global(.dark) .page {
+  background:
+    radial-gradient(circle at top, rgba(91, 79, 207, 0.18), transparent 22%),
+    #13131b;
+  color: #e5e7eb;
+}
+
+:global(.dark) .backButton {
+  background: #1c1b26;
+  color: #c5c1d8;
+  border-color: #302f3d;
+}
+
+:global(.dark) .subtitle,
+:global(.dark) .bookDesc,
+:global(.dark) .summaryLabel,
+:global(.dark) .placeholderCard,
+:global(.dark) .timelineDate {
+  color: #9d98b8;
+}
+
+:global(.dark) .bookCard,
+:global(.dark) .summaryCard,
+:global(.dark) .summaryItem,
+:global(.dark) .formCard,
+:global(.dark) .infoCard,
+:global(.dark) .placeholderCard {
+  background: #1a1924;
+  border-color: #2f2d3d;
+}
+
+:global(.dark) .bookName,
+:global(.dark) .summaryValue,
+:global(.dark) .todayValue,
+:global(.dark) .progressText {
+  color: #f2f1f8;
+  fill: #f2f1f8;
+}
+
+:global(.dark) .currentBadge {
+  background: rgba(91, 79, 207, 0.16);
+  color: #b9afff;
+  border-color: rgba(111, 100, 216, 0.4);
+}
+
+:global(.dark) .bookCount,
+:global(.dark) .progressHint,
+:global(.dark) .timelineLabel {
+  color: #7f7b9c;
+  fill: #7f7b9c;
+}
+
+:global(.dark) .timelineLabelActive {
+  color: #b9afff;
+}
+
+:global(.dark) .input {
+  color: #f8fafc;
+}
+
+:global(.dark) .inputShell {
+  background: #181722;
+  border-color: #2f2d3d;
+}
+
+:global(.dark) .inputShell:focus-within {
+  border-color: #7368db;
+}
+
+:global(.dark) .stepDivider,
+:global(.dark) .timelineItem:not(:last-child)::before {
+  background: #2f2d3d;
+}
+
+:global(.dark) .stepButton {
+  color: #8d88a9;
+}
+
+:global(.dark) .stepButton:hover {
+  background: rgba(91, 79, 207, 0.18);
+  color: #c8c1ff;
+}
+
+:global(.dark) .progressTrack {
+  color: #2f2d3d;
+}
+
+:global(.dark) .progressValue {
+  color: #7368db;
+}
+
+:global(.dark) .timelineDot {
+  border-color: #353346;
+  background: #16151e;
+}
+
+:global(.dark) .timelineDotDone {
+  background: #7368db;
+  border-color: #7368db;
+}
+
+:global(.dark) .timelineDotNow {
+  border-color: #7368db;
+  background: #16151e;
+  box-shadow: inset 0 0 0 4px #16151e, inset 0 0 0 8px #7368db;
+}
+
+:global(.dark) .todayBox {
+  background: rgba(91, 79, 207, 0.12);
+  border-color: rgba(111, 100, 216, 0.28);
+}
+
+:global(.dark) .todayLabel {
+  color: #9f97ef;
+}
+
+:global(.dark) .todayValue span,
+:global(.dark) .summaryHighlight {
+  color: #b9afff;
+}

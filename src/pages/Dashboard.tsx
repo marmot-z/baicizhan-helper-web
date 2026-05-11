@@ -113,6 +113,13 @@ export default function Dashboard() {
               <h2>{currentBook?.name || '雅思核心'}</h2>
               <p>{studyPlan?.learned_words_count} / {currentBook?.total_words_count}</p>
               <span>剩余 {currentBook && studyPlan ? Math.ceil((currentBook.total_words_count - studyPlan.learned_words_count) / (studyPlan.daily_plan_count || 1)) : 327} 天</span>
+              <button
+                type="button"
+                className="change-book-button"
+                onClick={() => navigate(ROUTES.ALL_BOOKS)}
+              >
+                更换单词本
+              </button>
             </div>
           </div>
           <div className="today-plan" style={{

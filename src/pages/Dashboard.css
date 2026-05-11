@@ -143,6 +143,18 @@
   color: #6c757d;
 }
 
+.change-book-button {
+  margin-top: 1rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: #e8f1ff;
+  color: #1d4ed8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* Today plan */
 .today-plan {
   text-align: center;
@@ -225,6 +237,11 @@
 
 .dark .invite-btn:hover {
   color: #FF8E53;
+}
+
+.dark .change-book-button {
+  background: #1e3a8a;
+  color: #dbeafe;
 }
 
 /* Word books */

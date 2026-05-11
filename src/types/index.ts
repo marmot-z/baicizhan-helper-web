@@ -47,10 +47,12 @@ export interface StudyRecord {
 
 export interface SelectBookPlanInfo {
   book_id: number;
+  selected_end_time?: number;
   learned_words_count: number;
   group_id: number;
   daily_plan_count: number;
   review_plan_count: number;
+  need_merge_count?: number;
 }
 
 export interface UserBookBasicInfo {
@@ -64,8 +66,46 @@ export interface UserBookBasicInfo {
   desc: string;
 }
 
+export interface UserSubCategory {
+  sub_name: string;
+  book_ids: number[];
+}
+
+export interface UserBookCategory {
+  cate_id: string;
+  category_name: string;
+  tag_name?: string;
+  sub_categories: UserSubCategory[];
+}
+
+export interface ExamPreparation {
+  userType: number;
+  questionnaireUrl: string;
+  newStudyUrl: string;
+  reviewUrl: string;
+  generalReviewUrl: string;
+}
+
+export interface UserSelectedBookInfo {
+  book_id: number;
+  selected_end_time?: number;
+  learned_words_count: number;
+  last_touch_at?: number;
+  roadmap_version?: number;
+  word_fm_updated_at?: number;
+  group_id: number;
+  daily_plan_count: number;
+  poster_updated_at?: number;
+  need_merge_count: number;
+  review_plan_count: number;
+  examPreparation?: ExamPreparation;
+  mode_switch_url?: string;
+  game_mode?: number;
+}
+
 export interface BooksInfoResponse {
   books_info: UserBookBasicInfo[];
+  categories_info: UserBookCategory[];
 }
 
 // 用户单词本项目

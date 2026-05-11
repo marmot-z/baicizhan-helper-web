@@ -1,0 +1,324 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(167, 139, 250, 0.12), transparent 28%),
+    #f0eff5;
+  color: #1a1838;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.backButton {
+  border: 1px solid #e2e0ec;
+  background: #fff;
+  color: #888;
+  border-radius: 999px;
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+
+.title {
+  margin: 0;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: #aaa;
+  font-size: 0.82rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex-wrap: wrap;
+  margin: 1.6rem 0 1.8rem;
+}
+
+.tab {
+  border: 1.5px solid #e2e0ec;
+  background: #fff;
+  color: #888;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tabActive {
+  background: #5b4fcf;
+  color: #ffffff;
+  border-color: #5b4fcf;
+}
+
+.sectionList {
+  display: grid;
+  gap: 1.6rem;
+}
+
+.section {
+  background: transparent;
+}
+
+.sectionLabel {
+  margin: 0 0 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b0adc8;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.bookTile {
+  border: 1px solid #ebe9f5;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.15rem 1rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.bookTile:hover {
+  border-color: #c9c4ef;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(91, 79, 207, 0.08);
+}
+
+.bookTileCurrent {
+  border-color: #a59fe8;
+  background: linear-gradient(160deg, #f7f6ff 0%, #fff 100%);
+}
+
+.tileCoverImage,
+.tileCover {
+  width: 100%;
+  height: 88px;
+  border-radius: 12px;
+  object-fit: cover;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.72rem 0.82rem;
+}
+
+.tileTag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 1;
+}
+
+.coverDeco,
+.coverDecoSmall {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.coverDeco {
+  width: 64px;
+  height: 64px;
+  right: -18px;
+  bottom: -18px;
+}
+
+.coverDecoSmall {
+  width: 38px;
+  height: 38px;
+  right: -6px;
+  bottom: -6px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.coverOrange {
+  background: linear-gradient(140deg, #f5920c, #df5f00);
+}
+
+.coverGold {
+  background: linear-gradient(140deg, #e8b830, #c98f08);
+}
+
+.coverGreen {
+  background: linear-gradient(140deg, #1db585, #0a7f5a);
+}
+
+.coverBlue {
+  background: linear-gradient(140deg, #3a8fd8, #1a60a8);
+}
+
+.coverPurple {
+  background: linear-gradient(140deg, #9b59b6, #6c3483);
+}
+
+.coverRose {
+  background: linear-gradient(140deg, #e74c3c, #a93226);
+}
+
+.tileBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tileHeading {
+  min-width: 0;
+}
+
+.tileName {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1a1838;
+}
+
+.tileDesc {
+  margin: 0;
+  color: #b0adc0;
+  line-height: 1.55;
+  font-size: 0.72rem;
+  min-height: 2.2rem;
+}
+
+.tileFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tileCount {
+  color: #c0bdd5;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.placeholderCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2rem;
+  text-align: center;
+  color: #888;
+  border: 1px solid #ebe9f5;
+}
+
+@media (max-width: 960px) {
+  .bookGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .wrapper {
+    padding: 1.35rem 1rem 2.5rem;
+  }
+
+  .bookGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+:global(.dark) .page {
+  background:
+    radial-gradient(circle at top, rgba(91, 79, 207, 0.18), transparent 22%),
+    #13131b;
+  color: #e5e7eb;
+}
+
+:global(.dark) .subtitle {
+  color: #9d98b8;
+}
+
+:global(.dark) .backButton,
+:global(.dark) .tab {
+  background: #1c1b26;
+  color: #c5c1d8;
+  border-color: #302f3d;
+}
+
+:global(.dark) .tabActive {
+  background: #5b4fcf;
+  color: #ffffff;
+  border-color: #5b4fcf;
+}
+
+:global(.dark) .placeholderCard {
+  background: #1a1924;
+  border-color: #2f2d3d;
+}
+
+:global(.dark) .sectionLabel {
+  color: #7f7b9c;
+}
+
+:global(.dark) .bookTile {
+  background: #1a1924;
+  border-color: #2f2d3d;
+}
+
+:global(.dark) .bookTile:hover {
+  border-color: #7368db;
+  box-shadow: 0 10px 28px rgba(41, 31, 87, 0.45);
+}
+
+:global(.dark) .bookTileCurrent {
+  background: linear-gradient(160deg, rgba(91, 79, 207, 0.18), #1a1924 55%);
+  border-color: #6f64d8;
+}
+
+:global(.dark) .tileName {
+  color: #f2f1f8;
+}
+
+:global(.dark) .tileDesc {
+  color: #9d98b8;
+}
+
+:global(.dark) .tileCount {
+  color: #7f7b9c;
+}
+
+:global(.dark) .currentBadge {
+  background: rgba(91, 79, 207, 0.16);
+  color: #b9afff;
+  border: 1px solid rgba(111, 100, 216, 0.4);
+}
