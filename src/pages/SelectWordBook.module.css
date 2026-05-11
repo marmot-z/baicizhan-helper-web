@@ -15,20 +15,10 @@
 
 .header {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.35rem;
   margin-bottom: 0.4rem;
-}
-
-.backButton {
-  border: 1px solid #e2e0ec;
-  background: #fff;
-  color: #888;
-  border-radius: 999px;
-  padding: 0.42rem 0.85rem;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.78rem;
 }
 
 .title {
@@ -39,17 +29,38 @@
 }
 
 .subtitle {
-  margin: 0.25rem 0 0;
+  margin: 0;
   color: #aaa;
   font-size: 0.82rem;
+}
+
+.tabsBlock {
+  margin: 1.6rem 0 1.8rem;
 }
 
 .tabs {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.tabsCollapsed {
   overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.tabsCollapsed::-webkit-scrollbar {
+  display: none;
+}
+
+.tabsExpanded {
   flex-wrap: wrap;
-  margin: 1.6rem 0 1.8rem;
+}
+
+.toggleRow {
+  margin-top: 0.55rem;
 }
 
 .tab {
@@ -69,6 +80,19 @@
   background: #5b4fcf;
   color: #ffffff;
   border-color: #5b4fcf;
+}
+
+.expandToggle {
+  border: 1.5px solid #d8d4ee;
+  background: #f7f6ff;
+  color: #5b4fcf;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .sectionList {
@@ -99,14 +123,13 @@
   border: 1px solid #ebe9f5;
   background: #fff;
   border-radius: 16px;
-  padding: 1.15rem 1rem 0.95rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
-  overflow: hidden;
   position: relative;
 }
 
@@ -117,26 +140,40 @@
 }
 
 .bookTileCurrent {
-  border-color: #a59fe8;
-  background: linear-gradient(160deg, #f7f6ff 0%, #fff 100%);
+  border: 1.5px solid #8b91ff;
+  background: #fff;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
 .tileCoverImage,
 .tileCover {
-  width: 100%;
-  height: 88px;
-  border-radius: 12px;
-  object-fit: cover;
+  width: 44px;
+  height: 56px;
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  padding: 0.72rem 0.82rem;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  padding: 0.35rem 0.42rem;
+}
+
+.tileCoverImage {
+  object-fit: cover;
+  background: #f7f6fb;
+  padding: 0;
 }
 
 .tileTag {
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-size: 0.5rem;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.95);
@@ -144,56 +181,57 @@
   z-index: 1;
 }
 
-.coverDeco,
-.coverDecoSmall {
-  position: absolute;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+.coverGlyph {
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  opacity: 0.45;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .coverDeco {
-  width: 64px;
-  height: 64px;
-  right: -18px;
-  bottom: -18px;
-}
-
-.coverDecoSmall {
-  width: 38px;
-  height: 38px;
-  right: -6px;
-  bottom: -6px;
-  background: rgba(255, 255, 255, 0.12);
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  width: 40px;
+  height: 40px;
+  right: -12px;
+  bottom: -12px;
 }
 
 .coverOrange {
-  background: linear-gradient(140deg, #f5920c, #df5f00);
+  background: #f0900a;
 }
 
 .coverGold {
-  background: linear-gradient(140deg, #e8b830, #c98f08);
+  background: #e8b830;
 }
 
 .coverGreen {
-  background: linear-gradient(140deg, #1db585, #0a7f5a);
+  background: #1db585;
 }
 
 .coverBlue {
-  background: linear-gradient(140deg, #3a8fd8, #1a60a8);
+  background: #3a8fd8;
 }
 
 .coverPurple {
-  background: linear-gradient(140deg, #9b59b6, #6c3483);
+  background: #8e56d9;
 }
 
 .coverRose {
-  background: linear-gradient(140deg, #e74c3c, #a93226);
+  background: #e74c3c;
 }
 
 .tileBody {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .tileHeading {
@@ -205,6 +243,9 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: #1a1838;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tileDesc {
@@ -212,7 +253,10 @@
   color: #b0adc0;
   line-height: 1.55;
   font-size: 0.72rem;
-  min-height: 2.2rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tileFoot {
@@ -220,12 +264,24 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  border-top: 0.5px solid #ebe9f5;
+  padding-top: 0.65rem;
 }
 
 .tileCount {
-  color: #c0bdd5;
-  font-size: 0.72rem;
+  color: #8f8c98;
+  font-size: 0.8rem;
   font-weight: 500;
+}
+
+.currentBadge {
+  font-size: 0.64rem;
+  font-weight: 500;
+  background: #edf4ff;
+  color: #3b6fb6;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
 }
 
 .placeholderCard {
@@ -268,7 +324,6 @@
   color: #9d98b8;
 }
 
-:global(.dark) .backButton,
 :global(.dark) .tab {
   background: #1c1b26;
   color: #c5c1d8;
@@ -281,6 +336,12 @@
   border-color: #5b4fcf;
 }
 
+:global(.dark) .expandToggle {
+  background: rgba(91, 79, 207, 0.14);
+  color: #b9afff;
+  border-color: rgba(111, 100, 216, 0.38);
+}
+
 :global(.dark) .placeholderCard {
   background: #1a1924;
   border-color: #2f2d3d;
@@ -291,18 +352,18 @@
 }
 
 :global(.dark) .bookTile {
-  background: #1a1924;
-  border-color: #2f2d3d;
+  background: #323130;
+  border-color: #585654;
 }
 
 :global(.dark) .bookTile:hover {
-  border-color: #7368db;
-  box-shadow: 0 10px 28px rgba(41, 31, 87, 0.45);
+  border-color: #7d7a77;
+  box-shadow: none;
 }
 
 :global(.dark) .bookTileCurrent {
-  background: linear-gradient(160deg, rgba(91, 79, 207, 0.18), #1a1924 55%);
-  border-color: #6f64d8;
+  background: #323130;
+  border-color: #4f9cff;
 }
 
 :global(.dark) .tileName {
@@ -310,15 +371,19 @@
 }
 
 :global(.dark) .tileDesc {
-  color: #9d98b8;
+  color: #d0cecb;
 }
 
 :global(.dark) .tileCount {
-  color: #7f7b9c;
+  color: #d0cecb;
+}
+
+:global(.dark) .tileFoot {
+  border-top-color: #585654;
 }
 
 :global(.dark) .currentBadge {
-  background: rgba(91, 79, 207, 0.16);
-  color: #b9afff;
-  border: 1px solid rgba(111, 100, 216, 0.4);
+  background: rgba(79, 156, 255, 0.18);
+  color: #8cc2ff;
+  border: none;
 }

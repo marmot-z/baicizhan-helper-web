@@ -242,9 +242,6 @@ const SelectStudyPlan: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.wrapper}>
         <header className={styles.header}>
-          <button type="button" className={styles.backButton} onClick={() => navigate(-1)}>
-            返回
-          </button>
           <div>
             <h1 className={styles.title}>制定计划</h1>
             <p className={styles.subtitle}>设置每日学习与复习数量，新的单词计划会立即生效。</p>

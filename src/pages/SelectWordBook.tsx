@@ -31,6 +31,16 @@ function getCoverTheme(bookId: number): string {
   return COVER_THEMES[Math.abs(bookId) % COVER_THEMES.length];
 }
 
+function getCoverGlyph(name: string): string {
+  const upperName = name.toUpperCase();
+  if (upperName.includes('CET-4')) return '4';
+  if (upperName.includes('CET-6')) return '6';
+  if (name.includes('高考')) return 'A';
+  if (name.includes('中考')) return 'B';
+  if (name.includes('专升本')) return '升';
+  return name.trim().charAt(0) || '词';
+}
+
 const buildSections = (
   books: UserBookBasicInfo[],
   categories: UserBookCategory[],
@@ -91,6 +101,7 @@ const SelectWordBook: React.FC = () => {
   const [categories, setCategories] = useState<UserBookCategory[]>([]);
   const [activeTab, setActiveTab] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAllTabs, setShowAllTabs] = useState(false);
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -126,27 +137,63 @@ const SelectWordBook: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.wrapper}>
         <header className={styles.header}>
-          <button type="button" className={styles.backButton} onClick={() => navigate(-1)}>
-            返回
-          </button>
-          <div>
-            <h1 className={styles.title}>全部词书</h1>
-            <p className={styles.subtitle}>选择新的学习词书，并为它制定每日计划。</p>
-          </div>
+          <h1 className={styles.title}>全部词书</h1>
+          <p className={styles.subtitle}>选择新的学习词书，并为它制定每日计划。</p>
         </header>
 
-        <div className={styles.tabs} role="tablist" aria-label="词书分类">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {showAllTabs ? (
+          <div className={styles.tabsBlock}>
+            <div className={`${styles.tabs} ${styles.tabsExpanded}`} role="tablist" aria-label="词书分类">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {tabs.length > 0 ? (
+              <div className={styles.toggleRow}>
+                <button
+                  type="button"
+                  className={styles.expandToggle}
+                  onClick={() => setShowAllTabs(false)}
+                >
+                  收起
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className={styles.tabsBlock}>
+            <div className={`${styles.tabs} ${styles.tabsCollapsed}`} role="tablist" aria-label="词书分类">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {tabs.length > 0 ? (
+              <div className={styles.toggleRow}>
+                <button
+                  type="button"
+                  className={styles.expandToggle}
+                  onClick={() => setShowAllTabs(true)}
+                >
+                  展开全部
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         {loading ? (
           <section className={styles.placeholderCard}>词书加载中...</section>
@@ -174,24 +221,26 @@ const SelectWordBook: React.FC = () => {
                           )
                         }
                       >
-                        {book.img ? (
-                          <img className={styles.tileCoverImage} src={book.img} alt={book.name} />
-                        ) : (
-                          <div className={`${styles.tileCover} ${getCoverTheme(book.id)}`}>
-                            <span className={styles.tileTag}>{getBookTag(book.name)}</span>
-                            <span className={styles.coverDeco} />
-                            <span className={styles.coverDecoSmall} />
+                        <div className={styles.cardTop}>
+                          {book.img ? (
+                            <img className={styles.tileCoverImage} src={book.img} alt={book.name} />
+                          ) : (
+                            <div className={`${styles.tileCover} ${getCoverTheme(book.id)}`}>
+                              <span className={styles.tileTag}>{getBookTag(book.name)}</span>
+                              <span className={styles.coverGlyph}>{getCoverGlyph(book.name)}</span>
+                              <span className={styles.coverDeco} />
+                            </div>
+                          )}
+                          <div className={styles.tileBody}>
+                            <div className={styles.tileHeading}>
+                              <h3 className={styles.tileName}>{book.name}</h3>
+                            </div>
+                            <p className={styles.tileDesc}>{book.desc || '暂无词书描述'}</p>
                           </div>
-                        )}
-                        <div className={styles.tileBody}>
-                          <div className={styles.tileHeading}>
-                            <h3 className={styles.tileName}>{book.name}</h3>
-                          </div>
-                          <p className={styles.tileDesc}>{book.desc || '暂无词书描述'}</p>
-                          <div className={styles.tileFoot}>
-                            <span className={styles.tileCount}>共 {book.total_words_count} 词</span>
-                            {isCurrent ? <span className={styles.currentBadge}>当前计划</span> : null}
-                          </div>
+                        </div>
+                        <div className={styles.tileFoot}>
+                          <span className={styles.tileCount}>共 {book.total_words_count} 词</span>
+                          {isCurrent ? <span className={styles.currentBadge}>当前计划</span> : null}
                         </div>
                       </button>
                     );
