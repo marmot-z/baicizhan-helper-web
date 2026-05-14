@@ -2,8 +2,11 @@ import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { router } from './router';
 import { useEffect } from 'react';
+import { useAuthInit } from './hooks';
 
 function App() {
+  useAuthInit();
+
   useEffect(() => {
     // 检查URL中是否有邀请码
     const params = new URLSearchParams(window.location.search);
