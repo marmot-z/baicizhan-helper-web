@@ -1,7 +1,24 @@
 import { ApiService } from './api';
 import { StudyUtils } from './study/StudyUtils';
 import type { StudyUIModel } from './study/types';
-import type { SelectBookPlanInfo, BooksInfoResponse, UserBookBasicInfo, CalendarDailyInfo, UserRoadMapElementV2, UserLearnedWordInfo, UserDoneWordRecord, CreditStatus, XModeWordDetail } from '../types';
+import type {
+  SelectBookPlanInfo,
+  BooksInfoResponse,
+  UserBookBasicInfo,
+  CalendarDailyInfo,
+  UserRoadMapElementV2,
+  UserLearnedWordInfo,
+  UserDoneWordRecord,
+  CreditStatus,
+  XModeWordDetail,
+  UserBookCategory,
+  UserSelectedBookInfo,
+} from '../types';
+
+export interface AllBooksResponse {
+  books: UserBookBasicInfo[];
+  categories: UserBookCategory[];
+}
 
 export const studyService = {
   // 获取用户学习计划信息
@@ -11,9 +28,45 @@ export const studyService = {
   },
 
   // 获取全部单词书信息
-  async getAllBooks(): Promise<UserBookBasicInfo[]> {
+  async getAllBooks(): Promise<AllBooksResponse> {
     const response = await ApiService.get<BooksInfoResponse>('/booksInfo');
-    return response.data.books_info;
+    return {
+      books: response.data.books_info ?? [],
+      categories: response.data.categories_info ?? [],
+    };
+  },
+
+  async selectBook(
+    bookId: number,
+    dailyPlanCount: number,
+    reviewPlanCount: number,
+    mode = -1,
+    groupCount = 0,
+  ): Promise<UserSelectedBookInfo> {
+    const params = new URLSearchParams();
+    params.append('bookId', String(bookId));
+    params.append('dailyPlanCount', String(dailyPlanCount));
+    params.append('reviewPlanCount', String(reviewPlanCount));
+    params.append('mode', String(mode));
+    params.append('groupCount', String(groupCount));
+
+    const response = await ApiService.post<UserSelectedBookInfo>(`/selectBook?${params.toString()}`);
+    return response.data;
+  },
+
+  async mergeAlreadyLearnedWordsAsync(bookId: number, oldBookIds: number[] = []): Promise<string> {
+    const params = new URLSearchParams();
+    params.append('bookId', String(bookId));
+    if (oldBookIds.length === 0) {
+      params.append('oldBookIds', '');
+    } else {
+      oldBookIds.forEach((id) => {
+        params.append('oldBookIds', String(id));
+      });
+    }
+
+    const response = await ApiService.post<string>(`/mergeAlreadyLearnedWordsAsync?${params.toString()}`);
+    return response.data;
   },
 
   // 获取指定日期的学习内容

@@ -37,6 +37,7 @@ interface StudyState {
   recomputeHomeState: (bookId: number) => StudyHomeState;
   syncCurrentBookState: (bookId?: number) => Promise<void>;
   fetchStudyData: () => Promise<void>;
+  refreshStudyDataForBook: (book: UserBookBasicInfo) => Promise<void>;
   clearStudyData: () => void;
 }
 
@@ -111,6 +112,27 @@ async function syncBookState(
 
   inflightBookSyncs.set(bookId, task);
   return task;
+}
+
+async function hydrateStudyPlanForKnownBook(
+  set: StudyStoreSet,
+  get: StudyStoreGet,
+  book: UserBookBasicInfo,
+): Promise<void> {
+  const planData = await studyService.getBookPlanInfo();
+  if (!planData || planData.length === 0) {
+    return;
+  }
+
+  const userPlan = planData[0];
+  set({
+    studyPlan: userPlan,
+    currentBook: book,
+  });
+
+  const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+  set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
+  await syncBookState(set, get, userPlan.book_id);
 }
 
 export const useStudyStore = create<StudyState>()(
@@ -211,7 +233,7 @@ export const useStudyStore = create<StudyState>()(
             } else {
               // 不匹配或无缓存，重新拉取单词书信息
               const booksData = await studyService.getAllBooks();
-              const matchedBook = booksData.find(book => book.id === userPlan.book_id);
+              const matchedBook = booksData.books.find(book => book.id === userPlan.book_id);
               if (matchedBook) {
                 set({ currentBook: matchedBook });
                 
@@ -225,6 +247,14 @@ export const useStudyStore = create<StudyState>()(
           }
         } catch (error) {
           console.error('Failed to fetch study data:', error);
+        }
+      },
+
+      refreshStudyDataForBook: async (book: UserBookBasicInfo) => {
+        try {
+          await hydrateStudyPlanForKnownBook(set, get, book);
+        } catch (error) {
+          console.error('Failed to refresh study data for known book:', error);
         }
       },
 

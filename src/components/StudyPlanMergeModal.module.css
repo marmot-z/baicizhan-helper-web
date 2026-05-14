@@ -1,0 +1,87 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1100;
+}
+
+.dialog {
+  width: min(100%, 480px);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 2rem 1.75rem 1.5rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+}
+
+.title {
+  margin: 0 0 1rem;
+  text-align: center;
+  font-size: 1.35rem;
+  color: #1e293b;
+}
+
+.description {
+  margin: 0;
+  text-align: center;
+  color: #475569;
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.secondaryButton,
+.primaryButton {
+  min-width: 120px;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.secondaryButton {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+}
+
+.secondaryButton:disabled,
+.primaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+:global(.dark) .dialog {
+  background: #1e293b;
+  border: 1px solid #334155;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
+}
+
+:global(.dark) .title {
+  color: #f8fafc;
+}
+
+:global(.dark) .description {
+  color: #cbd5e1;
+}
+
+:global(.dark) .secondaryButton {
+  background: #334155;
+  color: #e2e8f0;
+}

@@ -5,6 +5,8 @@ import {
   Login,
   Dashboard,
   Search,
+  SelectStudyPlan,
+  SelectWordBook,
   StudyCalendar,
   StudyView,
   WordBook,
@@ -45,8 +47,16 @@ export const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
+        path: ROUTES.ALL_BOOKS,
+        element: <SelectWordBook />,
+      },
+      {
         path: ROUTES.SEARCH,
         element: <Search />,
+      },
+      {
+        path: ROUTES.CREATE_STUDY_PLAN,
+        element: <SelectStudyPlan />,
       },
       {
         path: ROUTES.STUDY_CALENDAR,
