@@ -14,6 +14,7 @@ import StudyLoadingState from '../components/study/StudyLoadingState';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
 import { useStudyState } from '../hooks/useStudyState';
 import { AudioSequencePlayer } from '../utils/audio';
+import { studyRecordStore } from '../services/study';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -147,11 +148,18 @@ const StudyView: React.FC = () => {
   // 退出前进行提示
   useEffect(() => {
     if (isCompleted) {
-      toast.success('学习完成，学习记录已上传！');
+      const bookId = studyPlan?.book_id;
+      const syncMeta = bookId ? studyRecordStore.getSyncMeta(bookId) : null;
+      const hasPending = bookId ? studyRecordStore.getPendingDoneRecords(bookId).length > 0 : false;
+      if (hasPending || syncMeta?.lastUploadError) {
+        toast.success('学习完成，记录已保存到本地，等待同步');
+      } else {
+        toast.success('学习完成，学习记录已同步！');
+      }
       const words = study?.getAllWords() || [];
       navigate(ROUTES.STUDY_MID, { state: { words } });
     }
-  }, [isCompleted, navigate, study]);
+  }, [isCompleted, navigate, study, studyPlan?.book_id]);
 
   // 添加键盘事件监听
   useEffect(() => {

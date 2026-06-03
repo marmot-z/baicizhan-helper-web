@@ -1,8 +1,7 @@
 import { studyService } from '../studyService';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import { applyReviewCorrect, applyReviewWrong, studyRecordStore } from '../study';
-import { toUserDoneWordRecord } from '../study/uploadAdapter';
-import type { UserRoadMapElementV2 } from '../../types';
+import { toPendingDoneRecord } from '../study/uploadAdapter';
 import { useStudyStore } from '../../stores/studyStore';
 import type {
   ReviewContext,
@@ -21,7 +20,6 @@ export const reviewService = {
   async initializeReviewWords(
     bookId: number,
     reviewPlanCount: number,
-    _roadmapWords: UserRoadMapElementV2[]
   ): Promise<ReviewInitData> {
     await useStudyStore.getState().syncCurrentBookState(bookId);
     const { homeState, syncedBookId } = useStudyStore.getState();
@@ -67,10 +65,7 @@ export const reviewService = {
     };
   },
 
-  async getChoiceOptions(
-    word: StudyUIModel,
-    _roadmapMap: Map<number, UserRoadMapElementV2>
-  ): Promise<StudyOption[]> {
+  async getChoiceOptions(word: StudyUIModel): Promise<StudyOption[]> {
     if (!word.front.options.length) {
       return [
         {
@@ -212,18 +207,6 @@ export const reviewService = {
     store.loadLocalLearnRecords(context.bookId);
     store.recomputeHomeState(context.bookId);
 
-    const uploadedRecords = records
-      .map((reviewRecord) =>
-        studyRecordStore.getRecord(context.bookId, reviewRecord.topicId),
-      )
-      .filter((record) => record != null)
-      .map((record) => toUserDoneWordRecord(record));
-
-    if (!uploadedRecords.length) {
-      console.warn('No local review records found for upload.');
-      return;
-    }
-
     const { wordList, wordListBookId } = store;
     const currentRoadmap =
       wordListBookId === context.bookId ? wordList : [];
@@ -231,12 +214,18 @@ export const reviewService = {
       currentRoadmap.find((word) => records.some((record) => record.topicId === word.topic_id))
         ?.word_level_id ?? 0;
 
-    await studyService.updateDoneData(uploadedRecords, wordLevelId);
+    studyRecordStore.queuePendingDoneRecords(
+      context.bookId,
+      nextRecords.map((record) => toPendingDoneRecord(record, wordLevelId)),
+    );
+    await store.syncCurrentBookState(context.bookId);
+
+    const latestHomeState = useStudyStore.getState().homeState;
     await studyService.reportFinishDailyPlan(
       context.bookId,
       records.length,
       0,
-      store.homeState.unlearnedWords.length === 0,
+      latestHomeState.unlearnedWords.length === 0,
     );
   },
 };

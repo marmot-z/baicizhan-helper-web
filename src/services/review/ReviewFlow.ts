@@ -27,7 +27,6 @@ export class ReviewFlow {
   private listeners = new Set<(snapshot: ReviewSnapshot) => void>();
   private records = new Map<number, ReviewWordRecord>();
   private allWords: StudyUIModel[];
-  private roadmapMap: ReviewInitData['roadmapMap'];
   private context: ReviewInitData['context'];
 
   private choiceQueue: StudyUIModel[];
@@ -50,7 +49,6 @@ export class ReviewFlow {
   constructor(initData: ReviewInitData) {
     this.allWords = initData.words;
     this.choiceQueue = [...initData.words];
-    this.roadmapMap = initData.roadmapMap;
     this.context = initData.context;
 
     initData.words.forEach((word) => {
@@ -330,7 +328,7 @@ export class ReviewFlow {
       .reportWordShown(word, 'choice')
       .catch(console.error);
 
-    const options = await reviewService.getChoiceOptions(word, this.roadmapMap);
+    const options = await reviewService.getChoiceOptions(word);
     if (!this.currentChoiceWord || this.currentChoiceWord.topicId !== word.topicId) {
       return;
     }

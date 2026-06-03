@@ -1,11 +1,11 @@
 import { ProcessIterator } from './ProcessIterator';
-import type { UserRoadMapElementV2, UserDoneWordRecord } from '../../types';
+import type { UserRoadMapElementV2 } from '../../types';
 import type { WordCard } from './WordCard';
 import { studyService } from '../studyService';
 import { StudyUtils } from './StudyUtils';
 import { applyStudyCorrect } from './recordReducers';
 import { studyRecordStore } from './recordStore';
-import { toUserDoneWordRecord } from './uploadAdapter';
+import { toPendingDoneRecord } from './uploadAdapter';
 import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 
@@ -23,7 +23,7 @@ export class Study {
   private wordStudyTime: number;
   private startTime: number;
   public completed: boolean;
-  private onUpload?: (study: Study) => void;
+  private onUpload?: (study: Study) => void | Promise<void>;
   private listeners: Set<(wordCard: WordCard | null) => void>;
   
   /**
@@ -32,7 +32,7 @@ export class Study {
    * @param uiModels UI模型列表(预加载数据)
    * @param context 学习上下文
    */
-  constructor(words: UserRoadMapElementV2[], uiModels: StudyUIModel[], context: StudyContext, onUpload?: (study: Study) => void) {
+  constructor(words: UserRoadMapElementV2[], uiModels: StudyUIModel[], context: StudyContext, onUpload?: (study: Study) => void | Promise<void>) {
     this.processIterator = new ProcessIterator(uiModels);
     this.currentWordCard = null;
     this.failMap = new Map();
@@ -101,7 +101,7 @@ export class Study {
     }
 
     if (!this.processIterator.hasNext()) {
-      this.complete();
+      await this.complete();
       return;
     }    
 
@@ -238,7 +238,7 @@ export class Study {
     return parseFloat((this.processIterator.getProgress() * 100).toFixed(0));
   }
   
-  public complete(): void {
+  public async complete(): Promise<void> {
     this.completed = true;
     this.notify();
     const studyStatistics: StudyStatistcs = {
@@ -300,35 +300,26 @@ export class Study {
       'main-study'
     ).catch(console.error);
 
-    this.writeStudyRecordsToLocal();
-    this.reportFinishDailyPlan();
+    const updatedRecords = this.writeStudyRecordsToLocal();
+    const wordLevelId = this.words[0]?.word_level_id || 0;
+    studyRecordStore.queuePendingDoneRecords(
+      this.context.bookId,
+      updatedRecords.map((record) => toPendingDoneRecord(record, wordLevelId)),
+    );
+    await useStudyStore.getState().syncCurrentBookState(this.context.bookId);
 
     if (this.onUpload) {
-      this.onUpload(this);
+      await this.onUpload(this);
+      this.reportFinishDailyPlan();
       return;
     }
-    this.uploadDoneData();
+
+    this.reportFinishDailyPlan();
   }
 
-  private uploadDoneData(): void {
-    const doneWordRecords: UserDoneWordRecord[] = this.words
-      .map((word) =>
-        studyRecordStore.getRecord(this.context.bookId, word.topic_id),
-      )
-      .filter((record) => record != null)
-      .map((record) => toUserDoneWordRecord(record));
-
-    if (!doneWordRecords.length) {
-      console.warn('No local study records found for upload.');
-      return;
-    }
-    
-    studyService.updateDoneData(doneWordRecords, this.words[0]?.word_level_id || 0);
-  }
-
-  private writeStudyRecordsToLocal(): void {
+  private writeStudyRecordsToLocal() {
     if (!this.words.length) {
-      return;
+      return [];
     }
 
     const now = Date.now();
@@ -359,6 +350,7 @@ export class Study {
     const store = useStudyStore.getState();
     store.loadLocalLearnRecords(this.context.bookId);
     store.recomputeHomeState(this.context.bookId);
+    return updatedRecords;
   }
 
   private reportFinishDailyPlan(): void {

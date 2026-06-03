@@ -81,12 +81,56 @@ async function syncBookState(
       set({ wordList: roadmap, wordListBookId: bookId });
     }
 
+    const pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
+    if (pendingDoneRecords.length > 0) {
+      studyRecordStore.updateSyncMeta(bookId, {
+        lastUploadAttemptAt: Date.now(),
+        lastUploadError: null,
+      });
+
+      try {
+        const uploadResult = await studyService.updateDoneData(
+          pendingDoneRecords.map((item) => item.doneRecord),
+          pendingDoneRecords[pendingDoneRecords.length - 1]?.wordLevelId ?? 0,
+        );
+
+        studyRecordStore.clearPendingDoneRecords(
+          bookId,
+          pendingDoneRecords.map((item) => item.requestKey),
+        );
+        studyRecordStore.updateSyncMeta(bookId, {
+          localSyncVer: uploadResult.syncVersion,
+          lastSuccessfulSyncAt: Date.now(),
+          lastUploadError: null,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        studyRecordStore.updateSyncMeta(bookId, {
+          lastUploadError: message,
+        });
+        console.error(`Failed to upload pending done data for book ${bookId}:`, error);
+      }
+    }
+
     try {
-      const remoteLearnedWords = await studyService.getLearnedWords(bookId);
-      studyRecordStore.mergeRemoteLearnedWords(bookId, remoteLearnedWords);
+      const syncMeta = await studyService.getStudySyncMeta(bookId);
+      const localSyncMeta = studyRecordStore.getSyncMeta(bookId);
+      studyRecordStore.updateSyncMeta(bookId, {
+        remoteSyncVer: syncMeta.remoteSyncVer,
+      });
+
+      if (syncMeta.remoteSyncVer > localSyncMeta.localSyncVer) {
+        const remoteLearnedWords = await studyService.getLearnedWords(bookId);
+        studyRecordStore.mergeRemoteLearnedWords(bookId, remoteLearnedWords);
+        studyRecordStore.updateSyncMeta(bookId, {
+          localSyncVer: syncMeta.remoteSyncVer,
+          remoteSyncVer: syncMeta.remoteSyncVer,
+        });
+      }
+
       nextRecordMap = createRecordMap(studyRecordStore.getAllRecords(bookId));
     } catch (error) {
-      console.error(`Failed to sync learned words for book ${bookId}:`, error);
+      console.error(`Failed to sync remote learned words for book ${bookId}:`, error);
     }
 
     const currentPlan = get().studyPlan?.book_id === bookId ? get().studyPlan : null;
@@ -216,7 +260,7 @@ export const useStudyStore = create<StudyState>()(
             
             // 检查缓存的单词书ID是否与当前学习计划的book_id匹配
             if (currentBook && currentBook.id === userPlan.book_id) {
-              let { wordList } =  get();
+              const { wordList } =  get();
 
               // 无单词列表则拉取
               if (

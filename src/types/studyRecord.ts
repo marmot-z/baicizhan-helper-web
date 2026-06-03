@@ -1,4 +1,8 @@
-import type { UserLearnedWordInfo, UserRoadMapElementV2 } from './index';
+import type {
+  UserDoneWordRecord,
+  UserLearnedWordInfo,
+  UserRoadMapElementV2,
+} from './index';
 
 export const UNLEARNED_SCORE = -1024;
 
@@ -75,9 +79,36 @@ export interface RemoteLearnRecordMergeResult {
 
 export type TopicLearnRecordMap = Record<number, TopicLearnRecord>;
 
-export interface StudyRecordStoreSnapshot {
+export interface PendingDoneRecord {
+  topicId: number;
+  wordLevelId: number;
+  queuedAt: number;
+  requestKey: string;
+  doneRecord: UserDoneWordRecord;
+}
+
+export interface StudySyncMeta {
+  localSyncVer: number;
+  remoteSyncVer: number;
+  lastSuccessfulSyncAt: number;
+  lastUploadAttemptAt: number;
+  lastUploadError: string | null;
+}
+
+export interface StudyBookStateSnapshot {
+  totalRecords: TopicLearnRecordMap;
+  pendingDoneQueue: PendingDoneRecord[];
+  syncMeta: StudySyncMeta;
+}
+
+export interface StudyRecordStoreSnapshotV1 {
   version: 1;
   books: Record<number, TopicLearnRecordMap>;
+}
+
+export interface StudyRecordStoreSnapshot {
+  version: 2;
+  books: Record<number, StudyBookStateSnapshot>;
 }
 
 export function createEmptyHomeState(
@@ -130,6 +161,30 @@ export function createRecordMap(
     acc[record.topicId] = record;
     return acc;
   }, {});
+}
+
+export function createEmptySyncMeta(
+  overrides: Partial<StudySyncMeta> = {},
+): StudySyncMeta {
+  return {
+    localSyncVer: 0,
+    remoteSyncVer: 0,
+    lastSuccessfulSyncAt: 0,
+    lastUploadAttemptAt: 0,
+    lastUploadError: null,
+    ...overrides,
+  };
+}
+
+export function createEmptyBookStateSnapshot(
+  overrides: Partial<StudyBookStateSnapshot> = {},
+): StudyBookStateSnapshot {
+  return {
+    totalRecords: {},
+    pendingDoneQueue: [],
+    syncMeta: createEmptySyncMeta(),
+    ...overrides,
+  };
 }
 
 export function isUnlearnedRecord(

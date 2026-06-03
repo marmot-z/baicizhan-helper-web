@@ -20,6 +20,16 @@ export interface AllBooksResponse {
   categories: UserBookCategory[];
 }
 
+export interface StudySyncMetaResponse {
+  bookId: number;
+  remoteSyncVer: number;
+}
+
+export interface UpdateDoneDataResponse {
+  resultCode: number;
+  syncVersion: number;
+}
+
 export const studyService = {
   // 获取用户学习计划信息
   async getBookPlanInfo(): Promise<SelectBookPlanInfo[]> {
@@ -87,16 +97,21 @@ export const studyService = {
     return response.data;
   },
 
-  // 更新完成数据
-  async updateDoneData(doneRecords: UserDoneWordRecord[], wordLevelId: number): Promise<void> {
-    await ApiService.post('/updateDoneData', {
-      doneRecords,
-      wordLevelId
-    });
+  async getStudySyncMeta(bookId: number): Promise<StudySyncMetaResponse> {
+    const response = await ApiService.get<StudySyncMetaResponse>(`/studySyncMeta?bookId=${bookId}`);
+    return response.data;
   },
-  
-  async updateReviewData(doneRecords: UserDoneWordRecord[]): Promise<void> {
-    console.log('[studyService] updateReviewData', doneRecords);
+
+  // 更新完成数据
+  async updateDoneData(
+    doneRecords: UserDoneWordRecord[],
+    wordLevelId: number,
+  ): Promise<UpdateDoneDataResponse> {
+    const response = await ApiService.post<UpdateDoneDataResponse>('/updateDoneData', {
+      doneRecords,
+      wordLevelId,
+    });
+    return response.data;
   },
 
   // 获取配置
