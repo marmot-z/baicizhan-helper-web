@@ -65,15 +65,15 @@ export const studyService = {
   },
 
   async mergeAlreadyLearnedWordsAsync(bookId: number, oldBookIds: number[] = []): Promise<string> {
+    if (oldBookIds.length === 0) {
+      throw new Error('mergeAlreadyLearnedWordsAsync requires non-empty oldBookIds');
+    }
+
     const params = new URLSearchParams();
     params.append('bookId', String(bookId));
-    if (oldBookIds.length === 0) {
-      params.append('oldBookIds', '');
-    } else {
-      oldBookIds.forEach((id) => {
-        params.append('oldBookIds', String(id));
-      });
-    }
+    oldBookIds.forEach((id) => {
+      params.append('oldBookIds', String(id));
+    });
 
     const response = await ApiService.post<string>(`/mergeAlreadyLearnedWordsAsync?${params.toString()}`);
     return response.data;

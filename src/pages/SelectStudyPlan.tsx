@@ -71,7 +71,6 @@ const SelectStudyPlan: React.FC = () => {
   const [book, setBook] = useState<UserBookBasicInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [mergeLoading, setMergeLoading] = useState(false);
   const [dailyPlanInput, setDailyPlanInput] = useState('');
   const [reviewPlanInput, setReviewPlanInput] = useState('');
   const [mergeCount, setMergeCount] = useState(0);
@@ -220,21 +219,13 @@ const SelectStudyPlan: React.FC = () => {
   };
 
   const handleConfirmMerge = async () => {
-    if (!book) {
-      return;
-    }
-
-    setMergeLoading(true);
     try {
-      await studyService.mergeAlreadyLearnedWordsAsync(book.id, []);
       setMergeModalOpen(false);
-      toast.success('学习记录导入任务已创建');
+      toast.success('学习计划已更新');
       await finalizePlanSelection();
     } catch (error) {
-      console.error('导入学习记录失败:', error);
-      toast.error(error instanceof Error ? error.message : '导入学习记录失败');
-    } finally {
-      setMergeLoading(false);
+      console.error('更新学习计划失败:', error);
+      toast.error(error instanceof Error ? error.message : '更新学习计划失败');
     }
   };
 
@@ -441,7 +432,7 @@ const SelectStudyPlan: React.FC = () => {
       <StudyPlanMergeModal
         open={mergeModalOpen}
         mergeCount={mergeCount}
-        loading={mergeLoading}
+        loading={false}
         onSkip={() => {
           void handleSkipMerge();
         }}

@@ -70,7 +70,12 @@ const WordDetail: React.FC = () => {
       try {
         setLoading(true);
         const topicId = parseInt(word);
-        const data = await bookService.getWordDetail(topicId, true, false, true);
+        const data = await bookService.getWordDetail({
+          topicId,
+          withDict: true,
+          withMedia: false,
+          withSimilarWords: true,
+        });
         data.collected = await useWordBookStore.getState().isCollected(topicId);
         setWordData(data);
       } catch (err) {

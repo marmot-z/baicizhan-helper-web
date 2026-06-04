@@ -1,6 +1,26 @@
 import { ApiService } from './api';
 import type { UserBookItem, UserBooksResponse, UserBookWordDetail, TopicResourceV2, SearchWordResultV2 } from '../types';
 
+export type WordDetailChannel =
+  | 'SEARCH_WORD'
+  | 'STUDY'
+  | 'WORD_LIST_LEARNED'
+  | 'WORD_LIST_UNLEARNED'
+  | 'WORD_LIST_KILLED'
+  | 'WORD_LIST_COLLECTED'
+  | 'LOOK_UP'
+  | 'OTHER';
+
+export interface WordDetailRequest {
+  topicId: number;
+  withDict?: boolean;
+  withMedia?: boolean;
+  withSimilarWords?: boolean;
+  bookId?: number;
+  tagId?: number;
+  channel?: WordDetailChannel;
+}
+
 export const bookService = {
   // 获取用户所有单词本信息
   async getBooks(): Promise<UserBookItem[]> {
@@ -15,17 +35,29 @@ export const bookService = {
   },
 
   // 获取单词详情
-  async getWordDetail(
-    topicId: number,
-    withDict: boolean = true,
-    withMedia: boolean = false,
-    withSimilarWords: boolean = false
-  ): Promise<TopicResourceV2> {
+  async getWordDetail({
+    topicId,
+    withDict = true,
+    withMedia = false,
+    withSimilarWords = false,
+    bookId,
+    tagId,
+    channel,
+  }: WordDetailRequest): Promise<TopicResourceV2> {
     const params = new URLSearchParams();
     params.append('withDict', withDict.toString());
     params.append('withMedia', withMedia.toString());
     params.append('withSimilarWords', withSimilarWords.toString());
-    
+    if (bookId !== undefined) {
+      params.append('bookId', String(bookId));
+    }
+    if (tagId !== undefined) {
+      params.append('tagId', String(tagId));
+    }
+    if (channel) {
+      params.append('channel', channel);
+    }
+
     const response = await ApiService.get<TopicResourceV2>(`/word/${topicId}?${params.toString()}`);
     return response.data;
   },

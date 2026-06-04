@@ -60,7 +60,15 @@ export class StudyUtils {
   ): Promise<StudyOption[]> {
     const words: TopicResourceV2[] = await Promise.all(
       word.options.map((id) =>
-        bookService.getWordDetail(id, true, false, false)
+        bookService.getWordDetail({
+          topicId: id,
+          withDict: true,
+          withMedia: false,
+          withSimilarWords: false,
+          bookId: word.word_level_id,
+          tagId: word.tag_id,
+          channel: 'STUDY',
+        })
       )
     );
     const options: StudyOption[] = words
