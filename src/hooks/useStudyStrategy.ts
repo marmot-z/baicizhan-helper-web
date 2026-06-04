@@ -38,10 +38,8 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
             throw new Error('当前书学习状态同步未完成');
           }
 
-          // const unlearnedWords: UserRoadMapElementV2[] = homeState.unlearnedWords
-          //   .slice(0, currentStudyPlan.daily_plan_count);
           const unlearnedWords: UserRoadMapElementV2[] = homeState.unlearnedWords
-            .slice(0, 2);
+            .slice(0, currentStudyPlan.daily_plan_count);
 
           if (!unlearnedWords.length) {
             throw new Error('所有单词都已学习完成');
