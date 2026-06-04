@@ -207,16 +207,9 @@ export const reviewService = {
     store.loadLocalLearnRecords(context.bookId);
     store.recomputeHomeState(context.bookId);
 
-    const { wordList, wordListBookId } = store;
-    const currentRoadmap =
-      wordListBookId === context.bookId ? wordList : [];
-    const wordLevelId =
-      currentRoadmap.find((word) => records.some((record) => record.topicId === word.topic_id))
-        ?.word_level_id ?? 0;
-
     studyRecordStore.queuePendingDoneRecords(
       context.bookId,
-      nextRecords.map((record) => toPendingDoneRecord(record, wordLevelId)),
+      nextRecords.map((record) => toPendingDoneRecord(record)),
     );
     await store.syncCurrentBookState(context.bookId);
 

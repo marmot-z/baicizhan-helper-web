@@ -301,10 +301,9 @@ export class Study {
     ).catch(console.error);
 
     const updatedRecords = this.writeStudyRecordsToLocal();
-    const wordLevelId = this.words[0]?.word_level_id || 0;
     studyRecordStore.queuePendingDoneRecords(
       this.context.bookId,
-      updatedRecords.map((record) => toPendingDoneRecord(record, wordLevelId)),
+      updatedRecords.map((record) => toPendingDoneRecord(record)),
     );
     await useStudyStore.getState().syncCurrentBookState(this.context.bookId);
 

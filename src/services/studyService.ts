@@ -105,11 +105,11 @@ export const studyService = {
   // 更新完成数据
   async updateDoneData(
     doneRecords: UserDoneWordRecord[],
-    wordLevelId: number,
+    bookId: number,
   ): Promise<UpdateDoneDataResponse> {
     const response = await ApiService.post<UpdateDoneDataResponse>('/updateDoneData', {
       doneRecords,
-      wordLevelId,
+      bookId,
     });
     return response.data;
   },

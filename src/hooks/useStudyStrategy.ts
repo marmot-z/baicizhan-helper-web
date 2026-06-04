@@ -41,7 +41,7 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
           // const unlearnedWords: UserRoadMapElementV2[] = homeState.unlearnedWords
           //   .slice(0, currentStudyPlan.daily_plan_count);
           const unlearnedWords: UserRoadMapElementV2[] = homeState.unlearnedWords
-            .slice(0, 5);
+            .slice(0, 2);
 
           if (!unlearnedWords.length) {
             throw new Error('所有单词都已学习完成');

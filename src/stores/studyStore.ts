@@ -91,7 +91,7 @@ async function syncBookState(
       try {
         const uploadResult = await studyService.updateDoneData(
           pendingDoneRecords.map((item) => item.doneRecord),
-          pendingDoneRecords[pendingDoneRecords.length - 1]?.wordLevelId ?? 0,
+          bookId,
         );
 
         studyRecordStore.clearPendingDoneRecords(

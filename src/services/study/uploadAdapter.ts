@@ -22,12 +22,10 @@ export function toUserDoneWordRecord(
 
 export function toPendingDoneRecord(
   record: TopicLearnRecord,
-  wordLevelId: number,
   queuedAt = Date.now(),
 ): PendingDoneRecord {
   return {
     topicId: record.topicId,
-    wordLevelId,
     queuedAt,
     requestKey: `${record.bookId}-${record.topicId}-${queuedAt}`,
     doneRecord: toUserDoneWordRecord(record),

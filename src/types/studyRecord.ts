@@ -81,7 +81,6 @@ export type TopicLearnRecordMap = Record<number, TopicLearnRecord>;
 
 export interface PendingDoneRecord {
   topicId: number;
-  wordLevelId: number;
   queuedAt: number;
   requestKey: string;
   doneRecord: UserDoneWordRecord;
