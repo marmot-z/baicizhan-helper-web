@@ -45,9 +45,6 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
           <span> / </span>
           <span>当前进度：{progressPercent}%</span>
         </header>
-        {state.retryCount > 0 ? (
-          <div className={styles.choiceSubHeader}>待重学 {state.retryCount}</div>
-        ) : null}
 
         <main className={styles.choiceCard}>
           <div className={styles.choiceImageContainer}>

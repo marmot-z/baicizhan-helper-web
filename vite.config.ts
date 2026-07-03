@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://www.baicizhan-helper.cn',
+        target: 'https://www.baicizhan-helper.cn',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
