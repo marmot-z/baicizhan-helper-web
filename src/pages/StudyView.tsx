@@ -14,6 +14,7 @@ import StudyLoadingState from '../components/study/StudyLoadingState';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
 import { useStudyState } from '../hooks/useStudyState';
 import { AudioSequencePlayer } from '../utils/audio';
+import { feedbackSoundPlayer } from '../utils/feedbackSound';
 import { studyRecordStore } from '../services/study';
 
 const StudyView: React.FC = () => {
@@ -74,10 +75,12 @@ const StudyView: React.FC = () => {
     setSelectedOptionIds(prev => [...prev, id]);
 
     if (isCorrect) {
+      feedbackSoundPlayer.playCorrect();
       // 延迟 300ms 以展示绿色正确反馈
       await new Promise(resolve => setTimeout(resolve, 300));
       await study?.pass(id);
     } else {
+      feedbackSoundPlayer.playIncorrect();
       await study?.fail(id);
     }
   };

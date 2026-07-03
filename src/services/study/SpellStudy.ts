@@ -1,4 +1,5 @@
 import { studyService } from '../studyService';
+import { feedbackSoundPlayer } from '../../utils/feedbackSound';
 import type { StudyUIModel } from './types';
 
 /**
@@ -92,11 +93,13 @@ export class SpellStudy {
     const isCorrect = input.trim().toLowerCase() === this.currentWord.word.toLowerCase();
     
     if (isCorrect) {
+      feedbackSoundPlayer.playCorrect();
       this.reportClick(this.currentWord.topicId, 1);
       // 只有拼写正确才切换到下一个单词
       this.next();
       return true;
     } else {
+      feedbackSoundPlayer.playIncorrect();
       // 拼写错误：信号通知视图，且不切换单词
       if (!this.isWrong) {
         this.isWrong = true;

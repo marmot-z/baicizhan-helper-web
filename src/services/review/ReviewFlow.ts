@@ -1,5 +1,6 @@
 import type { StudyOption, StudyUIModel } from '../study/types';
 import { studyService } from '../studyService';
+import { feedbackSoundPlayer } from '../../utils/feedbackSound';
 import { reviewService } from './reviewService';
 import type {
   ReviewChoiceOptionView,
@@ -118,6 +119,7 @@ export class ReviewFlow {
     const record = this.mustGetRecord(this.currentChoiceWord.topicId);
 
     if (option.isCorrect) {
+      feedbackSoundPlayer.playCorrect();
       reviewService
         .reportChoiceResult(this.currentChoiceWord, optionId, true)
         .catch(console.error);
@@ -133,6 +135,7 @@ export class ReviewFlow {
       return;
     }
 
+    feedbackSoundPlayer.playIncorrect();
     this.currentChoiceAttemptCount += 1;
     this.currentChoiceClickedOptionIds.add(optionId);
     record.errorCount += 1;
@@ -179,6 +182,7 @@ export class ReviewFlow {
     const record = this.mustGetRecord(this.currentSpellWord.topicId);
 
     if (isCorrect) {
+      feedbackSoundPlayer.playCorrect();
       const completedAt = Date.now();
       record.spellingPassed = true;
       record.completedAt = completedAt;
@@ -201,6 +205,7 @@ export class ReviewFlow {
       return;
     }
 
+    feedbackSoundPlayer.playIncorrect();
     record.errorCount += 1;
     record.spellingFailed = true;
     this.currentSpellWrong = true;
