@@ -148,6 +148,8 @@ const SelectWordBook: React.FC = () => {
                 <button
                   key={tab.key}
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
                   className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
                   onClick={() => setActiveTab(tab.key)}
                 >
@@ -174,6 +176,8 @@ const SelectWordBook: React.FC = () => {
                 <button
                   key={tab.key}
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
                   className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
                   onClick={() => setActiveTab(tab.key)}
                 >
@@ -211,6 +215,7 @@ const SelectWordBook: React.FC = () => {
                       <button
                         key={book.id}
                         type="button"
+                        aria-current={isCurrent ? 'true' : undefined}
                         className={`${styles.bookTile} ${isCurrent ? styles.bookTileCurrent : ''}`}
                         onClick={() =>
                           navigate(
