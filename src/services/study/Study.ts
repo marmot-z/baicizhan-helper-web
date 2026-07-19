@@ -1,6 +1,6 @@
 import { ProcessIterator } from './ProcessIterator';
 import type { UserRoadMapElementV2 } from '../../types';
-import type { WordCard } from './WordCard';
+import { WordCard } from './WordCard';
 import { studyService } from '../studyService';
 import { StudyUtils } from './StudyUtils';
 import { applyStudyCorrect } from './recordReducers';
@@ -8,6 +8,8 @@ import { studyRecordStore } from './recordStore';
 import { toPendingDoneRecord } from './uploadAdapter';
 import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
+import type { LearnSessionState } from './sessionTypes';
+import { studySessionStore } from './sessionStore';
 
 /**
  * Study类 - 背单词功能的控制中心
@@ -24,6 +26,7 @@ export class Study {
   private startTime: number;
   public completed: boolean;
   private onUpload?: (study: Study) => void | Promise<void>;
+  private onCheckpoint?: (state: LearnSessionState) => void;
   private listeners: Set<(wordCard: WordCard | null) => void>;
   
   /**
@@ -32,7 +35,13 @@ export class Study {
    * @param uiModels UI模型列表(预加载数据)
    * @param context 学习上下文
    */
-  constructor(words: UserRoadMapElementV2[], uiModels: StudyUIModel[], context: StudyContext, onUpload?: (study: Study) => void | Promise<void>) {
+  constructor(
+    words: UserRoadMapElementV2[],
+    uiModels: StudyUIModel[],
+    context: StudyContext,
+    onUpload?: (study: Study) => void | Promise<void>,
+    onCheckpoint?: (state: LearnSessionState) => void,
+  ) {
     this.processIterator = new ProcessIterator(uiModels);
     this.currentWordCard = null;
     this.failMap = new Map();
@@ -43,7 +52,37 @@ export class Study {
     this.completed = false;
     this.startTime = Date.now();
     this.onUpload = onUpload;
+    this.onCheckpoint = onCheckpoint;
     this.listeners = new Set();
+  }
+
+  public static restore(
+    words: UserRoadMapElementV2[],
+    uiModels: StudyUIModel[],
+    context: StudyContext,
+    state: LearnSessionState,
+    onCheckpoint?: (state: LearnSessionState) => void,
+    onUpload?: (study: Study) => void | Promise<void>,
+  ): Study {
+    const instance = new Study(words, uiModels, context, onUpload, onCheckpoint);
+    const modelsByTopicId = new Map(uiModels.map((model) => [model.topicId, model]));
+    instance.processIterator = ProcessIterator.restore(uiModels, state.process);
+    if (state.currentCard) {
+      const model = modelsByTopicId.get(state.currentCard.topicId);
+      if (!model) {
+        throw new Error(`Cannot restore study card ${state.currentCard.topicId}`);
+      }
+      instance.currentWordCard = WordCard.restore(model, state.currentCard);
+    }
+    instance.failMap = new Map(
+      Object.entries(state.failMap).map(([topicId, count]) => [Number(topicId), count]),
+    );
+    instance.useTimeMap = new Map(
+      Object.entries(state.useTimeMap).map(([topicId, time]) => [Number(topicId), time]),
+    );
+    instance.startTime = Date.now() - Math.max(0, state.elapsedTime);
+    instance.wordStudyTime = Date.now() - Math.max(0, state.currentWordElapsedTime);
+    return instance;
   }
   
   public subscribe(listener: (wordCard: WordCard | null) => void): () => void {
@@ -57,11 +96,20 @@ export class Study {
   }
 
   private notify(): void {
+    if (!this.completed) {
+      this.onCheckpoint?.(this.exportState());
+    }
     this.listeners.forEach(listener => listener(this.currentWordCard));
   }
   
   public async start(): Promise<void> {  
     await this.process();
+  }
+
+  public checkpoint(): void {
+    if (!this.completed) {
+      this.onCheckpoint?.(this.exportState());
+    }
   }
 
   private getCurrentStrategyId(): string {
@@ -237,10 +285,34 @@ export class Study {
   public getProgress(): number {
     return parseFloat((this.processIterator.getProgress() * 100).toFixed(0));
   }
+
+  public exportState(): LearnSessionState {
+    return {
+      wordTopicIds: this.words.map((word) => word.topic_id),
+      process: this.processIterator.exportState(),
+      currentCard: this.currentWordCard?.exportState() ?? null,
+      failMap: Object.fromEntries(this.failMap),
+      useTimeMap: Object.fromEntries(this.useTimeMap),
+      elapsedTime: Math.max(0, Date.now() - this.startTime),
+      currentWordElapsedTime: this.currentWordCard
+        ? Math.max(0, Date.now() - this.wordStudyTime)
+        : 0,
+    };
+  }
   
   public async complete(): Promise<void> {
-    this.completed = true;
-    this.notify();
+    if (this.completed) {
+      return;
+    }
+
+    // 先把正式记录和待同步队列可靠地写入本地，再清除进行中草稿。
+    const updatedRecords = this.writeStudyRecordsToLocal();
+    studyRecordStore.queuePendingDoneRecords(
+      this.context.bookId,
+      updatedRecords.map((record) => toPendingDoneRecord(record)),
+    );
+    studySessionStore.clear('learn', this.context.bookId);
+
     const studyStatistics: StudyStatistcs = {
       failMap: Object.fromEntries(this.failMap),
       usedTimeMap: Object.fromEntries(this.useTimeMap),
@@ -300,12 +372,11 @@ export class Study {
       'main-study'
     ).catch(console.error);
 
-    const updatedRecords = this.writeStudyRecordsToLocal();
-    studyRecordStore.queuePendingDoneRecords(
-      this.context.bookId,
-      updatedRecords.map((record) => toPendingDoneRecord(record)),
-    );
-    await useStudyStore.getState().syncCurrentBookState(this.context.bookId);
+    this.completed = true;
+    this.notify();
+
+    // 正式记录已经在本地持久化；远端失败由 pending 队列负责后续补传。
+    void useStudyStore.getState().syncCurrentBookState(this.context.bookId);
 
     if (this.onUpload) {
       await this.onUpload(this);

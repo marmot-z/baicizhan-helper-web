@@ -1,6 +1,11 @@
 import type { StudyUIModel } from './types';
 import type { StudyStage } from './types';
 
+export interface WordIteratorState {
+  stage: StudyStage;
+  queueTopicIds: number[];
+}
+
 /**
  * WordIterator类 - 表示单个学习环节的迭代器
  * 负责管理环节内的单词队列和学习进度
@@ -18,6 +23,17 @@ export class WordIterator {
   constructor(stage: StudyStage, words: StudyUIModel[]) {    
     this.wordQueue = Array.from(words);
     this.stage = stage;
+  }
+
+  public static restore(
+    state: WordIteratorState,
+    wordsByTopicId: Map<number, StudyUIModel>,
+  ): WordIterator {
+    const words = state.queueTopicIds.map((topicId) => wordsByTopicId.get(topicId));
+    if (words.some((word) => !word)) {
+      throw new Error(`Cannot restore ${state.stage} iterator: missing word resource`);
+    }
+    return new WordIterator(state.stage, words as StudyUIModel[]);
   }
   
   /**
@@ -50,5 +66,12 @@ export class WordIterator {
 
   public getRemainNum(): number {
     return this.wordQueue.length;
+  }
+
+  public exportState(): WordIteratorState {
+    return {
+      stage: this.stage,
+      queueTopicIds: this.wordQueue.map((word) => word.topicId),
+    };
   }
 }

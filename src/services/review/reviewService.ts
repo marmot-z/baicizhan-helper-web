@@ -1,5 +1,6 @@
 import { studyService } from '../studyService';
 import type { StudyOption, StudyUIModel } from '../study/types';
+import type { UserRoadMapElementV2 } from '../../types';
 import { applyReviewCorrect, applyReviewWrong, studyRecordStore } from '../study';
 import { toPendingDoneRecord } from '../study/uploadAdapter';
 import { useStudyStore } from '../../stores/studyStore';
@@ -20,6 +21,7 @@ export const reviewService = {
   async initializeReviewWords(
     bookId: number,
     reviewPlanCount: number,
+    resumeTopicIds?: number[],
   ): Promise<ReviewInitData> {
     await useStudyStore.getState().syncCurrentBookState(bookId);
     const { homeState, syncedBookId } = useStudyStore.getState();
@@ -36,7 +38,17 @@ export const reviewService = {
     }
 
     const targetCount = reviewPlanCount || 10;
-    const reviewWords = homeState.unreviewedWords.slice(0, targetCount);
+    const roadmap = useStudyStore.getState().wordList;
+    const roadmapByTopicId = new Map(roadmap.map((word) => [word.topic_id, word]));
+    const reviewWords = resumeTopicIds
+      ? resumeTopicIds
+          .map((topicId) => roadmapByTopicId.get(topicId))
+          .filter((word): word is UserRoadMapElementV2 => Boolean(word))
+      : homeState.unreviewedWords.slice(0, targetCount);
+
+    if (resumeTopicIds && reviewWords.length !== resumeTopicIds.length) {
+      throw new Error('复习草稿中的单词已不在当前路线图中');
+    }
 
     if (!reviewWords.length) {
       return {
@@ -211,14 +223,14 @@ export const reviewService = {
       context.bookId,
       nextRecords.map((record) => toPendingDoneRecord(record)),
     );
-    await store.syncCurrentBookState(context.bookId);
-
-    const latestHomeState = useStudyStore.getState().homeState;
-    await studyService.reportFinishDailyPlan(
-      context.bookId,
-      records.length,
-      0,
-      latestHomeState.unlearnedWords.length === 0,
-    );
+    void store.syncCurrentBookState(context.bookId).then(() => {
+      const latestHomeState = useStudyStore.getState().homeState;
+      return studyService.reportFinishDailyPlan(
+        context.bookId,
+        records.length,
+        0,
+        latestHomeState.unlearnedWords.length === 0,
+      );
+    }).catch(console.error);
   },
 };

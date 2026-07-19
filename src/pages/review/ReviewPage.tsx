@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useStudyStore } from '../../stores/studyStore';
 import { ROUTES } from '../../constants';
 import { AudioSequencePlayer } from '../../utils/audio';
@@ -13,6 +14,12 @@ import ReviewChoiceCard from './ReviewChoiceCard';
 import ReviewWordDetail from './ReviewWordDetail';
 import ReviewSpellCard from './ReviewSpellCard';
 import styles from './review.module.css';
+import {
+  createStudySessionId,
+  getLocalPlanDate,
+  studySessionStore,
+} from '../../services/study/sessionStore';
+import type { ReviewSessionState } from '../../services/study/sessionTypes';
 
 /** 防止 React Strict Mode 下同一轮复习完成触发两次 navigate */
 const navigatedReviewStatisticsKeys = new Set<string>();
@@ -48,6 +55,7 @@ const ReviewPage: React.FC = () => {
     errorMessage: null,
   });
   const [spellInput, setSpellInput] = useState('');
+  const [draftSaveFailed, setDraftSaveFailed] = useState(false);
 
   useEffect(() => {
     if (!studyPlan || !currentBook || !wordList.length) {
@@ -65,17 +73,80 @@ const ReviewPage: React.FC = () => {
 
     const startReview = async () => {
       try {
-        const initData = await reviewService.initializeReviewWords(
-          studyPlan.book_id,
-          studyPlan.review_plan_count
-        );
+        const planDate = getLocalPlanDate();
+        studySessionStore.removeExpired(planDate);
+        const savedDraft = studySessionStore.load('review', studyPlan.book_id);
+        let flow: ReviewFlow;
+        let restored = false;
+        let initData;
+
+        if (savedDraft) {
+          try {
+            initData = await reviewService.initializeReviewWords(
+              studyPlan.book_id,
+              studyPlan.review_plan_count,
+              savedDraft.state.wordTopicIds,
+            );
+            const persistCheckpoint = (state: ReviewSessionState) => {
+              const saved = studySessionStore.save({
+                ...savedDraft,
+                updatedAt: Date.now(),
+                state,
+              });
+              if (isActive) setDraftSaveFailed(!saved);
+            };
+            flow = ReviewFlow.restore(initData, savedDraft.state, persistCheckpoint);
+            restored = true;
+          } catch (restoreError) {
+            console.error('恢复复习进度失败，将重新开始:', restoreError);
+            studySessionStore.clear('review', studyPlan.book_id);
+            initData = await reviewService.initializeReviewWords(
+              studyPlan.book_id,
+              studyPlan.review_plan_count,
+            );
+            const now = Date.now();
+            const sessionId = createStudySessionId();
+            flow = new ReviewFlow(initData, (state) => {
+              const saved = studySessionStore.save({
+                version: 1,
+                mode: 'review',
+                bookId: studyPlan.book_id,
+                planDate,
+                createdAt: now,
+                updatedAt: Date.now(),
+                sessionId,
+                state,
+              });
+              if (isActive) setDraftSaveFailed(!saved);
+            });
+          }
+        } else {
+          initData = await reviewService.initializeReviewWords(
+            studyPlan.book_id,
+            studyPlan.review_plan_count,
+          );
+          const now = Date.now();
+          const sessionId = createStudySessionId();
+          flow = new ReviewFlow(initData, (state) => {
+            const saved = studySessionStore.save({
+              version: 1,
+              mode: 'review',
+              bookId: studyPlan.book_id,
+              planDate,
+              createdAt: now,
+              updatedAt: Date.now(),
+              sessionId,
+              state,
+            });
+            if (isActive) setDraftSaveFailed(!saved);
+          });
+        }
 
         if (!isActive) {
           return;
         }
 
         reviewWordsRef.current = initData.words;
-        const flow = new ReviewFlow(initData);
         flowRef.current = flow;
         unsubscribe = flow.subscribe((nextSnapshot) => {
           if (!isActive) {
@@ -94,7 +165,12 @@ const ReviewPage: React.FC = () => {
           }
         });
 
-        await flow.start();
+        if (restored) {
+          await flow.resume();
+          toast.success('已恢复上次复习进度');
+        } else {
+          await flow.start();
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : '复习初始化失败';
         if (!isActive) {
@@ -117,11 +193,36 @@ const ReviewPage: React.FC = () => {
 
     return () => {
       isActive = false;
+      flowRef.current?.checkpoint();
       flowRef.current = null;
       reviewWordsRef.current = [];
       unsubscribe?.();
     };
   }, [studyPlan, currentBook, wordList]);
+
+  useEffect(() => {
+    const checkpoint = () => flowRef.current?.checkpoint();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        checkpoint();
+      }
+    };
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (draftSaveFailed) {
+        event.preventDefault();
+        event.returnValue = '复习进度保存失败，退出后可能丢失当前进度';
+      }
+    };
+    window.addEventListener('pagehide', checkpoint);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      checkpoint();
+      window.removeEventListener('pagehide', checkpoint);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [draftSaveFailed]);
 
   const activeWord = useMemo(() => {
     if (snapshot.choiceState) {

@@ -1,5 +1,6 @@
 import type { StudyStage, StudyOption, StudyUIModel } from './types';
 import { StudyUtils } from './StudyUtils';
+import type { LearnWordCardState } from './sessionTypes';
 
 /**
  * WordCard类 - 表示单个单词的学习卡片
@@ -26,6 +27,14 @@ export class WordCard {
     this.maxAttempts = 3;
     this.showAnswer = false;
     this.clickedOptionIds = new Set();
+  }
+
+  public static restore(uiModel: StudyUIModel, state: LearnWordCardState): WordCard {
+    const card = new WordCard(uiModel, state.stage);
+    card.showAnswer = state.showAnswer;
+    card.attemptCount = state.attemptCount;
+    card.clickedOptionIds = new Set(state.clickedOptionIds);
+    return card;
   }
 
   public pass(): void {
@@ -112,11 +121,23 @@ export class WordCard {
     return {
       uiModel: this.uiModel,
       showAnswer: this.showAnswer,
+      attemptCount: this.attemptCount,
+      clickedOptionIds: Array.from(this.clickedOptionIds),
       showWord: this.showWord(),
       showSentence: this.showSentence(),
       showTranslation: this.showTranslation(),
       showEnglishTranslation: this.showEnglishTranslation(),
       options: options,
     }
+  }
+
+  public exportState(): LearnWordCardState {
+    return {
+      topicId: this.uiModel.topicId,
+      stage: this.stage,
+      showAnswer: this.showAnswer,
+      attemptCount: this.attemptCount,
+      clickedOptionIds: Array.from(this.clickedOptionIds),
+    };
   }
 }

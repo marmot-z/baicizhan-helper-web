@@ -4,6 +4,7 @@ import type { UserBindInfo, LoginRequest } from '../types';
 import { authService } from '../services/authService';
 import { useStudyStore } from './studyStore'
 import { useWordBookStore } from './wordBookStore';
+import { studySessionStore } from '../services/study/sessionStore';
 
 interface AuthState {
   user: UserBindInfo[] | null;
@@ -23,27 +24,23 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (credentials: LoginRequest, inviteCode?: string) => {
+        const token = await authService.login(credentials, inviteCode);
+
+        // 登录成功后获取用户信息
         try {
-          const token = await authService.login(credentials, inviteCode);                
-          
-          // 登录成功后获取用户信息
-          try {
-            const userInfo = await authService.getUserInfo();
-            set({
-              user: userInfo,
-              token: token,
-              isAuthenticated: true,
-            });
-          } catch (userError) {
-            // 如果获取用户信息失败，仍然保持登录状态，但用户信息为空
-            set({
-              user: null,
-              token: token,
-              isAuthenticated: true,
-            });
-          }
-        } catch (error) {
-          throw error;
+          const userInfo = await authService.getUserInfo();
+          set({
+            user: userInfo,
+            token,
+            isAuthenticated: true,
+          });
+        } catch {
+          // 如果获取用户信息失败，仍然保持登录状态，但用户信息为空
+          set({
+            user: null,
+            token,
+            isAuthenticated: true,
+          });
         }
       },
 
@@ -57,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
         
         // 清理 studyStore 的本地学习信息
         useStudyStore.getState().clearStudyData();
+        studySessionStore.clearAll();
         
         // 清理 wordBookStore 的本地单词本、单词信息        
         useWordBookStore.getState().clearAllData();      

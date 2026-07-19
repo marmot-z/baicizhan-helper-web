@@ -27,7 +27,7 @@ const StudyView: React.FC = () => {
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
   
-  const { studyInstance, error, init } = useStudyStrategy();
+  const { studyInstance, error, restored, draftSaveFailed, init } = useStudyStrategy();
 
   // Create UI Model from current word card
   const uiModel: StudyUIModel | null = useMemo(() => {
@@ -37,10 +37,12 @@ const StudyView: React.FC = () => {
   // 监听卡片核心状态变化，自动重置选项选中状态
   // 替代手动在交互逻辑中重置
   useEffect(() => {
-    setSelectedOptionIds([]);
+    setSelectedOptionIds(wordCard?.clickedOptionIds ?? []);
   }, [
     uiModel?.topicId,
-    wordCard?.showAnswer
+    wordCard?.showAnswer,
+    wordCard?.attemptCount,
+    wordCard?.clickedOptionIds,
   ]);
 
   const shuffledOptions = useMemo(() => {
@@ -117,6 +119,12 @@ const StudyView: React.FC = () => {
     }
   }, [studyInstance, mode]);
 
+  useEffect(() => {
+    if (restored) {
+      toast.success('已恢复上次学习进度');
+    }
+  }, [restored]);
+
   // 处理初始化错误
   useEffect(() => {
     if (error) {
@@ -132,20 +140,34 @@ const StudyView: React.FC = () => {
     }
   }, [error]);
 
-  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    if (!isCompleted) {
-      event.preventDefault();
-      event.returnValue = '退出该页面后，学习记录将不会上传';
-      return '你是否确定要退出学习？';
-    }
-  };
-
   useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isCompleted && draftSaveFailed) {
+        event.preventDefault();
+        event.returnValue = '学习进度保存失败，退出后可能丢失当前进度';
+      }
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isCompleted]);
+  }, [isCompleted, draftSaveFailed]);
+
+  useEffect(() => {
+    const checkpoint = () => study?.checkpoint();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        checkpoint();
+      }
+    };
+    window.addEventListener('pagehide', checkpoint);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      checkpoint();
+      window.removeEventListener('pagehide', checkpoint);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [study]);
 
   // 监听学习完成状态，完成时跳转到中间页面
   // 退出前进行提示

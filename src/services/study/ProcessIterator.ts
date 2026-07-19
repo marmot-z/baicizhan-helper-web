@@ -2,6 +2,7 @@ import { WordIterator } from './WordIterator';
 import type { StudyUIModel } from './types';
 import type { SearchWordResultV2 } from '../../types';
 import { WordCard } from './WordCard';
+import type { LearnProcessState } from './sessionTypes';
 
 /**
  * ProcessIterator类 - 学习流程迭代器
@@ -27,6 +28,19 @@ export class ProcessIterator {
     this.currentIteratorIndex = 0;
     this.wordNum = words.length;
     this.allWords = words;
+  }
+
+  public static restore(words: StudyUIModel[], state: LearnProcessState): ProcessIterator {
+    const instance = new ProcessIterator(words);
+    const wordsByTopicId = new Map(words.map((word) => [word.topicId, word]));
+    instance.iterators = (['recognition', 'understanding', 'mastery'] as const).map((stage) =>
+      WordIterator.restore(
+        { stage, queueTopicIds: state.queues[stage] ?? [] },
+        wordsByTopicId,
+      ),
+    );
+    instance.currentIteratorIndex = Math.min(Math.max(state.currentIteratorIndex, 0), 2);
+    return instance;
   }
   
   /**
@@ -113,5 +127,17 @@ export class ProcessIterator {
     });
     
     return result;
+  }
+
+  public exportState(): LearnProcessState {
+    const iteratorStates = this.iterators.map((iterator) => iterator.exportState());
+    return {
+      currentIteratorIndex: this.currentIteratorIndex,
+      queues: {
+        recognition: iteratorStates.find((state) => state.stage === 'recognition')?.queueTopicIds ?? [],
+        understanding: iteratorStates.find((state) => state.stage === 'understanding')?.queueTopicIds ?? [],
+        mastery: iteratorStates.find((state) => state.stage === 'mastery')?.queueTopicIds ?? [],
+      },
+    };
   }
 }
