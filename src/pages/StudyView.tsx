@@ -16,6 +16,11 @@ import { useStudyState } from '../hooks/useStudyState';
 import { AudioSequencePlayer } from '../utils/audio';
 import { feedbackSoundPlayer } from '../utils/feedbackSound';
 import { studyRecordStore } from '../services/study';
+import {
+  getStudyOptionSetKey,
+  orderStudyOptions,
+  shuffleStudyOptionIds,
+} from './studyOptionOrder';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -45,29 +50,22 @@ const StudyView: React.FC = () => {
     wordCard?.clickedOptionIds,
   ]);
 
-  const shuffledOptions = useMemo(() => {
-    const rawOptions = uiModel 
-      ? (StudyUtils.getCachedOptions(uiModel.topicId) || uiModel.front.options) 
-      : (wordCard?.options as StudyOption[]);
-
-    if (!rawOptions) return [];
-
-    // Combine display config and shuffle
-    const optionsWithConfig = rawOptions.map((opt, i) => ({
-      ...opt,
-      showOptionWord: wordCard?.options?.[i]?.showOptionWord ?? true,
-      showOptionTranslation: wordCard?.options?.[i]?.showOptionTranslation ?? true
-    }));
-
-    // Fisher-Yates shuffle
-    const shuffled = [...optionsWithConfig];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    return shuffled;
-  }, [uiModel?.topicId, wordCard?.id, (uiModel ? (StudyUtils.getCachedOptions(uiModel.topicId) || uiModel.front.options) : wordCard?.options)?.length]);
+  const liveOptions: StudyOption[] = wordCard?.options?.length
+    ? wordCard.options
+    : uiModel
+      ? (StudyUtils.getCachedOptions(uiModel.topicId) || uiModel.front.options)
+      : [];
+  const optionSetKey = getStudyOptionSetKey(liveOptions);
+  const shuffledOptionIds = useMemo(
+    () => {
+      if (uiModel?.topicId === undefined || !optionSetKey) {
+        return [];
+      }
+      return shuffleStudyOptionIds(optionSetKey.split(',').map(Number));
+    },
+    [uiModel?.topicId, optionSetKey],
+  );
+  const shuffledOptions = orderStudyOptions(liveOptions, shuffledOptionIds);
 
   const handleNext = async () => {
     await study?.pass();

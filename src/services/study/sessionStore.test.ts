@@ -90,6 +90,19 @@ describe('studySessionStore', () => {
 });
 
 describe('learn flow snapshots', () => {
+  it('does not report negative progress when the first word is put back', () => {
+    const models = [1, 2, 3, 4, 5].map(createModel);
+    const iterator = new ProcessIterator(models);
+    const current = iterator.next();
+
+    expect(current?.getId()).toBe(1);
+    expect(iterator.getProgress(current?.getId())).toBe(0);
+
+    iterator.putback(models[0]);
+
+    expect(iterator.getProgress(current?.getId())).toBe(0);
+  });
+
   it('round-trips iterator queues', () => {
     const models = [createModel(1), createModel(2)];
     const state = createLearnState().process;

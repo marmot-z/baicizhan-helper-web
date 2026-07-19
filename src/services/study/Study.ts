@@ -283,7 +283,13 @@ export class Study {
   }
 
   public getProgress(): number {
-    return parseFloat((this.processIterator.getProgress() * 100).toFixed(0));
+    if (this.completed) {
+      return 100;
+    }
+
+    return parseFloat((
+      this.processIterator.getProgress(this.currentWordCard?.getId()) * 100
+    ).toFixed(0));
   }
 
   public exportState(): LearnSessionState {

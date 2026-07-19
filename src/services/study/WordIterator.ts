@@ -68,6 +68,10 @@ export class WordIterator {
     return this.wordQueue.length;
   }
 
+  public contains(topicId: number): boolean {
+    return this.wordQueue.some((word) => word.topicId === topicId);
+  }
+
   public exportState(): WordIteratorState {
     return {
       stage: this.stage,

@@ -98,10 +98,21 @@ export class ProcessIterator {
     this.iterators[this.currentIteratorIndex]?.putback(word);
   }
 
-  public getProgress(): number {
+  public getProgress(currentTopicId?: number): number {
     const remain = this.iterators.reduce((acc, cur) => acc + cur.getRemainNum(), 0);
     const total = this.iterators.length * this.wordNum;
-    return (total - remain - 1) / total;
+    if (total === 0) {
+      return 0;
+    }
+
+    // next() 会先把正在展示的词移出队列，因此正常情况下它尚未完成，
+    // 需要从完成数中扣除。答错后 putback() 已把同一词放回当前队列，
+    // 此时不能再次扣除，否则第一题答错就会得到负进度。
+    const currentIsQueued = currentTopicId !== undefined
+      && this.iterators[this.currentIteratorIndex]?.contains(currentTopicId);
+    const activeWordOffset = currentTopicId !== undefined && !currentIsQueued ? 1 : 0;
+    const completed = total - remain - activeWordOffset;
+    return Math.min(1, Math.max(0, completed / total));
   }
 
   public getAllWords(): StudyUIModel[] {
