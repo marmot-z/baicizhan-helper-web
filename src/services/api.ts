@@ -5,7 +5,9 @@ import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
 
 // API基础配置
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api' : '//www.baicizhan-helper.cn/');
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
