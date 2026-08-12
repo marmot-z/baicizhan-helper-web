@@ -10,6 +10,8 @@ import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
 import type { LearnSessionState } from './sessionTypes';
 import { studySessionStore } from './sessionStore';
+import { isKilledRecord } from '../../types/studyRecord';
+import { wordStatusService } from './wordStatusService';
 
 /**
  * Study类 - 背单词功能的控制中心
@@ -28,6 +30,8 @@ export class Study {
   private onUpload?: (study: Study) => void | Promise<void>;
   private onCheckpoint?: (state: LearnSessionState) => void;
   private listeners: Set<(wordCard: WordCard | null) => void>;
+  private killedTopicIds: Set<number>;
+  private killInProgress: boolean;
   
   /**
    * 构造函数
@@ -54,6 +58,8 @@ export class Study {
     this.onUpload = onUpload;
     this.onCheckpoint = onCheckpoint;
     this.listeners = new Set();
+    this.killedTopicIds = new Set();
+    this.killInProgress = false;
   }
 
   public static restore(
@@ -80,6 +86,24 @@ export class Study {
     instance.useTimeMap = new Map(
       Object.entries(state.useTimeMap).map(([topicId, time]) => [Number(topicId), time]),
     );
+    const persistedKilledTopicIds = state.wordTopicIds.filter((topicId) =>
+      isKilledRecord(studyRecordStore.getRecord(context.bookId, topicId)),
+    );
+    // 草稿记录本会话已经“斩并跳过”的单词，正式记录补充其他入口产生的斩词。
+    // 即使用户随后从管理页取消斩词，本轮也不应把未作答的词按普通完成再次结算。
+    instance.killedTopicIds = new Set([
+      ...(state.killedTopicIds ?? []),
+      ...persistedKilledTopicIds,
+    ]);
+    instance.killedTopicIds.forEach((topicId) => {
+      instance.processIterator.removeTopic(topicId);
+    });
+    if (
+      instance.currentWordCard &&
+      instance.killedTopicIds.has(instance.currentWordCard.getId())
+    ) {
+      instance.currentWordCard = null;
+    }
     instance.startTime = Date.now() - Math.max(0, state.elapsedTime);
     instance.wordStudyTime = Date.now() - Math.max(0, state.currentWordElapsedTime);
     return instance;
@@ -104,6 +128,12 @@ export class Study {
   
   public async start(): Promise<void> {  
     await this.process();
+  }
+
+  public async resume(): Promise<void> {
+    if (!this.currentWordCard && !this.completed) {
+      await this.process();
+    }
   }
 
   public checkpoint(): void {
@@ -198,7 +228,44 @@ export class Study {
   }
 
   public getAllWords(): StudyUIModel[] {
-    return this.processIterator.getAllWords();
+    return this.processIterator
+      .getAllWords()
+      .filter((word) => !this.killedTopicIds.has(word.topicId));
+  }
+
+  public getKilledTopicIds(): number[] {
+    return Array.from(this.killedTopicIds);
+  }
+
+  public async killCurrent(): Promise<void> {
+    if (!this.currentWordCard || this.killInProgress || this.completed) {
+      return;
+    }
+
+    this.killInProgress = true;
+    const topicId = this.currentWordCard.getId();
+    const word = this.words.find((item) => item.topic_id === topicId);
+    const elapsed = Math.max(0, Date.now() - this.wordStudyTime);
+    const usedTime = (this.useTimeMap.get(topicId) ?? 0) + elapsed;
+
+    try {
+      wordStatusService.killWord({
+        bookId: this.context.bookId,
+        topicId,
+        tagId: word?.tag_id,
+        usedTime,
+        errNumDelta: this.failMap.get(topicId) ?? 0,
+        isTodayNew: true,
+      });
+      this.useTimeMap.set(topicId, usedTime);
+      this.killedTopicIds.add(topicId);
+      this.processIterator.removeTopic(topicId);
+      this.currentWordCard = null;
+      this.onCheckpoint?.(this.exportState());
+      await this.process();
+    } finally {
+      this.killInProgress = false;
+    }
   }
 
   public getFailMap(): Map<number, number> {
@@ -303,6 +370,7 @@ export class Study {
       currentWordElapsedTime: this.currentWordCard
         ? Math.max(0, Date.now() - this.wordStudyTime)
         : 0,
+      killedTopicIds: Array.from(this.killedTopicIds),
     };
   }
   
@@ -325,6 +393,7 @@ export class Study {
       totalTime: Date.now() - this.startTime,
       words: this.processIterator.getWordBriefInfos(),
       updateTime: Date.now(),
+      killedTopicIds: Array.from(this.killedTopicIds),
     };
     
     // 保存学习统计信息
@@ -342,6 +411,10 @@ export class Study {
       };
       studyStatistics.totalTime += lastStudyStatistics.totalTime;
       studyStatistics.words = [...lastStudyStatistics.words, ...studyStatistics.words];
+      studyStatistics.killedTopicIds = Array.from(new Set([
+        ...(lastStudyStatistics.killedTopicIds ?? []),
+        ...studyStatistics.killedTopicIds!,
+      ]));
     }
 
     useStudyStore.getState().setLastStudyStatistics(studyStatistics);
@@ -399,7 +472,9 @@ export class Study {
     }
 
     const now = Date.now();
-    const updatedRecords = this.words.map((word) => {
+    const updatedRecords = this.words
+      .filter((word) => !this.killedTopicIds.has(word.topic_id))
+      .map((word) => {
       const existingRecord = studyRecordStore.getRecord(
         this.context.bookId,
         word.topic_id,

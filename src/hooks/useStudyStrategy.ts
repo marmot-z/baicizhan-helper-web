@@ -97,6 +97,7 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
                 savedDraft.state,
                 persistCheckpoint,
               );
+              await instance.resume();
               setStudyInstance(instance);
               setRestored(true);
               setLoading(false);

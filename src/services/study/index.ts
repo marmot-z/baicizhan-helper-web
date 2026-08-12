@@ -10,3 +10,4 @@ export * from './homeStateCalculator';
 export * from './uploadAdapter';
 export * from './sessionTypes';
 export * from './sessionStore';
+export * from './wordStatusService';

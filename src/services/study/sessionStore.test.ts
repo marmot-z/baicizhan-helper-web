@@ -8,6 +8,8 @@ import {
 import type { LearnSessionDraftV1, LearnSessionState } from './sessionTypes';
 import type { StudyUIModel } from './types';
 import type { UserRoadMapElementV2 } from '../../types';
+import { createTopicLearnRecord } from '../../types/studyRecord';
+import { studyRecordStore } from './recordStore';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -128,5 +130,52 @@ describe('learn flow snapshots', () => {
     expect(restored.useTimeMap).toEqual({ 1: 1200 });
     expect(restored.elapsedTime).toBeGreaterThanOrEqual(5000);
     expect(restored.currentWordElapsedTime).toBeGreaterThanOrEqual(600);
+  });
+
+  it('uses formal killed records to remove stale cards from an old draft', async () => {
+    studyRecordStore.upsertRecord(
+      10,
+      createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 }),
+    );
+    const models = [createModel(1), createModel(2)];
+    const words = [
+      { topic_id: 1, tag_id: 1 },
+      { topic_id: 2, tag_id: 2 },
+    ] as UserRoadMapElementV2[];
+    const study = Study.restore(
+      words,
+      models,
+      { planType: 'XModelNewStudy', bookId: 10 },
+      createLearnState(),
+    );
+
+    await study.resume();
+
+    expect(study.getCurrentWord()?.getId()).toBe(2);
+    expect(study.exportState().killedTopicIds).toEqual([1]);
+    expect(Object.values(study.exportState().process.queues).flat()).not.toContain(1);
+  });
+
+  it('keeps a word skipped for the current session after it is un-killed elsewhere', async () => {
+    studyRecordStore.upsertRecord(
+      10,
+      createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: 5 }),
+    );
+    const models = [createModel(1), createModel(2)];
+    const words = [
+      { topic_id: 1, tag_id: 1 },
+      { topic_id: 2, tag_id: 2 },
+    ] as UserRoadMapElementV2[];
+    const study = Study.restore(
+      words,
+      models,
+      { planType: 'XModelNewStudy', bookId: 10 },
+      { ...createLearnState(), killedTopicIds: [1] },
+    );
+
+    await study.resume();
+
+    expect(study.getCurrentWord()?.getId()).toBe(2);
+    expect(study.exportState().killedTopicIds).toEqual([1]);
   });
 });

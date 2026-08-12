@@ -198,6 +198,41 @@ export const studyRecordStore = {
     return records;
   },
 
+  upsertAndQueue(
+    bookId: number,
+    records: TopicLearnRecord[],
+    pendingRecords: PendingDoneRecord[],
+  ): TopicLearnRecord[] {
+    if (!records.length && !pendingRecords.length) {
+      return records;
+    }
+
+    const snapshot = readSnapshot();
+    const currentBookSnapshot = getBookSnapshot(snapshot, bookId);
+    const queueByTopicId = new Map<number, PendingDoneRecord>(
+      currentBookSnapshot.pendingDoneQueue.map((item) => [item.topicId, item]),
+    );
+
+    pendingRecords.forEach((item) => {
+      queueByTopicId.set(item.topicId, item);
+    });
+
+    writeSnapshot(
+      updateBookSnapshot(snapshot, bookId, {
+        ...currentBookSnapshot,
+        totalRecords: {
+          ...currentBookSnapshot.totalRecords,
+          ...createRecordMap(records),
+        },
+        pendingDoneQueue: Array.from(queueByTopicId.values()).sort(
+          (a, b) => a.queuedAt - b.queuedAt,
+        ),
+      }),
+    );
+
+    return records;
+  },
+
   queuePendingDoneRecords(
     bookId: number,
     pendingRecords: PendingDoneRecord[],

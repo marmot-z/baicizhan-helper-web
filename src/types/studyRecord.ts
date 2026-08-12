@@ -5,6 +5,10 @@ import type {
 } from './index';
 
 export const UNLEARNED_SCORE = -1024;
+export const DEFAULT_KILLED_SCORE = -1;
+export const MIN_KILLED_SCORE = -9;
+export const DEFAULT_UNKILLED_SCORE = 5;
+export const MAX_UNKILLED_SCORE = 9;
 
 export interface TopicLearnExtraScores {
   tagId?: number;
@@ -30,6 +34,7 @@ export interface TopicLearnRecord extends TopicLearnExtraScores {
 
 export interface StudyHomeState {
   unlearnedWords: UserRoadMapElementV2[];
+  killedWords: UserRoadMapElementV2[];
   todayLearnedWords: UserRoadMapElementV2[];
   unreviewedWords: UserRoadMapElementV2[];
   reviewedWords: UserRoadMapElementV2[];
@@ -115,6 +120,7 @@ export function createEmptyHomeState(
 ): StudyHomeState {
   return {
     unlearnedWords: [],
+    killedWords: [],
     todayLearnedWords: [],
     unreviewedWords: [],
     reviewedWords: [],
@@ -190,6 +196,40 @@ export function isUnlearnedRecord(
   record: TopicLearnRecord | undefined,
 ): boolean {
   return !record || record.topicScore === UNLEARNED_SCORE;
+}
+
+export function isKilledScore(score: number): boolean {
+  return score < 0 && score !== UNLEARNED_SCORE;
+}
+
+export function isKilledRecord(
+  record: TopicLearnRecord | undefined,
+): boolean {
+  return Boolean(record && isKilledScore(record.topicScore));
+}
+
+export function toKilledScore(score: number): number {
+  if (isKilledScore(score)) {
+    return Math.max(score, MIN_KILLED_SCORE);
+  }
+
+  if (score === UNLEARNED_SCORE || score === 0) {
+    return DEFAULT_KILLED_SCORE;
+  }
+
+  return Math.max(-Math.abs(score), MIN_KILLED_SCORE);
+}
+
+export function toUnkilledScore(score: number): number {
+  if (!isKilledScore(score)) {
+    return score;
+  }
+
+  if (score >= -4) {
+    return DEFAULT_UNKILLED_SCORE;
+  }
+
+  return Math.min(Math.abs(score), MAX_UNKILLED_SCORE);
 }
 
 export function createRecordFromLearnedWordInfo(

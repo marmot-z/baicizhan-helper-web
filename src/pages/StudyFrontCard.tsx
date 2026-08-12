@@ -13,6 +13,7 @@ interface StudyFrontCardProps {
   selectedOptionIds: number[];
   optionClick: (id: number, isCorrect: boolean) => Promise<void>;
   options: StudyOption[];
+  wordAction?: React.ReactNode;
 }
 
 const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
@@ -23,6 +24,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
   selectedOptionIds,
   optionClick,
   options,
+  wordAction,
 }) => {
   // Prefer uiModel if available, fallback to legacy wordCard (or handle hybrid)
   // For this refactor step, we assume uiModel will be passed.
@@ -76,6 +78,9 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
       </header>
 
       <main className={styles.studyFrontCard}>
+        {wordAction && (
+          <div className={styles.studyCardActions}>{wordAction}</div>
+        )}
         {isVideo ? (
           <video
             className={styles.imageContainer}

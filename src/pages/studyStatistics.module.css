@@ -87,6 +87,11 @@
     font-weight: 500;
 }
 
+.killedText {
+    color: #64748b;
+    font-weight: 600;
+}
+
 .hiddenMeaning {
     background-color: #c0c0c0;
     color: transparent;

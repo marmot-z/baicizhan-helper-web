@@ -17,6 +17,7 @@ import {
   StudyMidView,
   SpellView,
   ReviewPage,
+  KilledWords,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -77,6 +78,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.STUDY_MID,
         element: <StudyMidView />,
+      },
+      {
+        path: ROUTES.KILLED_WORDS,
+        element: <KilledWords />,
       },
       {
         path: ROUTES.VIP_CENTER,

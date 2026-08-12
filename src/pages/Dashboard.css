@@ -225,6 +225,21 @@
   opacity: 0.5;
 }
 
+.killed-words-link {
+  margin-top: 14px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.killed-words-link:hover {
+  color: #334155;
+  text-decoration: underline;
+}
+
 /* Invite Button */
 .invite-btn {
   background: none;

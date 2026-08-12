@@ -3,11 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 import type { StudyStatistcs } from '../services/study/types';
-import {
-  applyDayTransition,
-  calculateHomeState,
-  studyRecordStore,
-} from '../services/study';
+import { applyDayTransition } from '../services/study/recordReducers';
+import { calculateHomeState } from '../services/study/homeStateCalculator';
+import { studyRecordStore } from '../services/study/recordStore';
 import {
   createEmptyHomeState,
   createRecordMap,
@@ -81,8 +79,8 @@ async function syncBookState(
       set({ wordList: roadmap, wordListBookId: bookId });
     }
 
-    const pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
-    if (pendingDoneRecords.length > 0) {
+    let pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
+    while (pendingDoneRecords.length > 0) {
       studyRecordStore.updateSyncMeta(bookId, {
         lastUploadAttemptAt: Date.now(),
         lastUploadError: null,
@@ -93,6 +91,10 @@ async function syncBookState(
           pendingDoneRecords.map((item) => item.doneRecord),
           bookId,
         );
+
+        if (uploadResult.resultCode < 0) {
+          throw new Error(`updateDoneData returned ${uploadResult.resultCode}`);
+        }
 
         studyRecordStore.clearPendingDoneRecords(
           bookId,
@@ -109,7 +111,11 @@ async function syncBookState(
           lastUploadError: message,
         });
         console.error(`Failed to upload pending done data for book ${bookId}:`, error);
+        break;
       }
+
+      // 上传过程中可能产生新的斩词/取消斩词记录，继续排空最新队列。
+      pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
     }
 
     try {
@@ -245,7 +251,17 @@ export const useStudyStore = create<StudyState>()(
           return;
         }
 
+        const joinedExistingSync = inflightBookSyncs.has(targetBookId);
         await syncBookState(set, get, targetBookId);
+
+        // 如果本次调用加入的是旧同步任务，任务执行期间可能又写入了新状态；
+        // 再启动一轮即可排空，当前调用自身失败时则保留 pending 等下次重试。
+        if (
+          joinedExistingSync &&
+          studyRecordStore.getPendingDoneRecords(targetBookId).length > 0
+        ) {
+          await syncBookState(set, get, targetBookId);
+        }
       },
 
       fetchStudyData: async () => {
@@ -319,6 +335,14 @@ export const useStudyStore = create<StudyState>()(
     }),
     {
       name: 'study-storage',
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<StudyState>;
+        return {
+          ...currentState,
+          ...persisted,
+          homeState: createEmptyHomeState(persisted.homeState ?? {}),
+        };
+      },
       partialize: (state) => ({
         currentBook: state.currentBook,
         studyPlan: state.studyPlan,

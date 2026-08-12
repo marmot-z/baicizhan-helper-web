@@ -164,6 +164,13 @@ export default function Dashboard() {
                 复习
               </button>
             </div>
+            <button
+              type="button"
+              className="killed-words-link"
+              onClick={() => navigate(ROUTES.KILLED_WORDS)}
+            >
+              已斩 {homeState.killedWords?.length ?? 0} 词 ›
+            </button>
           </div>
         </section>
 

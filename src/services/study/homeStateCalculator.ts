@@ -1,6 +1,7 @@
 import type { UserRoadMapElementV2 } from '../../types';
 import {
   createEmptyHomeState,
+  isKilledRecord,
   isUnlearnedRecord,
   type HomeStateCalculatorInput,
   type StudyHomeState,
@@ -38,6 +39,16 @@ export function calculateHomeState(
 
     if (isUnlearnedRecord(record)) {
       pushWord(result.unlearnedWords, word);
+      continue;
+    }
+
+    if (isKilledRecord(record)) {
+      pushWord(result.killedWords, word);
+      if (record?.isTodayNew) {
+        pushWord(result.todayLearnedWords, word);
+      } else if (shouldCountAsTodayReviewed(record)) {
+        pushWord(result.todayReviewedWords, word);
+      }
       continue;
     }
 

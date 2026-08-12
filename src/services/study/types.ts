@@ -47,6 +47,7 @@ export interface StudyStatistcs {
   totalTime: number;
   words: SearchWordResultV2[],
   updateTime: number;
+  killedTopicIds?: number[];
 }
 
 // 学习状态类型

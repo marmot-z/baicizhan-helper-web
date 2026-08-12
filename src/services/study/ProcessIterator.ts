@@ -98,6 +98,10 @@ export class ProcessIterator {
     this.iterators[this.currentIteratorIndex]?.putback(word);
   }
 
+  public removeTopic(topicId: number): void {
+    this.iterators.forEach((iterator) => iterator.removeTopic(topicId));
+  }
+
   public getProgress(currentTopicId?: number): number {
     const remain = this.iterators.reduce((acc, cur) => acc + cur.getRemainNum(), 0);
     const total = this.iterators.length * this.wordNum;

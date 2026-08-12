@@ -24,6 +24,7 @@ export interface LearnSessionState {
   useTimeMap: Record<number, number>;
   elapsedTime: number;
   currentWordElapsedTime: number;
+  killedTopicIds?: number[];
 }
 
 export interface ReviewSessionState {

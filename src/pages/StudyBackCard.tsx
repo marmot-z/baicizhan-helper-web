@@ -14,6 +14,8 @@ interface StudyBackCardProps {
   nextLabel?: string;
   /** 是否展示收藏入口与收藏弹窗，默认 true */
   showCollect?: boolean;
+  /** 当前单词的次要操作，例如斩词 */
+  wordAction?: React.ReactNode;
 }
 
 const StudyBackCard: React.FC<StudyBackCardProps> = ({
@@ -21,6 +23,7 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({
   next,
   nextLabel = '下一个',
   showCollect = true,
+  wordAction,
 }) => {
   const [activeTab, setActiveTab] = useState('');
   const [showCollectModal, setShowCollectModal] = useState(false);
@@ -141,18 +144,21 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({
             <h1 className={styles.backWordTitle}>
               {word}
             </h1>
-            {showCollect && (
-              <FontAwesomeIcon
-                icon={faStar}
-                className={styles.backStarIcon}
-                onClick={handleStarClick}
-                style={{
-                  color: isWordCollected() ? '#007bff' : '#d3d3d3',
-                  cursor: 'pointer',
-                }}
-                title="收藏/取消收藏"
-              />
-            )}
+            <div className={styles.backWordActions}>
+              {wordAction}
+              {showCollect && (
+                <FontAwesomeIcon
+                  icon={faStar}
+                  className={styles.backStarIcon}
+                  onClick={handleStarClick}
+                  style={{
+                    color: isWordCollected() ? '#007bff' : '#d3d3d3',
+                    cursor: 'pointer',
+                  }}
+                  title="收藏/取消收藏"
+                />
+              )}
+            </div>
           </div>
           <div className={styles.backPronunciation}>
             {accentUk && (

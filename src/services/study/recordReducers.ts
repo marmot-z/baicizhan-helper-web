@@ -1,6 +1,9 @@
 import {
   UNLEARNED_SCORE,
   createTopicLearnRecord,
+  isKilledRecord,
+  toKilledScore,
+  toUnkilledScore,
   type StudyDayTransitionInput,
   type TopicLearnRecord,
   type TopicLearnRecordUpdateInput,
@@ -140,6 +143,37 @@ export function applyReviewWrong(
   });
 }
 
+export function applyKill(
+  record: TopicLearnRecord | undefined,
+  input: TopicLearnRecordUpdateInput,
+): TopicLearnRecord {
+  if (isKilledRecord(record)) {
+    return record!;
+  }
+
+  const baseRecord = record ?? createBaseRecord(input);
+  return applyCommonMutation(baseRecord, input, {
+    topicScore: toKilledScore(baseRecord.topicScore),
+    topicDay: 0,
+    reviewRound: input.nextReviewRound ?? baseRecord.reviewRound,
+  });
+}
+
+export function applyUnkill(
+  record: TopicLearnRecord,
+  input: TopicLearnRecordUpdateInput,
+): TopicLearnRecord {
+  return applyCommonMutation(record, {
+    ...input,
+    doNumDelta: input.doNumDelta ?? 0,
+    errNumDelta: input.errNumDelta ?? 0,
+  }, {
+    topicScore: toUnkilledScore(record.topicScore),
+    topicDay: 0,
+    reviewRound: input.nextReviewRound ?? record.reviewRound,
+  });
+}
+
 export function applyDayTransition(
   record: TopicLearnRecord,
   input: StudyDayTransitionInput = {},
@@ -151,6 +185,15 @@ export function applyDayTransition(
 
   const advancedTopicDay =
     input.nextSpanDays ?? record.topicDay + getDayDiff(record.lastDoTime, now);
+  if (isKilledRecord(record)) {
+    return {
+      ...record,
+      updatedAt: now,
+      isTodayNew: false,
+      topicDay: advancedTopicDay,
+    };
+  }
+
   const fixedTopicScore =
     input.nextScore ?? applyCrossDayScoreFix(advancedTopicDay, record.topicScore);
 

@@ -18,6 +18,7 @@ export const ROUTES = {
   STUDY_MID: '/page/study-mid',
   SPELL_VIEW: '/page/spell-view',
   REVIEW_VIEW: '/page/review',
+  KILLED_WORDS: '/page/killed-words',
 } as const;
 
 // API端点常量

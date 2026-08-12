@@ -64,6 +64,10 @@ export class WordIterator {
     this.wordQueue.push(word);
   }
 
+  public removeTopic(topicId: number): void {
+    this.wordQueue = this.wordQueue.filter((word) => word.topicId !== topicId);
+  }
+
   public getRemainNum(): number {
     return this.wordQueue.length;
   }

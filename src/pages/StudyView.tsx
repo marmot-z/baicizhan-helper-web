@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { SelectBookPlanInfo } from '../types';
@@ -21,6 +21,7 @@ import {
   orderStudyOptions,
   shuffleStudyOptionIds,
 } from './studyOptionOrder';
+import KillWordConfirmModal from '../components/study/KillWordConfirmModal';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ const StudyView: React.FC = () => {
   const { wordCard, isCompleted } = useStudyState(study);
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
+  const [killConfirmOpen, setKillConfirmOpen] = useState(false);
+  const [killSubmitting, setKillSubmitting] = useState(false);
+  const [killAnimating, setKillAnimating] = useState(false);
   
   const { studyInstance, error, restored, draftSaveFailed, init } = useStudyStrategy();
 
@@ -67,11 +71,11 @@ const StudyView: React.FC = () => {
   );
   const shuffledOptions = orderStudyOptions(liveOptions, shuffledOptionIds);
 
-  const handleNext = async () => {
+  const handleNext = useCallback(async () => {
     await study?.pass();
-  };
+  }, [study]);
 
-  const handleOptionClick = async (id: number, isCorrect: boolean) => {
+  const handleOptionClick = useCallback(async (id: number, isCorrect: boolean) => {
     setSelectedOptionIds(prev => [...prev, id]);
 
     if (isCorrect) {
@@ -83,7 +87,37 @@ const StudyView: React.FC = () => {
       feedbackSoundPlayer.playIncorrect();
       await study?.fail(id);
     }
+  }, [study]);
+
+  const handleKillConfirm = async () => {
+    if (!study || killSubmitting) return;
+
+    setKillSubmitting(true);
+    try {
+      await study.killCurrent();
+      setKillConfirmOpen(false);
+      setKillAnimating(true);
+      window.setTimeout(() => setKillAnimating(false), 500);
+      toast.success('已斩词，记录正在同步');
+    } catch (killError) {
+      console.error('斩词失败:', killError);
+      toast.error('斩词保存失败，请重试');
+    } finally {
+      setKillSubmitting(false);
+    }
   };
+
+  const renderKillButton = (className: string) => (
+    <button
+      type="button"
+      className={`${styles.killButton} ${className} ${killAnimating ? styles.killButtonAnimating : ''}`}
+      onClick={() => setKillConfirmOpen(true)}
+      disabled={killSubmitting}
+      aria-label={`斩掉单词 ${uiModel?.word ?? ''}`}
+    >
+      斩词
+    </button>
+  );
 
   // 初始化学习流程
   useEffect(() => {
@@ -187,6 +221,10 @@ const StudyView: React.FC = () => {
   // 添加键盘事件监听
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
+      if (killConfirmOpen) {
+        return;
+      }
+
       const key = event.key;
 
       // 处理选项选择（1-4数字键）
@@ -216,7 +254,7 @@ const StudyView: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [wordCard, handleNext, shuffledOptions]);
+  }, [wordCard, handleNext, handleOptionClick, shuffledOptions, killConfirmOpen]);
 
   useEffect(() => {
     if (!wordCard) return;
@@ -232,7 +270,7 @@ const StudyView: React.FC = () => {
     return () => {
       player.stop();
     };
-  }, [wordCard?.word, wordCard?.showAnswer, wordCard?.showSentence, uiModel]);
+  }, [wordCard, uiModel]);
 
   return (
     <div className={styles.container}>
@@ -240,7 +278,8 @@ const StudyView: React.FC = () => {
         wordCard.showAnswer ? (
           <StudyBackCard 
             uiModel={uiModel} 
-            next={handleNext} 
+            next={handleNext}
+            wordAction={renderKillButton(styles.cardKillButton)}
           />
         ) : (
           <StudyFrontCard
@@ -251,6 +290,7 @@ const StudyView: React.FC = () => {
             selectedOptionIds={selectedOptionIds}
             optionClick={handleOptionClick}
             options={shuffledOptions}
+            wordAction={renderKillButton(styles.cardKillButton)}
           />
         )
       ) : (
@@ -259,6 +299,19 @@ const StudyView: React.FC = () => {
           subtitle={"单词资料与选项加载完成后，会自动进入学习页面。\n可使用 1-4 快捷选择选项，单词详情页可按空格进入下一个。"}
         />
       )}
+      {wordCard && !isCompleted && (
+        <div className={styles.studyActionBar}>
+          <div className={styles.studyActionBarInner}>
+            {renderKillButton(styles.mobileKillButton)}
+          </div>
+        </div>
+      )}
+      <KillWordConfirmModal
+        open={killConfirmOpen}
+        submitting={killSubmitting}
+        onCancel={() => setKillConfirmOpen(false)}
+        onConfirm={handleKillConfirm}
+      />
     </div>
   );
 };

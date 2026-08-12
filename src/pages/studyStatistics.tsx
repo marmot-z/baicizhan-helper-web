@@ -6,17 +6,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import type { StudyStatistcs } from '../services/study/types';
 
-interface StudyStatisticsProps {
-  // 可以根据需要添加props
-}
-
 interface StudyStatisticsLocationState {
   source?: 'review';
   statisticsOverride?: StudyStatistcs;
   from?: string;
 }
 
-const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
+const StudyStatistics: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { lastStudyStatistics } = useStudyStore();
@@ -38,10 +34,13 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
   }
 
   // 计算学习统计数据
-  const totalWords = statistics.words.length;
-  const failedWords = Object.values(statistics.failMap).reduce((sum, count) => sum + count, 0);
-  const correctWords = totalWords - failedWords;
-  const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+  const killedTopicIds = new Set(statistics.killedTopicIds ?? []);
+  const scoredWords = statistics.words.filter((word) => !killedTopicIds.has(word.topic_id));
+  const failedWords = scoredWords.filter((word) => (statistics.failMap[word.topic_id] ?? 0) > 0).length;
+  const correctWords = scoredWords.length - failedWords;
+  const accuracy = scoredWords.length > 0
+    ? Math.round((correctWords / scoredWords.length) * 100)
+    : 100;
   
   // 计算总学习时间（毫秒转换为分:秒格式）
   const totalTime = statistics.totalTime;
@@ -71,6 +70,7 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
                 const failCount = statistics.failMap[word.topic_id] || 0;
                 const wordId = String(word.topic_id || `word-${index}`);
                 const isVisible = visibleMeanings.has(wordId);
+                const isKilled = killedTopicIds.has(word.topic_id);
                 
                 const toggleMeaning = () => {
                   const newVisibleMeanings = new Set(visibleMeanings);
@@ -92,7 +92,9 @@ const StudyStatistics: React.FC<StudyStatisticsProps> = () => {
                       {word.mean_cn}
                     </td>
                     <td>
-                      {failCount === 0 ? (
+                      {isKilled ? (
+                        <span className={styles.killedText}>斩 已掌握</span>
+                      ) : failCount === 0 ? (
                         <span className={styles.correctText}>✓ 正确</span>
                       ) : (
                         <span>错 <span className={styles.errorText}>{failCount}</span> 次</span>
