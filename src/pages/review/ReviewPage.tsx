@@ -29,6 +29,18 @@ const buildReviewStatisticsNavKey = (state: NonNullable<ReviewSnapshot['summaryS
     .map((r) => `${r.topicId}:${r.errorCount}:${r.completedAt ?? ''}`)
     .join('|')}`;
 
+const createLoadingSnapshot = (): ReviewSnapshot => ({
+  stage: 'loading',
+  totalWords: 0,
+  completedChoiceWords: 0,
+  completedSpellWords: 0,
+  choiceState: null,
+  detailState: null,
+  spellState: null,
+  summaryState: null,
+  errorMessage: null,
+});
+
 const ReviewPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,19 +55,10 @@ const ReviewPage: React.FC = () => {
   const reviewWordsRef = useRef<StudyUIModel[]>([]);
   const spellWordTopicIdRef = useRef<number | null>(null);
   const choiceSentenceReadyRef = useRef(false);
-  const [snapshot, setSnapshot] = useState<ReviewSnapshot>({
-    stage: 'loading',
-    totalWords: 0,
-    completedChoiceWords: 0,
-    completedSpellWords: 0,
-    choiceState: null,
-    detailState: null,
-    spellState: null,
-    summaryState: null,
-    errorMessage: null,
-  });
+  const [snapshot, setSnapshot] = useState<ReviewSnapshot>(createLoadingSnapshot);
   const [spellInput, setSpellInput] = useState('');
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!studyPlan || !currentBook || !wordList.length) {
@@ -198,7 +201,7 @@ const ReviewPage: React.FC = () => {
       reviewWordsRef.current = [];
       unsubscribe?.();
     };
-  }, [studyPlan, currentBook, wordList]);
+  }, [studyPlan, currentBook, wordList, retryKey]);
 
   useEffect(() => {
     const checkpoint = () => flowRef.current?.checkpoint();
@@ -283,12 +286,7 @@ const ReviewPage: React.FC = () => {
     return () => {
       player.stop();
     };
-  }, [
-    snapshot.stage,
-    snapshot.choiceState?.word.topicId,
-    snapshot.choiceState?.isOptionsLoading,
-    snapshot.choiceState?.attemptCount,
-  ]);
+  }, [snapshot.stage, snapshot.choiceState]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -386,13 +384,25 @@ const ReviewPage: React.FC = () => {
       <div className={styles.placeholderPage}>
         <div className={styles.placeholderCard}>
           <p>{snapshot.errorMessage || '复习页面加载失败'}</p>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={() => navigate(ROUTES.DASHBOARD)}
-          >
-            返回首页
-          </button>
+          <div className={styles.summaryActions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => {
+                setSnapshot(createLoadingSnapshot());
+                setRetryKey((current) => current + 1);
+              }}
+            >
+              重新加载
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => navigate(ROUTES.DASHBOARD)}
+            >
+              返回首页
+            </button>
+          </div>
         </div>
       </div>
     );

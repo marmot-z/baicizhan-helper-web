@@ -4,6 +4,30 @@ import type { ApiResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
 
+interface ApiErrorBody {
+  message?: unknown;
+}
+
+interface ToastWindow extends Window {
+  __lastToastTime?: number;
+}
+
+const getRequestPath = (url?: string) => url?.split('?')[0];
+
+const getResponseErrorMessage = (
+  response: AxiosResponse,
+  fallback: string,
+) => {
+  const body = response.data as ApiErrorBody | undefined;
+  const serverMessage =
+    typeof body?.message === 'string' && body.message.trim()
+      ? body.message.trim()
+      : null;
+  const requestPath = getRequestPath(response.config.url);
+
+  return serverMessage || `${fallback}${requestPath ? `（${requestPath}）` : ''}`;
+};
+
 // API基础配置
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -53,10 +77,11 @@ apiClient.interceptors.response.use(
       
       // 防抖机制：5秒内只显示一次toast
       const now = Date.now();
-      const lastToastTime = (window as any).__lastToastTime || 0;
+      const toastWindow = window as ToastWindow;
+      const lastToastTime = toastWindow.__lastToastTime || 0;
       
       if (now - lastToastTime > 5000) {
-        (window as any).__lastToastTime = now;
+        toastWindow.__lastToastTime = now;
         // 使用 setTimeout 确保在 React 上下文中调用 toast
         setTimeout(() => {
           toast.error('权限不足，请开通会员');
@@ -68,13 +93,22 @@ apiClient.interceptors.response.use(
     
     if (response.data?.code === 500) {
       // 处理500错误（服务器内部错误）
-      return Promise.reject(new Error(response.data?.message));
+      return Promise.reject(new Error(getResponseErrorMessage(response, '服务器处理请求失败')));
     }
     
     return response;
   },
   async (error) => {
     // 处理网络错误或其他HTTP错误
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      const fallback = status >= 500
+        ? `服务器处理请求失败，HTTP ${status}`
+        : `请求失败，HTTP ${status}`;
+
+      return Promise.reject(new Error(getResponseErrorMessage(error.response, fallback)));
+    }
+
     return Promise.reject(error);
   }
 );

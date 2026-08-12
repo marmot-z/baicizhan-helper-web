@@ -17,6 +17,20 @@ const REVIEW_PLAN_TYPE = 'XModelReviewStudy';
 const DETAIL_PLAN_TYPE = 'XModelNewStudy';
 const DETAIL_CHANNEL = 'study_mainstream';
 
+const runOptionalReviewInitialization = (bookId: number, topicIds: number[]) => {
+  const requests = [
+    ['复习设置', studyService.getSettings()],
+    ['信用状态', studyService.getCreditStatus()],
+    ['远端学习记录', studyService.getStudyRecord(bookId, topicIds)],
+  ] as const;
+
+  requests.forEach(([label, request]) => {
+    void request.catch((error) => {
+      console.warn(`${label}加载失败，继续使用本地复习状态:`, error);
+    });
+  });
+};
+
 export const reviewService = {
   async initializeReviewWords(
     bookId: number,
@@ -62,10 +76,18 @@ export const reviewService = {
     }
 
     const topicIds = reviewWords.map((word) => word.topic_id);
-    await studyService.getSettings();
-    await studyService.getCreditStatus();
     const words = await studyService.getXModeWordDetails(bookId, topicIds);
-    await studyService.getStudyRecord(bookId, topicIds);
+
+    if (
+      words.length !== topicIds.length ||
+      topicIds.some((topicId) => !words.some((word) => word.topicId === topicId))
+    ) {
+      throw new Error('复习单词资源不完整，请重新加载');
+    }
+
+    // 这三个接口只用于对齐百词斩 X 模式的辅助初始化，当前页面不消费其返回值。
+    // 上游偶发失败时不应阻断已经可以开始的本地复习流程。
+    runOptionalReviewInitialization(bookId, topicIds);
 
     return {
       words,
