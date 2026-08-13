@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRoadMapElementV2 } from '../../types';
 import {
+  createEmptyHomeState,
   createTopicLearnRecord,
   isKilledScore,
   toKilledScore,
@@ -157,6 +158,90 @@ describe('killed word scheduling', () => {
     expect(state.queues.recognition).toEqual([2]);
     expect(state.queues.understanding).toEqual([2]);
     expect(state.queues.mastery).toEqual([2]);
+  });
+});
+
+describe('wordStatusService', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { localStorage: new MemoryStorage() },
+    });
+    useStudyStore.setState({
+      wordList: [createRoadmapWord(1)],
+      wordListBookId: 10,
+      learnRecords: {},
+      homeState: createEmptyHomeState(),
+      studyPlan: {
+        book_id: 10,
+        learned_words_count: 0,
+        group_id: 0,
+        daily_plan_count: 1,
+        review_plan_count: 0,
+      },
+    });
+    vi.spyOn(
+      useStudyStore.getState(),
+      'syncCurrentBookState'
+    ).mockResolvedValue();
+  });
+
+  it('persists a killed word, updates live lists and queues the remote payload', () => {
+    const killed = wordStatusService.killWord({
+      bookId: 10,
+      topicId: 1,
+      tagId: 7,
+      isTodayNew: true,
+    });
+
+    expect(killed.topicScore).toBe(-1);
+    expect(studyRecordStore.getRecord(10, 1)?.topicScore).toBe(-1);
+    expect(
+      studyRecordStore
+        .getPendingDoneRecords(10)
+        .map((item) => item.doneRecord.current_score)
+    ).toEqual([-1]);
+    expect(useStudyStore.getState().learnRecords[1]?.topicScore).toBe(-1);
+    expect(
+      useStudyStore
+        .getState()
+        .homeState.killedWords.map((word) => word.topic_id)
+    ).toEqual([1]);
+    expect(useStudyStore.getState().syncCurrentBookState).toHaveBeenCalledWith(
+      10
+    );
+  });
+
+  it('replaces the pending kill with an unkill and moves the word out of killed lists', () => {
+    wordStatusService.killWord({
+      bookId: 10,
+      topicId: 1,
+      isTodayNew: true,
+    });
+
+    const restored = wordStatusService.unkillWord(10, 1);
+
+    expect(restored.topicScore).toBe(5);
+    expect(studyRecordStore.getRecord(10, 1)?.topicScore).toBe(5);
+    expect(
+      studyRecordStore
+        .getPendingDoneRecords(10)
+        .map((item) => item.doneRecord.current_score)
+    ).toEqual([5]);
+    expect(useStudyStore.getState().homeState.killedWords).toEqual([]);
+    expect(
+      useStudyStore
+        .getState()
+        .homeState.todayLearnedWords.map((word) => word.topic_id)
+    ).toEqual([1]);
+  });
+
+  it('rejects unkill when the word is not currently killed', () => {
+    expect(() => wordStatusService.unkillWord(10, 1)).toThrow(
+      '该单词当前不是已斩状态'
+    );
+    expect(studyRecordStore.getPendingDoneRecords(10)).toEqual([]);
   });
 });
 

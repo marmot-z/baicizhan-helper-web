@@ -71,7 +71,7 @@ describe('studyStore kill sync', () => {
     expect(studyRecordStore.getSyncMeta(10).lastUploadError).toContain('returned -1');
   });
 
-  it('drains a newer status written while an upload is in flight', async () => {
+  it('drains a newer status written in the same millisecond while an upload is in flight', async () => {
     const killed = createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 });
     studyRecordStore.upsertAndQueue(10, [killed], [toPendingDoneRecord(killed, 1)]);
 
@@ -90,7 +90,7 @@ describe('studyStore kill sync', () => {
     await vi.waitFor(() => expect(uploadedScores).toEqual([-1]));
 
     const restored = createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: 5 });
-    studyRecordStore.upsertAndQueue(10, [restored], [toPendingDoneRecord(restored, 2)]);
+    studyRecordStore.upsertAndQueue(10, [restored], [toPendingDoneRecord(restored, 1)]);
     const joinedSync = useStudyStore.getState().syncCurrentBookState(10);
     releaseFirstUpload();
 

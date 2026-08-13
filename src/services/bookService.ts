@@ -1,5 +1,13 @@
 import { ApiService } from './api';
-import type { UserBookItem, UserBooksResponse, UserBookWordDetail, TopicResourceV2, SearchWordResultV2 } from '../types';
+import type {
+  UserBookItem,
+  UserBooksResponse,
+  UserBookWordDetail,
+  TopicResourceV2,
+  SearchWordResultV2,
+  TopicKey,
+  WordListWordMetaV2,
+} from '../types';
 
 export type WordDetailChannel =
   | 'SEARCH_WORD'
@@ -30,7 +38,24 @@ export const bookService = {
 
   // 获取单词本中的单词列表
   async getBookWords(bookId: number): Promise<UserBookWordDetail[]> {
-    const response = await ApiService.get<UserBookWordDetail[]>(`/book/${bookId}/words`);
+    const response = await ApiService.get<UserBookWordDetail[]>(
+      `/book/${bookId}/words`
+    );
+    return response.data;
+  },
+
+  // 获取当前词书列表展示所需的轻量元信息
+  async getWordListWordMeta(
+    topicKeys: TopicKey[]
+  ): Promise<WordListWordMetaV2[]> {
+    if (topicKeys.length === 0) {
+      return [];
+    }
+
+    const response = await ApiService.post<WordListWordMetaV2[]>(
+      '/wordListWordMetaV2',
+      topicKeys
+    );
     return response.data;
   },
 
@@ -58,25 +83,33 @@ export const bookService = {
       params.append('channel', channel);
     }
 
-    const response = await ApiService.get<TopicResourceV2>(`/word/${topicId}?${params.toString()}`);
+    const response = await ApiService.get<TopicResourceV2>(
+      `/word/${topicId}?${params.toString()}`
+    );
     return response.data;
   },
 
   // 收藏单词
   async collectWord(bookId: number, topicId: number): Promise<boolean> {
-    const response = await ApiService.put<boolean>(`/book/${bookId}/word/${topicId}`);
+    const response = await ApiService.put<boolean>(
+      `/book/${bookId}/word/${topicId}`
+    );
     return response.data;
   },
 
   // 取消收藏单词
   async cancelCollectWord(bookId: number, topicId: number): Promise<boolean> {
-    const response = await ApiService.delete<boolean>(`/book/${bookId}/word/${topicId}`);
+    const response = await ApiService.delete<boolean>(
+      `/book/${bookId}/word/${topicId}`
+    );
     return response.data;
   },
 
   // 搜索单词
   async searchWord(word: string): Promise<SearchWordResultV2[]> {
-    const response = await ApiService.get<SearchWordResultV2[]>(`/search/word/${encodeURIComponent(word)}`);
+    const response = await ApiService.get<SearchWordResultV2[]>(
+      `/search/word/${encodeURIComponent(word)}`
+    );
     return response.data;
   },
 };

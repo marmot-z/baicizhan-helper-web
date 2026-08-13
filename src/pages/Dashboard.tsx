@@ -101,14 +101,21 @@ export default function Dashboard() {
           <div className="book-info" style={{
             
           }}>
-            {currentBook?.img ? (
-              <img 
-                src={currentBook.img} 
-                alt={currentBook.name || '单词书封面'}
-              />
-            ) : (
-              <div className="book-cover-placeholder"></div>
-            )}
+            <button
+              type="button"
+              className="book-cover-button"
+              aria-label={`查看${currentBook?.name || '当前词书'}的单词列表`}
+              onClick={() => navigate(ROUTES.WORD_LIST)}
+            >
+              {currentBook?.img ? (
+                <img
+                  src={currentBook.img}
+                  alt=""
+                />
+              ) : (
+                <div className="book-cover-placeholder" aria-hidden="true"></div>
+              )}
+            </button>
             <div className="book-details">
               <h2>{currentBook?.name || '雅思核心'}</h2>
               <p>{studyPlan?.learned_words_count} / {currentBook?.total_words_count}</p>
@@ -164,13 +171,6 @@ export default function Dashboard() {
                 复习
               </button>
             </div>
-            <button
-              type="button"
-              className="killed-words-link"
-              onClick={() => navigate(ROUTES.KILLED_WORDS)}
-            >
-              已斩 {homeState.killedWords?.length ?? 0} 词 ›
-            </button>
           </div>
         </section>
 

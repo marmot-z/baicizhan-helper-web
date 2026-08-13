@@ -118,7 +118,29 @@
   align-items: center;
   gap: 1rem;
 }
-.book-info img {
+.book-cover-button {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.book-cover-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.book-cover-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 3px;
+}
+
+.book-cover-button img {
+  display: block;
   width: 140px;
   border-radius: 4px;
   object-fit: cover;
@@ -223,21 +245,6 @@
 .btn-review:disabled {
   cursor: not-allowed;
   opacity: 0.5;
-}
-
-.killed-words-link {
-  margin-top: 14px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: #64748b;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.killed-words-link:hover {
-  color: #334155;
-  text-decoration: underline;
 }
 
 /* Invite Button */

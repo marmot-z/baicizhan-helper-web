@@ -241,6 +241,13 @@ export interface TopicKey {
   tag_id: number;
 }
 
+export interface WordListWordMetaV2 {
+  topic_key: TopicKey;
+  word: string;
+  mean_cn: string;
+  accent_usa_audio_uri?: string;
+}
+
 export interface ZpkInfo {
   topic_key: TopicKey;
   zpk_uri: string;

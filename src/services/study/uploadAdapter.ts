@@ -1,6 +1,8 @@
 import type { UserDoneWordRecord } from '../../types';
 import type { PendingDoneRecord, TopicLearnRecord } from '../../types/studyRecord';
 
+let pendingRequestSequence = 0;
+
 export function toUserDoneWordRecord(
   record: TopicLearnRecord,
 ): UserDoneWordRecord {
@@ -24,10 +26,15 @@ export function toPendingDoneRecord(
   record: TopicLearnRecord,
   queuedAt = Date.now(),
 ): PendingDoneRecord {
+  const requestSequence = pendingRequestSequence++;
+
   return {
     topicId: record.topicId,
     queuedAt,
-    requestKey: `${record.bookId}-${record.topicId}-${queuedAt}`,
+    // queuedAt only has millisecond precision. A newer status can be queued while
+    // an older upload for the same topic is still in flight, so it needs a
+    // process-local suffix to prevent the old response from clearing the new item.
+    requestKey: `${record.bookId}-${record.topicId}-${queuedAt}-${requestSequence}`,
     doneRecord: toUserDoneWordRecord(record),
   };
 }

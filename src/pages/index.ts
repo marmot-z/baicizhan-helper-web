@@ -15,4 +15,4 @@ export { default as StudyStatistics } from './studyStatistics';
 export { default as StudyMidView } from './StudyMidView';
 export { default as SpellView } from './SpellView';
 export { default as ReviewPage } from './review/ReviewPage';
-export { default as KilledWords } from './KilledWords';
+export { default as CurrentBookWordList } from './CurrentBookWordList';
