@@ -20,6 +20,9 @@ const WordBook: React.FC = () => {
   const [words, setWords] = useState<UserBookWordDetail[]>([]);
   const [selectedWords, setSelectedWords] = useState<Record<number, string>>({});
   const selectWordsRef = useRef(selectedWords);
+  const [revealedTopicIds, setRevealedTopicIds] = useState<Set<number>>(
+    () => new Set()
+  );
   const [downloadModelShow, setDownloadModelShow] = useState(false);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
 
@@ -30,6 +33,10 @@ const WordBook: React.FC = () => {
   useEffect(() => {
     selectWordsRef.current = selectedWords;
   }, [selectedWords]);
+
+  useEffect(() => {
+    setRevealedTopicIds(new Set());
+  }, [id]);
 
   useEffect(() => {
     // 根据单词本ID获取单词本信息
@@ -102,7 +109,7 @@ const WordBook: React.FC = () => {
     return () => {
       btn?.removeEventListener('click', exportToAnki);
     };
-  }, [id]);
+  }, [clearExpiredData, getWordBook, id, setWordBook]);
 
   // 排序逻辑
   const sortedWords = React.useMemo(() => {
@@ -148,10 +155,25 @@ const WordBook: React.FC = () => {
       }));
     } else {
       setSelectedWords(prev => {
-        const { [topicId]: _, ...rest } = prev;
+        const rest = { ...prev };
+        delete rest[topicId];
         return rest;
       });
     }
+  }
+
+  function toggleMeaning(topicId: number) {
+    setRevealedTopicIds((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(topicId)) {
+        next.delete(topicId);
+      } else {
+        next.add(topicId);
+      }
+
+      return next;
+    });
   }
 
   function toggleDownloadModelShow() {
@@ -232,39 +254,59 @@ const WordBook: React.FC = () => {
 
               <button id="exportBtn" className={styles.exportButton}>导出</button>
             </div>
-            {sortedWords.map((wordItem, index) => (
-              <div
-                key={wordItem.topic_id}
-                className={`${styles.wordItem} ${index !== sortedWords.length - 1 ? styles.wordItemWithBorder : ''}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={!!selectedWords[wordItem.topic_id]}
-                  value={wordItem.topic_id}
-                  onChange={selectWord}
-                  className={styles.checkbox}
-                />
-                <div className={styles.wordContent}>
-                  <div className={styles.wordHeader}>
-                    <h2 className={styles.word}>{wordItem.word}</h2>
-                    <AudioIcon src={wordItem.audio_uk} />                  
-                  </div>
-                  <div className={styles.wordFooter}>
-                    <p className={styles.wordMeaning}>{wordItem.mean.substring(0, 40)}</p>
-                    <a
-                      href="#"
-                      className={styles.detailLink}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(`/page/word-detail/${wordItem.topic_id}`);
-                      }}
-                    >
-                      详情 &gt;
-                    </a>
+            {sortedWords.map((wordItem, index) => {
+              const isRevealed = revealedTopicIds.has(wordItem.topic_id);
+
+              return (
+                <div
+                  key={wordItem.topic_id}
+                  className={`${styles.wordItem} ${index !== sortedWords.length - 1 ? styles.wordItemWithBorder : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!selectedWords[wordItem.topic_id]}
+                    value={wordItem.topic_id}
+                    onChange={selectWord}
+                    className={styles.checkbox}
+                  />
+                  <div className={styles.wordContent}>
+                    <div className={styles.wordHeader}>
+                      <h2 className={styles.word}>{wordItem.word}</h2>
+                      <AudioIcon src={wordItem.audio_uk} />                  
+                    </div>
+                    <div className={styles.wordFooter}>
+                      <button
+                        type="button"
+                        className={styles.wordMeaningButton}
+                        aria-label={`${wordItem.word}，${isRevealed ? '点击遮挡释义' : '点击显示释义'}`}
+                        onClick={() => toggleMeaning(wordItem.topic_id)}
+                      >
+                        {isRevealed ? (
+                          <span className={styles.wordMeaning}>
+                            {wordItem.mean.substring(0, 40)}
+                          </span>
+                        ) : (
+                          <span
+                            className={styles.wordMeaningMask}
+                            aria-hidden="true"
+                          />
+                        )}
+                      </button>
+                      <a
+                        href="#"
+                        className={styles.detailLink}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/page/word-detail/${wordItem.topic_id}`);
+                        }}
+                      >
+                        详情 &gt;
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </main>
         </div>
       </div>

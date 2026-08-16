@@ -190,14 +190,42 @@
   align-items: center;
 }
 
+.wordMeaningButton {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wordMeaningButton:focus-visible {
+  outline: 3px solid rgb(0 123 255 / 35%);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .wordMeaning {
-  margin: 0;
+  display: block;
   color: #6c757d;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-grow: 1;
-  margin-right: 1rem;
+}
+
+.wordMeaningMask {
+  display: block;
+  width: min(100%, 460px);
+  height: 24px;
+  border-radius: 3px;
+  background-color: #e5e7eb;
+}
+
+.wordMeaningButton:hover .wordMeaningMask {
+  background-color: #d1d5db;
 }
 
 .detailLink {
@@ -236,4 +264,12 @@
 
 :global(.dark) .wordMeaning {
   color: #9ca3af;
+}
+
+:global(.dark) .wordMeaningMask {
+  background-color: #374151;
+}
+
+:global(.dark) .wordMeaningButton:hover .wordMeaningMask {
+  background-color: #4b5563;
 }

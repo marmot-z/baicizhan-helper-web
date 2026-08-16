@@ -1,25 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
+import type { CalendarProps } from 'react-calendar';
+import { Link } from 'react-router-dom';
 import './MyCalendar.css';
+import { ROUTES } from '../constants';
 import { studyService } from '../services/studyService';
 import type { CalendarDailyInfo, CalendarDailyWord } from '../types';
 import styles from './StudyCalendar.module.css';
+
+type CalendarValue = Parameters<NonNullable<CalendarProps['onChange']>>[0];
+
+// 格式化日期为 yyyyMMdd 格式
+const formatDateToString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
+
+// 格式化日期显示
+const formatSelectedDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}年${month}月${day}日`;
+};
 
 const StudyCalendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date()); // 2024年9月20日
   const [dailyInfo, setDailyInfo] = useState<CalendarDailyInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 格式化日期为 yyyyMMdd 格式
-  const formatDateToString = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
-  };
-
   // 获取日期学习内容
-  const fetchDailyInfo = async (date: Date) => {
+  const fetchDailyInfo = useCallback(async (date: Date) => {
     setLoading(true);
     try {
       const dateString = formatDateToString(date);
@@ -31,10 +44,10 @@ const StudyCalendar: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // 处理日期选择
-  const handleDateChange = (value: any) => {
+  const handleDateChange = (value: CalendarValue) => {
     let newDate: Date | null = null;
     if (value instanceof Date) {
       newDate = value;
@@ -44,22 +57,13 @@ const StudyCalendar: React.FC = () => {
     
     if (newDate) {
       setSelectedDate(newDate);
-      fetchDailyInfo(newDate);
     }
   };
 
-  // 格式化日期显示
-  const formatSelectedDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
-  };
-
-  // 初始化时获取当前日期的学习内容
+  // 初始化和日期切换时获取学习内容
   useEffect(() => {
     fetchDailyInfo(selectedDate);
-  }, []);
+  }, [fetchDailyInfo, selectedDate]);
 
   return (
     <div className={styles.container}>
@@ -87,9 +91,11 @@ const StudyCalendar: React.FC = () => {
               </div>
             ) : dailyInfo && dailyInfo.words && dailyInfo.words.length > 0 ? (
               dailyInfo.words.map((wordData: CalendarDailyWord, index: number) => (
-                <div 
+                <Link
                   key={wordData.topic_id || index} 
+                  to={ROUTES.WORD_DETAIL.replace(':word', String(wordData.topic_id))}
                   className={`${styles.wordItem} ${index !== dailyInfo.words.length - 1 ? styles.wordItemWithBorder : ''}`}
+                  aria-label={`查看 ${wordData.word} 的详情`}
                 >
                   <span className={styles.wordText}>
                     {wordData.word}
@@ -97,7 +103,7 @@ const StudyCalendar: React.FC = () => {
                   <span className={styles.meanText}>
                     {wordData.mean}
                   </span>
-                </div>
+                </Link>
               ))
             ) : (
               <div className={styles.message}>

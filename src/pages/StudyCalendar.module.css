@@ -37,6 +37,20 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 0;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.wordItem:hover,
+.wordItem:focus-visible {
+  color: #007bff;
+}
+
+.wordItem:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 4px;
 }
 
 .wordItemWithBorder {
@@ -47,6 +61,9 @@
   font-weight: bold;
   margin-right: 1rem;
   flex-shrink: 0;
+  color: #007bff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .meanText {
@@ -84,6 +101,10 @@
 :global(.dark) .meanText,
 :global(.dark) .message {
   color: #9ca3af;
+}
+
+:global(.dark) .wordText {
+  color: #60a5fa;
 }
 
 /* React Calendar Dark Mode Overrides removed; use MyCalendar.css for calendar styles */
