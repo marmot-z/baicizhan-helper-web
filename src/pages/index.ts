@@ -4,6 +4,7 @@ export { default as Home } from './Home';
 export { default as Login } from './Login';
 export { default as PaymentPage } from './PaymentPage';
 export { default as SelectWordBook } from './SelectWordBook';
+export { default as SwitchStudyBook } from './SwitchStudyBook';
 export { default as Search } from './Search';
 export { default as SelectStudyPlan } from './SelectStudyPlan';
 export { default as StudyCalendar } from './StudyCalendar';

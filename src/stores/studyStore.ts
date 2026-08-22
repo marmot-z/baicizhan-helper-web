@@ -18,6 +18,7 @@ const inflightBookSyncs = new Map<number, Promise<void>>();
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
   studyPlan: SelectBookPlanInfo | null;
+  studyPlans: SelectBookPlanInfo[];
   wordList: UserRoadMapElementV2[];
   wordListBookId: number | null;
   learnRecords: TopicLearnRecordMap;
@@ -35,6 +36,8 @@ interface StudyState {
   recomputeHomeState: (bookId: number) => StudyHomeState;
   syncCurrentBookState: (bookId?: number) => Promise<void>;
   fetchStudyData: () => Promise<void>;
+  refreshStudyPlans: () => Promise<SelectBookPlanInfo[]>;
+  switchStudyBook: (plan: SelectBookPlanInfo) => Promise<void>;
   refreshStudyDataForBook: (book: UserBookBasicInfo) => Promise<void>;
   clearStudyData: () => void;
 }
@@ -170,6 +173,7 @@ async function hydrateStudyPlanForKnownBook(
   book: UserBookBasicInfo,
 ): Promise<void> {
   const planData = await studyService.getBookPlanInfo();
+  set({ studyPlans: planData ?? [] });
   if (!planData || planData.length === 0) {
     return;
   }
@@ -185,11 +189,36 @@ async function hydrateStudyPlanForKnownBook(
   await syncBookState(set, get, userPlan.book_id);
 }
 
+async function hydrateStudyPlan(
+  set: StudyStoreSet,
+  get: StudyStoreGet,
+  plan: SelectBookPlanInfo,
+  books?: UserBookBasicInfo[],
+): Promise<void> {
+  let matchedBook =
+    get().currentBook?.id === plan.book_id ? get().currentBook : null;
+
+  if (!matchedBook) {
+    const availableBooks = books ?? (await studyService.getAllBooks()).books;
+    matchedBook = availableBooks.find((book) => book.id === plan.book_id) ?? null;
+  }
+
+  set({
+    studyPlan: plan,
+    currentBook: matchedBook,
+  });
+
+  const roadmapData = await studyService.getRoadmap(plan.book_id);
+  set({ wordList: roadmapData, wordListBookId: plan.book_id });
+  await syncBookState(set, get, plan.book_id);
+}
+
 export const useStudyStore = create<StudyState>()(
   persist(
     (set, get) => ({
       currentBook: null,
       studyPlan: null,
+      studyPlans: [],
       wordList: [],
       wordListBookId: null,
       learnRecords: {},
@@ -268,6 +297,7 @@ export const useStudyStore = create<StudyState>()(
         try {
           // 获取用户学习计划
           const planData = await studyService.getBookPlanInfo();
+          set({ studyPlans: planData ?? [] });
           if (planData && planData.length > 0) {
             const userPlan = planData[0];
             set({ studyPlan: userPlan });
@@ -304,10 +334,36 @@ export const useStudyStore = create<StudyState>()(
             }
 
             await get().syncCurrentBookState(userPlan.book_id);
+          } else {
+            set({
+              studyPlan: null,
+              currentBook: null,
+              wordList: [],
+              wordListBookId: null,
+              homeState: createEmptyHomeState(),
+            });
           }
         } catch (error) {
           console.error('Failed to fetch study data:', error);
         }
+      },
+
+      refreshStudyPlans: async () => {
+        const planData = await studyService.getBookPlanInfo();
+        set({ studyPlans: planData ?? [] });
+        return planData ?? [];
+      },
+
+      switchStudyBook: async (plan: SelectBookPlanInfo) => {
+        await studyService.switchSelectedBookPlan(plan);
+        const [planData, booksData] = await Promise.all([
+          studyService.getBookPlanInfo(),
+          studyService.getAllBooks(),
+        ]);
+        const currentPlan = planData[0] ?? plan;
+
+        set({ studyPlans: planData ?? [] });
+        await hydrateStudyPlan(set, get, currentPlan, booksData.books);
       },
 
       refreshStudyDataForBook: async (book: UserBookBasicInfo) => {
@@ -322,6 +378,7 @@ export const useStudyStore = create<StudyState>()(
         set({
           currentBook: null,
           studyPlan: null,
+          studyPlans: [],
           wordList: [],
           wordListBookId: null,
           learnRecords: {},
@@ -346,6 +403,7 @@ export const useStudyStore = create<StudyState>()(
       partialize: (state) => ({
         currentBook: state.currentBook,
         studyPlan: state.studyPlan,
+        studyPlans: state.studyPlans,
         wordList: state.wordList,
         wordListBookId: state.wordListBookId,
         learnRecords: state.learnRecords,

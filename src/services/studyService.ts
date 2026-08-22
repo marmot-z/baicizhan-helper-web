@@ -64,6 +64,16 @@ export const studyService = {
     return response.data;
   },
 
+  async switchSelectedBookPlan(plan: SelectBookPlanInfo): Promise<UserSelectedBookInfo> {
+    return this.selectBook(
+      plan.book_id,
+      plan.daily_plan_count,
+      plan.review_plan_count,
+      -1,
+      0,
+    );
+  },
+
   async mergeAlreadyLearnedWordsAsync(bookId: number, oldBookIds: number[] = []): Promise<string> {
     if (oldBookIds.length === 0) {
       throw new Error('mergeAlreadyLearnedWordsAsync requires non-empty oldBookIds');

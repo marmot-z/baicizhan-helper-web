@@ -133,7 +133,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   className="change-book-link"
-                  onClick={() => navigate(ROUTES.ALL_BOOKS)}
+                  onClick={() => navigate(ROUTES.SWITCH_STUDY_BOOK)}
                 >
                   修改 &gt;
                 </button>

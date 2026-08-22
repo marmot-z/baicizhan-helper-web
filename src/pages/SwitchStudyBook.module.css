@@ -1,0 +1,515 @@
+.page {
+  min-height: calc(100vh - 64px);
+  background: #f8f9fa;
+  color: #212529;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+.wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.backButton,
+.secondaryButton {
+  flex-shrink: 0;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #fff;
+  color: #495057;
+  padding: 8px 14px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.backButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.title {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.subtitle {
+  max-width: 640px;
+  margin: 6px 0 0;
+  color: #6c757d;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.planList {
+  display: grid;
+  gap: 16px;
+}
+
+.planCard,
+.placeholderCard,
+.modal {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.planCard {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 22px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.planCard:hover:not(:disabled) {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.planCard:focus-visible,
+.backButton:focus-visible,
+.secondaryButton:focus-visible,
+.primaryButton:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 3px;
+}
+
+.planCard:disabled {
+  cursor: default;
+}
+
+.planCardCurrent {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.08);
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.bookCoverImage,
+.bookCover {
+  position: relative;
+  display: flex;
+  flex: 0 0 66px;
+  align-items: flex-start;
+  width: 66px;
+  height: 84px;
+  overflow: hidden;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.bookCover {
+  padding: 9px 10px;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.16);
+}
+
+.bookMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.bookTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.bookName {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.planLine {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 0.94rem;
+}
+
+.bookDesc {
+  display: -webkit-box;
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: #6c757d;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.currentBadge,
+.switchHint {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.currentBadge {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 10px;
+}
+
+.switchHint {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  color: #2563eb;
+}
+
+.progressBlock {
+  display: grid;
+  gap: 8px;
+  padding-left: 82px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9ecef;
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-right: 76px;
+  color: #6c757d;
+  font-size: 0.82rem;
+}
+
+.placeholderCard {
+  padding: 48px 24px;
+  color: #6c757d;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+}
+
+.placeholderTitle {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.placeholderText {
+  max-width: 420px;
+  margin: 8px auto 18px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.footerBar {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.primaryButton {
+  min-width: 180px;
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  padding: 10px 20px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tileTag {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coverDeco,
+.coverDecoSmall {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.coverDeco {
+  right: -14px;
+  bottom: -14px;
+  width: 54px;
+  height: 54px;
+}
+
+.coverDecoSmall {
+  right: -4px;
+  bottom: -4px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.coverOrange {
+  background: linear-gradient(140deg, #f5920c, #df5f00);
+}
+
+.coverGold {
+  background: linear-gradient(140deg, #e8b830, #c98f08);
+}
+
+.coverGreen {
+  background: linear-gradient(140deg, #1db585, #0a7f5a);
+}
+
+.coverBlue {
+  background: linear-gradient(140deg, #3a8fd8, #1a60a8);
+}
+
+.coverPurple {
+  background: linear-gradient(140deg, #9b59b6, #6c3483);
+}
+
+.coverRose {
+  background: linear-gradient(140deg, #e74c3c, #a93226);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+  width: min(420px, 100%);
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+}
+
+.modalTitle {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.modalText {
+  margin: 12px 0 20px;
+  color: #6c757d;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+:global(.dark) .page {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+:global(.dark) .planCard,
+:global(.dark) .placeholderCard,
+:global(.dark) .modal,
+:global(.dark) .backButton,
+:global(.dark) .secondaryButton {
+  border-color: #374151;
+  background: #111827;
+}
+
+:global(.dark) .planCard {
+  box-shadow: none;
+}
+
+:global(.dark) .planCard:hover:not(:disabled),
+:global(.dark) .planCardCurrent {
+  border-color: #3b82f6;
+}
+
+:global(.dark) .backButton:hover:not(:disabled),
+:global(.dark) .secondaryButton:hover:not(:disabled) {
+  border-color: #4b5563;
+  background: #1f2937;
+}
+
+:global(.dark) .title,
+:global(.dark) .bookName,
+:global(.dark) .placeholderTitle,
+:global(.dark) .modalTitle {
+  color: #f8fafc;
+}
+
+:global(.dark) .planLine {
+  color: #cbd5e1;
+}
+
+:global(.dark) .bookDesc,
+:global(.dark) .progressMeta,
+:global(.dark) .subtitle,
+:global(.dark) .placeholderCard,
+:global(.dark) .placeholderText,
+:global(.dark) .modalText,
+:global(.dark) .backButton,
+:global(.dark) .secondaryButton {
+  color: #9ca3af;
+}
+
+:global(.dark) .progressTrack {
+  background: #374151;
+}
+
+:global(.dark) .currentBadge {
+  border-color: #1e40af;
+  background: #172554;
+  color: #93c5fd;
+}
+
+:global(.dark) .switchHint {
+  color: #60a5fa;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 20px 16px 36px;
+  }
+
+  .header {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.86rem;
+  }
+
+  .bookTitleRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .progressBlock {
+    padding-left: 0;
+  }
+
+  .progressMeta {
+    padding-right: 0;
+  }
+
+  .switchHint {
+    position: static;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .cardTop {
+    gap: 12px;
+  }
+
+  .bookCoverImage,
+  .bookCover {
+    flex-basis: 56px;
+    width: 56px;
+    height: 72px;
+  }
+
+  .planCard {
+    padding: 16px;
+  }
+
+  .footerBar .primaryButton {
+    width: 100%;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalActions .primaryButton,
+  .modalActions .secondaryButton {
+    width: 100%;
+  }
+}

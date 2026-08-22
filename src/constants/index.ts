@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: '/page/login',
   DASHBOARD: '/page/dashboard',
   ALL_BOOKS: '/page/all-books',
+  SWITCH_STUDY_BOOK: '/page/switch-study-book',
   PROFILE: '/page/profile',
   SEARCH: '/page/search',
   WORD_BOOK: '/page/wordbook/:id',

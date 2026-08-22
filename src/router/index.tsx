@@ -7,6 +7,7 @@ import {
   Search,
   SelectStudyPlan,
   SelectWordBook,
+  SwitchStudyBook,
   StudyCalendar,
   StudyView,
   WordBook,
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.ALL_BOOKS,
         element: <SelectWordBook />,
+      },
+      {
+        path: ROUTES.SWITCH_STUDY_BOOK,
+        element: <SwitchStudyBook />,
       },
       {
         path: ROUTES.SEARCH,
