@@ -77,6 +77,7 @@ export interface ReviewSummaryState {
   completedWords: number;
   totalErrors: number;
   records: ReviewWordRecord[];
+  killedTopicIds: number[];
 }
 
 /** 跳转至统计页时通过路由 state 传递的复习汇总（精简可序列化字段） */

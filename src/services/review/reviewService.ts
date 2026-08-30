@@ -199,42 +199,49 @@ export const reviewService = {
     );
   },
 
-  async finishReview(records: ReviewWordRecord[], context: ReviewContext): Promise<void> {
+  async finishReview(
+    records: ReviewWordRecord[],
+    context: ReviewContext,
+    killedTopicIds: number[],
+  ): Promise<void> {
     const updatedAt = Date.now();
-    const nextRecords = records.map((reviewRecord) => {
-      const existingRecord = studyRecordStore.getRecord(context.bookId, reviewRecord.topicId);
-      const usedTime =
-        reviewRecord.completedAt && reviewRecord.reviewStartedAt
-          ? Math.max(0, reviewRecord.completedAt - reviewRecord.reviewStartedAt)
-          : 0;
+    const killedTopicIdSet = new Set(killedTopicIds);
+    const nextRecords = records
+      .filter((reviewRecord) => !killedTopicIdSet.has(reviewRecord.topicId))
+      .map((reviewRecord) => {
+        const existingRecord = studyRecordStore.getRecord(context.bookId, reviewRecord.topicId);
+        const usedTime =
+          reviewRecord.completedAt && reviewRecord.reviewStartedAt
+            ? Math.max(0, reviewRecord.completedAt - reviewRecord.reviewStartedAt)
+            : 0;
 
-      const nextScore =
-        reviewRecord.errorCount === 0
-          ? Math.max(existingRecord?.topicScore ?? 0, 5)
-          : Math.min(Math.max(existingRecord?.topicScore ?? 0, 0), 4);
-
-      const input = {
-        bookId: context.bookId,
-        topicId: reviewRecord.topicId,
-        usedTime,
-        doNumDelta: 1,
-        errNumDelta: reviewRecord.errorCount,
-        now: reviewRecord.completedAt ?? updatedAt,
-        isFirstDoAtToday: false,
-        nextScore,
-        nextSpanDays: existingRecord?.topicDay ?? 0,
-        nextReviewRound:
+        const nextScore =
           reviewRecord.errorCount === 0
-            ? (existingRecord?.reviewRound ?? 0) + 1
-            : existingRecord?.reviewRound ?? 0,
-      };
+            ? Math.max(existingRecord?.topicScore ?? 0, 5)
+            : Math.min(Math.max(existingRecord?.topicScore ?? 0, 0), 4);
 
-      if (reviewRecord.errorCount === 0) {
-        return applyReviewCorrect(existingRecord, input);
-      }
+        const input = {
+          bookId: context.bookId,
+          topicId: reviewRecord.topicId,
+          usedTime,
+          doNumDelta: 1,
+          errNumDelta: reviewRecord.errorCount,
+          now: reviewRecord.completedAt ?? updatedAt,
+          isFirstDoAtToday: false,
+          nextScore,
+          nextSpanDays: existingRecord?.topicDay ?? 0,
+          nextReviewRound:
+            reviewRecord.errorCount === 0
+              ? (existingRecord?.reviewRound ?? 0) + 1
+              : existingRecord?.reviewRound ?? 0,
+        };
 
-      return applyReviewWrong(existingRecord, input);
-    });
+        if (reviewRecord.errorCount === 0) {
+          return applyReviewCorrect(existingRecord, input);
+        }
+
+        return applyReviewWrong(existingRecord, input);
+      });
 
     studyRecordStore.upsertRecords(context.bookId, nextRecords);
     const store = useStudyStore.getState();

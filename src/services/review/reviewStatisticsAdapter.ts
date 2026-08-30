@@ -52,6 +52,7 @@ export const reviewStatisticsAdapter = {
         };
       }),
       updateTime: Date.now(),
+      killedTopicIds: summaryState.killedTopicIds,
     };
   },
 };

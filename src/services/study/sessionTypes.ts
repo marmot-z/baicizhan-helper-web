@@ -29,6 +29,7 @@ export interface LearnSessionState {
 
 export interface ReviewSessionState {
   wordTopicIds: number[];
+  killedTopicIds?: number[];
   stage: ReviewStage;
   completedChoiceWords: number;
   completedSpellWords: number;

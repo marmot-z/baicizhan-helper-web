@@ -6,9 +6,10 @@ import studyStyles from '../StudyView.module.css';
 interface ReviewWordDetailProps {
   state: ReviewDetailState;
   onNext: () => void;
+  wordAction?: React.ReactNode;
 }
 
-const ReviewWordDetail: React.FC<ReviewWordDetailProps> = ({ state, onNext }) => {
+const ReviewWordDetail: React.FC<ReviewWordDetailProps> = ({ state, onNext, wordAction }) => {
   return (
     <div className={studyStyles.container}>
       <StudyBackCard
@@ -16,6 +17,7 @@ const ReviewWordDetail: React.FC<ReviewWordDetailProps> = ({ state, onNext }) =>
         next={onNext}
         nextLabel={state.nextLabel}
         showCollect={false}
+        wordAction={wordAction}
       />
     </div>
   );

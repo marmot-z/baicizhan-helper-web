@@ -17,6 +17,7 @@ interface SpellPracticePanelProps {
   inputPlaceholder: string;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
+  wordAction?: React.ReactNode;
 }
 
 const SpellPracticePanel: React.FC<SpellPracticePanelProps> = ({
@@ -32,6 +33,7 @@ const SpellPracticePanel: React.FC<SpellPracticePanelProps> = ({
   inputPlaceholder,
   onInputChange,
   onSubmit,
+  wordAction,
 }) => {
   const handlePlayAudio = () => {
     if (!audioSrc) {
@@ -52,6 +54,7 @@ const SpellPracticePanel: React.FC<SpellPracticePanelProps> = ({
         .join(' ')}
     >
       <div className={styles.container}>
+        {wordAction && <div className={styles.wordAction}>{wordAction}</div>}
         <div className={styles.topHint}>{topHint}</div>
 
         <div className={styles.imageContainer}>

@@ -12,6 +12,9 @@ import type {
 } from './types';
 import type { ReviewSessionState } from '../study/sessionTypes';
 import { studySessionStore } from '../study/sessionStore';
+import { studyRecordStore } from '../study/recordStore';
+import { wordStatusService } from '../study/wordStatusService';
+import { isKilledRecord } from '../../types/studyRecord';
 
 const createInitialSnapshot = (): ReviewSnapshot => ({
   stage: 'loading',
@@ -30,8 +33,11 @@ export class ReviewFlow {
   private listeners = new Set<(snapshot: ReviewSnapshot) => void>();
   private records = new Map<number, ReviewWordRecord>();
   private allWords: StudyUIModel[];
+  private roadmapMap: ReviewInitData['roadmapMap'];
   private context: ReviewInitData['context'];
   private onCheckpoint?: (state: ReviewSessionState) => void;
+  private killedTopicIds = new Set<number>();
+  private killInProgress = false;
 
   private choiceQueue: StudyUIModel[];
   private choiceRetryQueue: StudyUIModel[] = [];
@@ -57,6 +63,7 @@ export class ReviewFlow {
   ) {
     this.allWords = initData.words;
     this.choiceQueue = [...initData.words];
+    this.roadmapMap = initData.roadmapMap;
     this.context = initData.context;
     this.onCheckpoint = onCheckpoint;
 
@@ -107,6 +114,25 @@ export class ReviewFlow {
   }
 
   async resume(): Promise<void> {
+    if (this.snapshot.stage === 'choice' && !this.currentChoiceWord) {
+      await this.advanceChoiceQueue();
+      return;
+    }
+
+    if (this.snapshot.stage === 'detail' && !this.detailWord) {
+      if (this.detailReason === 'spell_error') {
+        await this.advanceSpellQueue();
+      } else {
+        await this.advanceChoiceQueue();
+      }
+      return;
+    }
+
+    if (this.snapshot.stage === 'spelling' && !this.currentSpellWord) {
+      await this.advanceSpellQueue();
+      return;
+    }
+
     if (
       this.snapshot.stage === 'spelling' &&
       this.currentSpellWord &&
@@ -141,6 +167,9 @@ export class ReviewFlow {
   exportState(): ReviewSessionState {
     return {
       wordTopicIds: this.allWords.map((word) => word.topicId),
+      ...(this.killedTopicIds.size > 0
+        ? { killedTopicIds: Array.from(this.killedTopicIds) }
+        : {}),
       stage: this.snapshot.stage,
       completedChoiceWords: this.snapshot.completedChoiceWords,
       completedSpellWords: this.snapshot.completedSpellWords,
@@ -185,7 +214,7 @@ export class ReviewFlow {
   }
 
   async chooseOption(optionId: number): Promise<void> {
-    if (!this.currentChoiceWord || this.snapshot.stage !== 'choice') {
+    if (this.killInProgress || !this.currentChoiceWord || this.snapshot.stage !== 'choice') {
       return;
     }
 
@@ -237,7 +266,12 @@ export class ReviewFlow {
   }
 
   async continueFromDetail(): Promise<void> {
-    if (this.snapshot.stage !== 'detail' || !this.detailWord || !this.detailReason) {
+    if (
+      this.killInProgress ||
+      this.snapshot.stage !== 'detail' ||
+      !this.detailWord ||
+      !this.detailReason
+    ) {
       return;
     }
 
@@ -250,7 +284,7 @@ export class ReviewFlow {
   }
 
   async submitSpell(input: string): Promise<void> {
-    if (!this.currentSpellWord || this.snapshot.stage !== 'spelling') {
+    if (this.killInProgress || !this.currentSpellWord || this.snapshot.stage !== 'spelling') {
       return;
     }
 
@@ -316,6 +350,7 @@ export class ReviewFlow {
 
   clearSpellWrongOnInput(): void {
     if (
+      this.killInProgress ||
       this.snapshot.stage !== 'spelling' ||
       !this.currentSpellWord ||
       !this.currentSpellWrong ||
@@ -383,13 +418,23 @@ export class ReviewFlow {
     this.spellRetrySet = new Set(state.spellRetryTopicIds);
     this.currentSpellWord = getWord(state.currentSpellTopicId);
     this.currentSpellWrong = state.currentSpellWrong;
+    const persistedKilledTopicIds = this.allWords
+      .filter((word) =>
+        isKilledRecord(studyRecordStore.getRecord(this.context.bookId, word.topicId)),
+      )
+      .map((word) => word.topicId);
+    this.killedTopicIds = new Set([
+      ...(state.killedTopicIds ?? []),
+      ...persistedKilledTopicIds,
+    ]);
+    this.killedTopicIds.forEach((topicId) => this.removeTopicFromQueues(topicId));
 
     this.snapshot = {
       ...createInitialSnapshot(),
       stage: state.stage,
       totalWords: this.allWords.length,
-      completedChoiceWords: state.completedChoiceWords,
-      completedSpellWords: state.completedSpellWords,
+      completedChoiceWords: this.getCompletedChoiceWords(),
+      completedSpellWords: this.getCompletedSpellWords(),
     };
 
     if (state.stage === 'choice' && this.currentChoiceWord) {
@@ -419,8 +464,107 @@ export class ReviewFlow {
         remainingInRound: this.spellQueue.length,
         retryCount: this.spellRetryQueue.length,
       };
-    } else {
+    } else if (!['choice', 'detail', 'spelling'].includes(state.stage)) {
       throw new Error(`Cannot restore review stage ${state.stage}`);
+    }
+  }
+
+  private getActiveWord(): StudyUIModel | null {
+    if (this.snapshot.stage === 'choice') {
+      return this.currentChoiceWord;
+    }
+
+    if (this.snapshot.stage === 'detail') {
+      return this.detailWord;
+    }
+
+    if (this.snapshot.stage === 'spelling') {
+      return this.currentSpellWord;
+    }
+
+    return null;
+  }
+
+  private removeTopicFromQueues(topicId: number): void {
+    this.choiceQueue = this.choiceQueue.filter((word) => word.topicId !== topicId);
+    this.choiceRetryQueue = this.choiceRetryQueue.filter((word) => word.topicId !== topicId);
+    this.choiceRetrySet.delete(topicId);
+    this.spellQueue = this.spellQueue.filter((word) => word.topicId !== topicId);
+    this.spellRetryQueue = this.spellRetryQueue.filter((word) => word.topicId !== topicId);
+    this.spellRetrySet.delete(topicId);
+
+    if (this.currentChoiceWord?.topicId === topicId) {
+      this.currentChoiceWord = null;
+      this.currentChoiceOptions = [];
+      this.currentChoiceAttemptCount = 0;
+      this.currentChoiceClickedOptionIds.clear();
+    }
+
+    if (this.detailWord?.topicId === topicId) {
+      this.detailWord = null;
+    }
+
+    if (this.currentSpellWord?.topicId === topicId) {
+      this.currentSpellWord = null;
+      this.currentSpellWrong = false;
+    }
+  }
+
+  private getCompletedChoiceWords(): number {
+    return Array.from(this.records.values()).filter(
+      (record) => record.choicePassed || this.killedTopicIds.has(record.topicId),
+    ).length;
+  }
+
+  private getCompletedSpellWords(): number {
+    return Array.from(this.records.values()).filter(
+      (record) => record.spellingPassed || this.killedTopicIds.has(record.topicId),
+    ).length;
+  }
+
+  async killCurrent(): Promise<void> {
+    const stage = this.snapshot.stage;
+    const activeWord = this.getActiveWord();
+    if (this.killInProgress || !activeWord || !['choice', 'detail', 'spelling'].includes(stage)) {
+      return;
+    }
+
+    const detailReason = this.detailReason;
+    const record = this.mustGetRecord(activeWord.topicId);
+    const now = Date.now();
+    const usedTime = record.reviewStartedAt == null
+      ? 0
+      : Math.max(0, now - record.reviewStartedAt);
+
+    this.killInProgress = true;
+    try {
+      wordStatusService.killWord({
+        bookId: this.context.bookId,
+        topicId: activeWord.topicId,
+        tagId: this.roadmapMap.get(activeWord.topicId)?.tag_id,
+        usedTime,
+        errNumDelta: record.errorCount,
+        isTodayNew: false,
+      });
+
+      record.completedAt = now;
+      this.killedTopicIds.add(activeWord.topicId);
+      this.removeTopicFromQueues(activeWord.topicId);
+      this.syncProgress();
+
+      if (stage === 'choice') {
+        await this.advanceChoiceQueue();
+        return;
+      }
+
+      if (stage === 'detail' && detailReason !== 'spell_error') {
+        await this.advanceChoiceQueue();
+        return;
+      }
+
+      await this.advanceSpellQueue();
+    } finally {
+      this.killInProgress = false;
     }
   }
 
@@ -475,6 +619,11 @@ export class ReviewFlow {
   }
 
   private async enterChoiceWord(word: StudyUIModel | null): Promise<void> {
+    if (word && this.killedTopicIds.has(word.topicId)) {
+      await this.advanceChoiceQueue();
+      return;
+    }
+
     if (!word) {
       await this.startSpellPhase();
       return;
@@ -563,13 +712,20 @@ export class ReviewFlow {
   }
 
   private async startSpellPhase(): Promise<void> {
-    this.spellQueue = [...this.allWords];
+    this.spellQueue = this.allWords.filter(
+      (word) => !this.killedTopicIds.has(word.topicId),
+    );
     this.spellRetryQueue = [];
     this.spellRetrySet.clear();
     await this.enterSpellWord(this.spellQueue.shift() || null);
   }
 
   private async enterSpellWord(word: StudyUIModel | null): Promise<void> {
+    if (word && this.killedTopicIds.has(word.topicId)) {
+      await this.advanceSpellQueue();
+      return;
+    }
+
     if (!word) {
       await this.complete();
       return;
@@ -620,18 +776,18 @@ export class ReviewFlow {
     const records = Array.from(this.records.values());
     return {
       totalWords: this.allWords.length,
-      completedWords: records.filter((record) => record.spellingPassed).length,
+      completedWords: this.getCompletedSpellWords(),
       totalErrors: records.reduce((sum, record) => sum + record.errorCount, 0),
       records,
+      killedTopicIds: Array.from(this.killedTopicIds),
     };
   }
 
   private syncProgress(): void {
-    const records = Array.from(this.records.values());
     this.snapshot = {
       ...this.snapshot,
-      completedChoiceWords: records.filter((record) => record.choicePassed).length,
-      completedSpellWords: records.filter((record) => record.spellingPassed).length,
+      completedChoiceWords: this.getCompletedChoiceWords(),
+      completedSpellWords: this.getCompletedSpellWords(),
     };
     this.checkpoint();
   }
@@ -641,7 +797,11 @@ export class ReviewFlow {
     const records = Array.from(this.records.values());
 
     // 先完成正式本地记录与 pending 队列，再清理草稿并展示总结。
-    await reviewService.finishReview(records, this.context);
+    await reviewService.finishReview(
+      records,
+      this.context,
+      Array.from(this.killedTopicIds),
+    );
     studySessionStore.clear('review', this.context.bookId);
 
     this.setSnapshot({

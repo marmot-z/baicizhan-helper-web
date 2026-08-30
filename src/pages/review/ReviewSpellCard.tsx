@@ -7,6 +7,7 @@ interface ReviewSpellCardProps {
   inputValue: string;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
+  wordAction?: React.ReactNode;
 }
 
 const buildMediaUrl = (url?: string) => {
@@ -19,6 +20,7 @@ const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
   inputValue,
   onInputChange,
   onSubmit,
+  wordAction,
 }) => {
   const mediaUrl = buildMediaUrl(
     state.word.front.media?.url || state.word.back.sentences[0]?.img
@@ -44,6 +46,7 @@ const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
       inputPlaceholder="请输入英文单词"
       onInputChange={onInputChange}
       onSubmit={onSubmit}
+      wordAction={wordAction}
     />
   );
 };

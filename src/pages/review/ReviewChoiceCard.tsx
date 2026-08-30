@@ -8,6 +8,7 @@ interface ReviewChoiceCardProps {
   totalWords: number;
   completedWords: number;
   onChoose: (optionId: number) => void;
+  wordAction?: React.ReactNode;
 }
 
 const buildMediaUrl = (url?: string) => {
@@ -20,6 +21,7 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
   totalWords,
   completedWords,
   onChoose,
+  wordAction,
 }) => {
   const mediaUrl = buildMediaUrl(
     state.word.front.media?.url || state.word.back.sentences[0]?.img
@@ -47,6 +49,9 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
         </header>
 
         <main className={styles.choiceCard}>
+          {wordAction && (
+            <div className={styles.choiceCardActions}>{wordAction}</div>
+          )}
           <div className={styles.choiceImageContainer}>
           {isVideo ? (
             <video

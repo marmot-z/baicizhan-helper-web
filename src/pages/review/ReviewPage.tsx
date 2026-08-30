@@ -14,6 +14,8 @@ import ReviewChoiceCard from './ReviewChoiceCard';
 import ReviewWordDetail from './ReviewWordDetail';
 import ReviewSpellCard from './ReviewSpellCard';
 import styles from './review.module.css';
+import studyStyles from '../StudyView.module.css';
+import KillWordConfirmModal from '../../components/study/KillWordConfirmModal';
 import {
   createStudySessionId,
   getLocalPlanDate,
@@ -25,7 +27,9 @@ import type { ReviewSessionState } from '../../services/study/sessionTypes';
 const navigatedReviewStatisticsKeys = new Set<string>();
 
 const buildReviewStatisticsNavKey = (state: NonNullable<ReviewSnapshot['summaryState']>) =>
-  `${state.totalWords}-${state.completedWords}-${state.totalErrors}-${state.records
+  `${state.totalWords}-${state.completedWords}-${state.totalErrors}-${[...state.killedTopicIds]
+    .sort((a, b) => a - b)
+    .join(',')}-${state.records
     .map((r) => `${r.topicId}:${r.errorCount}:${r.completedAt ?? ''}`)
     .join('|')}`;
 
@@ -59,6 +63,9 @@ const ReviewPage: React.FC = () => {
   const [spellInput, setSpellInput] = useState('');
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [killConfirmOpen, setKillConfirmOpen] = useState(false);
+  const [killSubmitting, setKillSubmitting] = useState(false);
+  const [killAnimating, setKillAnimating] = useState(false);
 
   useEffect(() => {
     if (!studyPlan || !currentBook || !wordList.length) {
@@ -243,6 +250,58 @@ const ReviewPage: React.FC = () => {
     return null;
   }, [snapshot.choiceState, snapshot.detailState, snapshot.spellState]);
 
+  const handleKillConfirm = async () => {
+    const flow = flowRef.current;
+    if (!flow || !activeWord || killSubmitting) {
+      return;
+    }
+
+    setKillSubmitting(true);
+    try {
+      await flow.killCurrent();
+      setKillConfirmOpen(false);
+      setKillAnimating(true);
+      window.setTimeout(() => setKillAnimating(false), 500);
+      toast.success('已斩词，记录正在同步');
+    } catch (error) {
+      console.error('斩词失败:', error);
+      toast.error('斩词保存失败，请重试');
+    } finally {
+      setKillSubmitting(false);
+    }
+  };
+
+  const renderKillButton = (className: string) => (
+    <button
+      type="button"
+      className={`${studyStyles.killButton} ${className} ${
+        killAnimating ? studyStyles.killButtonAnimating : ''
+      }`}
+      onClick={() => setKillConfirmOpen(true)}
+      disabled={killSubmitting}
+      aria-label={`斩掉单词 ${activeWord?.word ?? ''}`}
+    >
+      斩词
+    </button>
+  );
+
+  const renderActiveStage = (content: React.ReactNode) => (
+    <>
+      {content}
+      <div className={studyStyles.studyActionBar}>
+        <div className={studyStyles.studyActionBarInner}>
+          {renderKillButton(studyStyles.mobileKillButton)}
+        </div>
+      </div>
+      <KillWordConfirmModal
+        open={killConfirmOpen}
+        submitting={killSubmitting}
+        onCancel={() => setKillConfirmOpen(false)}
+        onConfirm={handleKillConfirm}
+      />
+    </>
+  );
+
   useEffect(() => {
     if (!activeWord || snapshot.stage === 'choice') {
       return;
@@ -290,6 +349,10 @@ const ReviewPage: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (killConfirmOpen || killSubmitting) {
+        return;
+      }
+
       if (snapshot.stage === 'choice' && snapshot.choiceState) {
         if (['1', '2', '3', '4'].includes(event.key)) {
           const optionIndex = Number(event.key) - 1;
@@ -314,7 +377,13 @@ const ReviewPage: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [snapshot.stage, snapshot.choiceState, snapshot.detailState]);
+  }, [
+    snapshot.stage,
+    snapshot.choiceState,
+    snapshot.detailState,
+    killConfirmOpen,
+    killSubmitting,
+  ]);
 
   useEffect(() => {
     if (snapshot.stage !== 'summary' || !snapshot.summaryState) {
@@ -409,35 +478,40 @@ const ReviewPage: React.FC = () => {
   }
 
   if (snapshot.stage === 'choice' && snapshot.choiceState) {
-    return (
+    return renderActiveStage(
       <ReviewChoiceCard
         state={snapshot.choiceState}
         totalWords={snapshot.totalWords}
         completedWords={snapshot.completedChoiceWords}
         onChoose={(optionId) => {
+          if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.chooseOption(optionId).catch(console.error);
         }}
+        wordAction={renderKillButton(studyStyles.cardKillButton)}
       />
     );
   }
 
   if (snapshot.stage === 'detail' && snapshot.detailState) {
-    return (
+    return renderActiveStage(
       <ReviewWordDetail
         state={snapshot.detailState}
         onNext={() => {
+          if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.continueFromDetail().catch(console.error);
         }}
+        wordAction={renderKillButton(studyStyles.cardKillButton)}
       />
     );
   }
 
   if (snapshot.stage === 'spelling' && snapshot.spellState) {
-    return (
+    return renderActiveStage(
       <ReviewSpellCard
         state={snapshot.spellState}
         inputValue={spellInput}
         onInputChange={(value) => {
+          if (killConfirmOpen || killSubmitting) return;
           if (snapshot.spellState?.isWrong) {
             flowRef.current?.clearSpellWrongOnInput();
             setSpellInput(value.slice(-1));
@@ -446,8 +520,10 @@ const ReviewPage: React.FC = () => {
           }
         }}
         onSubmit={() => {
+          if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.submitSpell(spellInput).catch(console.error);
         }}
+        wordAction={renderKillButton(studyStyles.cardKillButton)}
       />
     );
   }
