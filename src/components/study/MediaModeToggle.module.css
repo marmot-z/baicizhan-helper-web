@@ -1,0 +1,65 @@
+.toggle {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #64748b;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-size: 18px;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, transform 0.18s ease;
+}
+
+.toggle:hover {
+  color: #2563eb;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.toggle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+.toggle[aria-checked='true'] {
+  color: #2563eb;
+  border-color: #bfdbfe;
+  background: rgba(239, 246, 255, 0.94);
+}
+
+:global(.dark) .toggle {
+  color: #94a3b8;
+  border-color: #334155;
+  background: rgba(30, 41, 59, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+:global(.dark) .toggle:hover,
+:global(.dark) .toggle[aria-checked='true'] {
+  color: #60a5fa;
+  border-color: #475569;
+  background: rgba(51, 65, 85, 0.96);
+}
+
+@media (max-width: 600px) {
+  .toggle {
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+}

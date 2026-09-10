@@ -5,6 +5,7 @@ import SpellPracticePanel from '../../components/spell/SpellPracticePanel';
 interface ReviewSpellCardProps {
   state: ReviewSpellState;
   inputValue: string;
+  showMedia: boolean;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   wordAction?: React.ReactNode;
@@ -18,6 +19,7 @@ const buildMediaUrl = (url?: string) => {
 const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
   state,
   inputValue,
+  showMedia,
   onInputChange,
   onSubmit,
   wordAction,
@@ -38,6 +40,7 @@ const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
       mediaUrl={mediaUrl}
       posterUrl={posterUrl}
       isVideo={Boolean(isVideo)}
+      showMedia={showMedia}
       pageAlign="top"
       inputValue={inputValue}
       isWrong={state.isWrong}

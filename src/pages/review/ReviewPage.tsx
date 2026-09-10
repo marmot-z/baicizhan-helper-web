@@ -22,6 +22,8 @@ import {
   studySessionStore,
 } from '../../services/study/sessionStore';
 import type { ReviewSessionState } from '../../services/study/sessionTypes';
+import MediaModeToggle from '../../components/study/MediaModeToggle';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 /** 防止 React Strict Mode 下同一轮复习完成触发两次 navigate */
 const navigatedReviewStatisticsKeys = new Set<string>();
@@ -66,6 +68,7 @@ const ReviewPage: React.FC = () => {
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
+  const showMedia = useSettingsStore((state) => state.showMedia);
 
   useEffect(() => {
     if (!studyPlan || !currentBook || !wordList.length) {
@@ -287,6 +290,7 @@ const ReviewPage: React.FC = () => {
 
   const renderActiveStage = (content: React.ReactNode) => (
     <>
+      <MediaModeToggle />
       {content}
       <div className={studyStyles.studyActionBar}>
         <div className={studyStyles.studyActionBarInner}>
@@ -483,6 +487,7 @@ const ReviewPage: React.FC = () => {
         state={snapshot.choiceState}
         totalWords={snapshot.totalWords}
         completedWords={snapshot.completedChoiceWords}
+        showMedia={showMedia}
         onChoose={(optionId) => {
           if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.chooseOption(optionId).catch(console.error);
@@ -510,6 +515,7 @@ const ReviewPage: React.FC = () => {
       <ReviewSpellCard
         state={snapshot.spellState}
         inputValue={spellInput}
+        showMedia={showMedia}
         onInputChange={(value) => {
           if (killConfirmOpen || killSubmitting) return;
           if (snapshot.spellState?.isWrong) {

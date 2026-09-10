@@ -50,6 +50,10 @@
   overflow: hidden;
 }
 
+.choiceCard.choiceCardNoMedia {
+  min-height: 0;
+}
+
 .choiceCardActions {
   display: flex;
   justify-content: flex-end;

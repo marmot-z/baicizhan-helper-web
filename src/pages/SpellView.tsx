@@ -5,11 +5,14 @@ import type { StudyUIModel } from '../services/study/types';
 import { useStudyStore } from '../stores/studyStore';
 import { ROUTES } from '../constants';
 import SpellPracticePanel from '../components/spell/SpellPracticePanel';
+import MediaModeToggle from '../components/study/MediaModeToggle';
+import { useSettingsStore } from '../stores/settingsStore';
 
 const SpellView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentBook } = useStudyStore();
+  const showMedia = useSettingsStore((state) => state.showMedia);
   
   // 从路由状态中获取单词数据
   const words = useMemo(() => (location.state as { words?: StudyUIModel[] })?.words || [], [location.state]);
@@ -87,20 +90,24 @@ const SpellView: React.FC = () => {
   }
 
   return (
-    <SpellPracticePanel
-      topHint={`需拼写 ${stats.remainingInRound + stats.retryCount + 1} 词`}
-      mediaUrl={finalMediaUrl}
-      posterUrl={finalPosterUrl}
-      isVideo={Boolean(isVideo)}
-      pageAlign="top"
-      inputValue={inputValue}
-      isWrong={spellStudy.isWrong}
-      hintText={spellStudy.isWrong ? currentWord.word : currentWord.front.chnMean}
-      audioSrc={currentWord.front.accent.ukAudio}
-      inputPlaceholder="Type the English word..."
-      onInputChange={handleInputChange}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <MediaModeToggle />
+      <SpellPracticePanel
+        topHint={`需拼写 ${stats.remainingInRound + stats.retryCount + 1} 词`}
+        mediaUrl={finalMediaUrl}
+        posterUrl={finalPosterUrl}
+        isVideo={Boolean(isVideo)}
+        showMedia={showMedia}
+        pageAlign="top"
+        inputValue={inputValue}
+        isWrong={spellStudy.isWrong}
+        hintText={spellStudy.isWrong ? currentWord.word : currentWord.front.chnMean}
+        audioSrc={currentWord.front.accent.ukAudio}
+        inputPlaceholder="Type the English word..."
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+      />
+    </>
   );
 };
 

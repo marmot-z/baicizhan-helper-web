@@ -9,6 +9,7 @@ interface SpellPracticePanelProps {
   mediaUrl: string;
   posterUrl?: string;
   isVideo: boolean;
+  showMedia: boolean;
   pageAlign?: 'center' | 'top';
   inputValue: string;
   isWrong: boolean;
@@ -25,6 +26,7 @@ const SpellPracticePanel: React.FC<SpellPracticePanelProps> = ({
   mediaUrl,
   posterUrl,
   isVideo,
+  showMedia,
   pageAlign = 'center',
   inputValue,
   isWrong,
@@ -57,24 +59,26 @@ const SpellPracticePanel: React.FC<SpellPracticePanelProps> = ({
         {wordAction && <div className={styles.wordAction}>{wordAction}</div>}
         <div className={styles.topHint}>{topHint}</div>
 
-        <div className={styles.imageContainer}>
-          {isVideo ? (
-            <video
-              className={styles.mediaElement}
-              src={mediaUrl}
-              poster={posterUrl}
-              muted
-              playsInline
-              loop
-              autoPlay
-            />
-          ) : (
-            <div
-              className={styles.mediaElement}
-              style={{ backgroundImage: mediaUrl ? `url(${mediaUrl})` : undefined }}
-            />
-          )}
-        </div>
+        {showMedia && (
+          <div className={styles.imageContainer}>
+            {isVideo ? (
+              <video
+                className={styles.mediaElement}
+                src={mediaUrl}
+                poster={posterUrl}
+                muted
+                playsInline
+                loop
+                autoPlay
+              />
+            ) : (
+              <div
+                className={styles.mediaElement}
+                style={{ backgroundImage: mediaUrl ? `url(${mediaUrl})` : undefined }}
+              />
+            )}
+          </div>
+        )}
 
         <input
           type="text"

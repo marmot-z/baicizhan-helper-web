@@ -5,8 +5,10 @@ type Theme = 'light' | 'dark'
 
 interface SettingsState {
   theme: Theme
+  showMedia: boolean
   setTheme: (t: Theme) => void
   applyTheme: (t?: Theme) => void
+  toggleMedia: () => void
 }
 
 export const SETTINGS_STORAGE_KEY = 'settings-storage'
@@ -33,6 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       theme: 'light',
+      showMedia: true,
       setTheme: (t) => {
         applyThemeToDom(t)
         set({ theme: t })
@@ -40,10 +43,16 @@ export const useSettingsStore = create<SettingsState>()(
       applyTheme: (t) => {
         applyThemeToDom(t ?? get().theme)
       },
+      toggleMedia: () => {
+        set((state) => ({ showMedia: !state.showMedia }))
+      },
     }),
     {
       name: SETTINGS_STORAGE_KEY,
-      partialize: (state) => ({ theme: state.theme }),
+      partialize: (state) => ({
+        theme: state.theme,
+        showMedia: state.showMedia,
+      }),
       onRehydrateStorage: () => (state) => {
         const t = state?.theme ?? 'light'
         applyThemeToDom(t)

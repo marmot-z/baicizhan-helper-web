@@ -7,6 +7,7 @@ interface ReviewChoiceCardProps {
   state: ReviewChoiceState;
   totalWords: number;
   completedWords: number;
+  showMedia: boolean;
   onChoose: (optionId: number) => void;
   wordAction?: React.ReactNode;
 }
@@ -20,6 +21,7 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
   state,
   totalWords,
   completedWords,
+  showMedia,
   onChoose,
   wordAction,
 }) => {
@@ -48,12 +50,15 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
           <span>当前进度：{progressPercent}%</span>
         </header>
 
-        <main className={styles.choiceCard}>
+        <main
+          className={`${styles.choiceCard} ${showMedia ? '' : styles.choiceCardNoMedia}`}
+        >
           {wordAction && (
             <div className={styles.choiceCardActions}>{wordAction}</div>
           )}
-          <div className={styles.choiceImageContainer}>
-          {isVideo ? (
+          {showMedia && (
+            <div className={styles.choiceImageContainer}>
+            {isVideo ? (
             <video
               className={styles.choiceMedia}
               src={mediaUrl}
@@ -68,8 +73,9 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
               className={styles.choiceMedia}
               style={mediaUrl ? { backgroundImage: `url(${mediaUrl})` } : undefined}
             />
+            )}
+            </div>
           )}
-          </div>
 
           <div className={styles.choiceWordBlock}>
             {state.showWord && <h1 className={styles.wordTitle}>{state.word.word}</h1>}

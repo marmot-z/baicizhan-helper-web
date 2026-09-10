@@ -107,6 +107,11 @@
   overflow: hidden;
 }
 
+.studyFrontCard.studyFrontCardNoMedia {
+  height: auto;
+  min-height: 0;
+}
+
 .studyCardActions {
   display: flex;
   justify-content: flex-end;

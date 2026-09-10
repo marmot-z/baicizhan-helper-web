@@ -5,14 +5,22 @@ import type { SelectBookPlanInfo } from '../types';
 import { Study } from '../services/study/Study';
 import styles from './StudyView.module.css';
 
+interface StudyCardDisplayState {
+  showWord?: boolean;
+  showSentence?: boolean;
+  showTranslation?: boolean;
+  showEnglishTranslation?: boolean;
+}
+
 interface StudyFrontCardProps {
   uiModel: StudyUIModel | null;
-  wordCard: any | null; // Keep for legacy compatibility during migration if needed, or remove if fully switched
+  wordCard: StudyCardDisplayState | null;
   studyPlan: SelectBookPlanInfo | null;
   study: Study | null;
   selectedOptionIds: number[];
   optionClick: (id: number, isCorrect: boolean) => Promise<void>;
   options: StudyOption[];
+  showMedia: boolean;
   wordAction?: React.ReactNode;
 }
 
@@ -24,6 +32,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
   selectedOptionIds,
   optionClick,
   options,
+  showMedia,
   wordAction,
 }) => {
   // Prefer uiModel if available, fallback to legacy wordCard (or handle hybrid)
@@ -77,11 +86,15 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
         <span>当前进度：{study?.getProgress()}%</span>
       </header>
 
-      <main className={styles.studyFrontCard}>
+      <main
+        className={`${styles.studyFrontCard} ${
+          showMedia ? '' : styles.studyFrontCardNoMedia
+        }`}
+      >
         {wordAction && (
           <div className={styles.studyCardActions}>{wordAction}</div>
         )}
-        {isVideo ? (
+        {showMedia && (isVideo ? (
           <video
             className={styles.imageContainer}
             src={finalMediaUrl}
@@ -97,8 +110,8 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
             style={{
               backgroundImage: `url(${finalMediaUrl})`,
             }}
-          ></div>
-        )}
+          />
+        ))}
         {showWord && (
           <h1 className={styles.studyFrontWord}>
             {word}

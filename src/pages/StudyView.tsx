@@ -22,6 +22,8 @@ import {
   shuffleStudyOptionIds,
 } from './studyOptionOrder';
 import KillWordConfirmModal from '../components/study/KillWordConfirmModal';
+import MediaModeToggle from '../components/study/MediaModeToggle';
+import { useSettingsStore } from '../stores/settingsStore';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ const StudyView: React.FC = () => {
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
+  const showMedia = useSettingsStore((state) => state.showMedia);
   
   const { studyInstance, error, restored, draftSaveFailed, init } = useStudyStrategy();
 
@@ -274,6 +277,7 @@ const StudyView: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      {wordCard && !isCompleted && <MediaModeToggle />}
       {wordCard ? (
         wordCard.showAnswer ? (
           <StudyBackCard 
@@ -290,6 +294,7 @@ const StudyView: React.FC = () => {
             selectedOptionIds={selectedOptionIds}
             optionClick={handleOptionClick}
             options={shuffledOptions}
+            showMedia={showMedia}
             wordAction={renderKillButton(styles.cardKillButton)}
           />
         )
