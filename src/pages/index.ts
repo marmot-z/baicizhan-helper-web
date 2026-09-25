@@ -17,3 +17,4 @@ export { default as StudyMidView } from './StudyMidView';
 export { default as SpellView } from './SpellView';
 export { default as ReviewPage } from './review/ReviewPage';
 export { default as CurrentBookWordList } from './CurrentBookWordList';
+export { default as Feedback } from './Feedback';

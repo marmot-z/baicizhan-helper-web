@@ -19,6 +19,7 @@ import {
   SpellView,
   ReviewPage,
   CurrentBookWordList,
+  Feedback,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -91,6 +92,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.VIP_CENTER,
         element: <VipCenter />,
+      },
+      {
+        path: ROUTES.FEEDBACK,
+        element: <Feedback />,
       },
     ],
   },

@@ -161,6 +161,30 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface FeedbackItem {
+  id: number;
+  content: string;
+  replyContent: string | null;
+  createdTime: string;
+  repliedTime: string | null;
+  adminInfo?: FeedbackAdminInfo;
+}
+
+export interface FeedbackAdminInfo {
+  nickname: string;
+  memberType: string;
+  publicVisible: boolean;
+}
+
+export interface FeedbackPageResponse {
+  items: FeedbackItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  isAdmin: boolean;
+}
+
 // 通用类型
 export interface SelectOption {
   label: string;

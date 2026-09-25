@@ -107,10 +107,10 @@ export default function Header() {
                         <FontAwesomeIcon icon={faDownload} style={{ marginRight: '8px' }} />
                         插件下载
                       </a>
-                      <a href="http://www.baicizhan-helper.cn/comments" target="_blank">
+                      <Link to={ROUTES.FEEDBACK}>
                         <FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />
                         反馈
-                      </a>
+                      </Link>
                       <a
                         href="#"
                         onClick={(e) => {
@@ -132,4 +132,3 @@ export default function Header() {
     </header>
   );
 }
-

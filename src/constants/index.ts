@@ -20,6 +20,7 @@ export const ROUTES = {
   SPELL_VIEW: '/page/spell-view',
   REVIEW_VIEW: '/page/review',
   WORD_LIST: '/page/word-list',
+  FEEDBACK: '/page/feedback',
 } as const;
 
 // API端点常量

@@ -74,6 +74,7 @@ apiClient.interceptors.response.use(
     if (response.data?.code === 403) {
       // 处理403错误（权限不足）
       console.error('Forbidden access');
+      const message = getResponseErrorMessage(response, '权限不足');
       
       // 防抖机制：5秒内只显示一次toast
       const now = Date.now();
@@ -84,11 +85,11 @@ apiClient.interceptors.response.use(
         toastWindow.__lastToastTime = now;
         // 使用 setTimeout 确保在 React 上下文中调用 toast
         setTimeout(() => {
-          toast.error('权限不足，请开通会员');
+          toast.error(message);
         }, 0);
       }
       
-      return Promise.reject(new Error(response.data?.message || 'Forbidden access'));
+      return Promise.reject(new Error(message));
     }
     
     if (response.data?.code === 500) {
