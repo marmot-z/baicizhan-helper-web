@@ -1,11 +1,14 @@
 import React from 'react';
 import type { ReviewSpellState } from '../../services/review/types';
 import SpellPracticePanel from '../../components/spell/SpellPracticePanel';
+import type { PronunciationPreference } from '../../stores/settingsStore';
+import { resolvePreferredAudio } from '../../stores/settingsStore';
 
 interface ReviewSpellCardProps {
   state: ReviewSpellState;
   inputValue: string;
   showMedia: boolean;
+  pronunciationPreference: PronunciationPreference;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   wordAction?: React.ReactNode;
@@ -20,6 +23,7 @@ const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
   state,
   inputValue,
   showMedia,
+  pronunciationPreference,
   onInputChange,
   onSubmit,
   wordAction,
@@ -45,7 +49,11 @@ const ReviewSpellCard: React.FC<ReviewSpellCardProps> = ({
       inputValue={inputValue}
       isWrong={state.isWrong}
       hintText={state.isWrong ? state.word.word : state.word.front.chnMean}
-      audioSrc={state.word.front.accent.ukAudio}
+      audioSrc={resolvePreferredAudio(
+        state.word.front.accent.ukAudio,
+        state.word.front.accent.usAudio,
+        pronunciationPreference,
+      )}
       inputPlaceholder="请输入英文单词"
       onInputChange={onInputChange}
       onSubmit={onSubmit}

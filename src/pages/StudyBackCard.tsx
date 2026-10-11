@@ -12,6 +12,7 @@ interface StudyBackCardProps {
   next: () => void;
   /** 底部主按钮文案，默认「下一个」 */
   nextLabel?: string;
+  shortcutHint?: string;
   /** 是否展示收藏入口与收藏弹窗，默认 true */
   showCollect?: boolean;
   /** 当前单词的次要操作，例如斩词 */
@@ -22,6 +23,7 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({
   uiModel,
   next,
   nextLabel = '下一个',
+  shortcutHint,
   showCollect = true,
   wordAction,
 }) => {
@@ -358,6 +360,7 @@ const StudyBackCard: React.FC<StudyBackCardProps> = ({
         <footer className={styles.backStudyFooter}>
           <button onClick={next} className={styles.backNextButton}>
             {nextLabel}
+            {shortcutHint && <kbd className={styles.shortcutHint}>{shortcutHint}</kbd>}
           </button>
         </footer>
       </div>

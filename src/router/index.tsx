@@ -20,6 +20,7 @@ import {
   ReviewPage,
   CurrentBookWordList,
   Feedback,
+  Settings,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -96,6 +97,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.FEEDBACK,
         element: <Feedback />,
+      },
+      {
+        path: ROUTES.SETTINGS,
+        element: <Settings />,
       },
     ],
   },

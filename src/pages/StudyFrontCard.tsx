@@ -21,6 +21,7 @@ interface StudyFrontCardProps {
   optionClick: (id: number, isCorrect: boolean) => Promise<void>;
   options: StudyOption[];
   showMedia: boolean;
+  optionShortcuts?: string[];
   wordAction?: React.ReactNode;
 }
 
@@ -33,6 +34,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
   optionClick,
   options,
   showMedia,
+  optionShortcuts = [],
   wordAction,
 }) => {
   // Prefer uiModel if available, fallback to legacy wordCard (or handle hybrid)
@@ -170,7 +172,7 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
       <footer className={styles.footer}>
         <div className={styles.studyFrontOptions}>
           {(options && options.length ? options : null) ? options.map(
-            (option) => (
+            (option, index) => (
               <button
                 key={option.id}
                 onClick={
@@ -194,6 +196,9 @@ const StudyFrontCard: React.FC<StudyFrontCardProps> = ({
                 )}
                 {option.showOptionTranslation && (
                   <span>{option.translation}</span>
+                )}
+                {optionShortcuts[index] && (
+                  <kbd className={styles.shortcutHint}>{optionShortcuts[index]}</kbd>
                 )}
               </button>
             )

@@ -7,6 +7,8 @@ import { wordService } from '../services/wordService';
 import { CollectModal, AudioIcon } from '../components';
 import type { TopicResourceV2, UserBookItem } from '../types';
 import { useWordBookStore } from '../stores/wordBookStore';
+import { AudioSequencePlayer } from '../utils/audio';
+import { resolvePreferredAudio, useSettingsStore } from '../stores/settingsStore';
 import styles from './WordDetail.module.css';
 
 const WordDetail: React.FC = () => {
@@ -17,6 +19,8 @@ const WordDetail: React.FC = () => {
   const [showCollectModal, setShowCollectModal] = useState(false);
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const wordDetailAutoPronounce = useSettingsStore((state) => state.wordDetailAutoPronounce);
+  const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
 
   // 处理收藏图标点击事件
   const handleStarClick = async () => {
@@ -88,6 +92,26 @@ const WordDetail: React.FC = () => {
 
     fetchWordDetail();
   }, [word]);
+
+  useEffect(() => {
+    if (!wordData || !wordDetailAutoPronounce) {
+      return;
+    }
+
+    const player = new AudioSequencePlayer();
+    player.playSequence([
+      resolvePreferredAudio(
+        wordData.dict.word_basic_info.accent_uk_audio_uri,
+        wordData.dict.word_basic_info.accent_usa_audio_uri,
+        pronunciationPreference,
+      ),
+      wordData.dict.sentences[0]?.audio_uri,
+    ], 500);
+
+    return () => {
+      player.stop();
+    };
+  }, [wordData, wordDetailAutoPronounce, pronunciationPreference]);
 
   if (loading) {
     return (

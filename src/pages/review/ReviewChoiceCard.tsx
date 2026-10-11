@@ -8,6 +8,7 @@ interface ReviewChoiceCardProps {
   totalWords: number;
   completedWords: number;
   showMedia: boolean;
+  optionShortcuts?: string[];
   onChoose: (optionId: number) => void;
   wordAction?: React.ReactNode;
 }
@@ -22,6 +23,7 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
   totalWords,
   completedWords,
   showMedia,
+  optionShortcuts = [],
   onChoose,
   wordAction,
 }) => {
@@ -109,7 +111,7 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
             {state.isOptionsLoading ? (
               <div className={styles.loadingBox}>加载选项中...</div>
             ) : (
-              state.options.map((option) => (
+              state.options.map((option, index) => (
                 <button
                   key={option.id}
                   type="button"
@@ -126,6 +128,9 @@ const ReviewChoiceCard: React.FC<ReviewChoiceCardProps> = ({
                   {option.showOptionWord && <span className={styles.optionWord}>{option.word}</span>}
                   {option.showOptionTranslation && (
                     <span className={styles.optionTranslation}>{option.translation}</span>
+                  )}
+                  {optionShortcuts[index] && (
+                    <kbd className={styles.shortcutHint}>{optionShortcuts[index]}</kbd>
                   )}
                 </button>
               ))

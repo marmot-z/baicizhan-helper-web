@@ -50,4 +50,42 @@ describe('settingsStore media visibility', () => {
     expect(useSettingsStore.getState().theme).toBe('dark');
     expect(useSettingsStore.getState().showMedia).toBe(true);
   });
+
+  it('fills defaults for the new pronunciation and shortcut settings', async () => {
+    const {
+      DEFAULT_SHORTCUTS,
+      useSettingsStore,
+    } = await import('./settingsStore');
+
+    expect(useSettingsStore.getState()).toMatchObject({
+      wordDetailAutoPronounce: false,
+      studyReviewAutoPronounce: true,
+      pronunciationPreference: 'uk',
+      shortcuts: DEFAULT_SHORTCUTS,
+    });
+  });
+
+  it('persists custom shortcuts and rejects conflicts', async () => {
+    const { SETTINGS_STORAGE_KEY, useSettingsStore } = await import('./settingsStore');
+
+    useSettingsStore.getState().setShortcut('option1', 'KeyA');
+    expect(useSettingsStore.getState().shortcuts.option1).toBe('KeyA');
+
+    useSettingsStore.getState().setShortcut('option2', 'KeyA');
+    expect(useSettingsStore.getState().shortcuts.option2).toBe('Digit2');
+    expect(JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) ?? '{}').state.shortcuts)
+      .toMatchObject({ option1: 'KeyA', option2: 'Digit2' });
+  });
+
+  it('normalizes key aliases and resolves preferred audio with fallback', async () => {
+    const {
+      normalizeShortcutCode,
+      resolvePreferredAudio,
+    } = await import('./settingsStore');
+
+    expect(normalizeShortcutCode(' ')).toBe('Space');
+    expect(normalizeShortcutCode('1')).toBe('Digit1');
+    expect(resolvePreferredAudio('', '/uk.mp3', 'us')).toBe('/uk.mp3');
+    expect(resolvePreferredAudio('/uk.mp3', '/us.mp3', 'us')).toBe('/us.mp3');
+  });
 });

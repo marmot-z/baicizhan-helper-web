@@ -22,8 +22,13 @@ import {
   studySessionStore,
 } from '../../services/study/sessionStore';
 import type { ReviewSessionState } from '../../services/study/sessionTypes';
-import MediaModeToggle from '../../components/study/MediaModeToggle';
-import { useSettingsStore } from '../../stores/settingsStore';
+import {
+  formatShortcutCode,
+  resolvePreferredAudio,
+  shortcutMatches,
+  shouldIgnoreShortcutEvent,
+  useSettingsStore,
+} from '../../stores/settingsStore';
 
 /** 防止 React Strict Mode 下同一轮复习完成触发两次 navigate */
 const navigatedReviewStatisticsKeys = new Set<string>();
@@ -69,6 +74,9 @@ const ReviewPage: React.FC = () => {
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
   const showMedia = useSettingsStore((state) => state.showMedia);
+  const studyReviewAutoPronounce = useSettingsStore((state) => state.studyReviewAutoPronounce);
+  const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
+  const shortcuts = useSettingsStore((state) => state.shortcuts);
 
   useEffect(() => {
     if (!studyPlan || !currentBook || !wordList.length) {
@@ -284,13 +292,12 @@ const ReviewPage: React.FC = () => {
       disabled={killSubmitting}
       aria-label={`斩掉单词 ${activeWord?.word ?? ''}`}
     >
-      斩词
+      斩词 <kbd className={studyStyles.killShortcutHint}>{formatShortcutCode(shortcuts.kill)}</kbd>
     </button>
   );
 
   const renderActiveStage = (content: React.ReactNode) => (
     <>
-      <MediaModeToggle />
       {content}
       <div className={studyStyles.studyActionBar}>
         <div className={studyStyles.studyActionBarInner}>
@@ -311,13 +318,23 @@ const ReviewPage: React.FC = () => {
       return;
     }
 
+    if (!studyReviewAutoPronounce) {
+      return;
+    }
+
     const player = new AudioSequencePlayer();
-    player.playSequence([activeWord.front.accent.ukAudio], 400);
+    player.playSequence([
+      resolvePreferredAudio(
+        activeWord.front.accent.ukAudio,
+        activeWord.front.accent.usAudio,
+        pronunciationPreference,
+      ),
+    ], 400);
 
     return () => {
       player.stop();
     };
-  }, [activeWord, snapshot.stage]);
+  }, [activeWord, snapshot.stage, studyReviewAutoPronounce, pronunciationPreference]);
 
   useEffect(() => {
     const choiceState = snapshot.choiceState;
@@ -336,11 +353,19 @@ const ReviewPage: React.FC = () => {
       return;
     }
 
+    if (!studyReviewAutoPronounce) {
+      return;
+    }
+
     choiceSentenceReadyRef.current = true;
     const player = new AudioSequencePlayer();
     player.playSequence(
       [
-        choiceState.word.front.accent.ukAudio,
+        resolvePreferredAudio(
+          choiceState.word.front.accent.ukAudio,
+          choiceState.word.front.accent.usAudio,
+          pronunciationPreference,
+        ),
         choiceState.word.back.sentences[0]?.audio,
       ],
       400
@@ -349,17 +374,30 @@ const ReviewPage: React.FC = () => {
     return () => {
       player.stop();
     };
-  }, [snapshot.stage, snapshot.choiceState]);
+  }, [snapshot.stage, snapshot.choiceState, studyReviewAutoPronounce, pronunciationPreference]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (killConfirmOpen || killSubmitting) {
+      if (killConfirmOpen || killSubmitting || shouldIgnoreShortcutEvent(event)) {
+        return;
+      }
+
+      if (activeWord && shortcutMatches(event, shortcuts.kill)) {
+        event.preventDefault();
+        setKillConfirmOpen(true);
         return;
       }
 
       if (snapshot.stage === 'choice' && snapshot.choiceState) {
-        if (['1', '2', '3', '4'].includes(event.key)) {
-          const optionIndex = Number(event.key) - 1;
+        const optionShortcuts = [
+          shortcuts.option1,
+          shortcuts.option2,
+          shortcuts.option3,
+          shortcuts.option4,
+        ];
+        const optionIndex = optionShortcuts.findIndex((code) => shortcutMatches(event, code));
+        if (optionIndex >= 0) {
+          event.preventDefault();
           const option = snapshot.choiceState.options[optionIndex];
           if (!option || option.disabled) {
             return;
@@ -370,7 +408,11 @@ const ReviewPage: React.FC = () => {
         return;
       }
 
-      if (snapshot.stage === 'detail' && snapshot.detailState && event.key === ' ') {
+      if (
+        snapshot.stage === 'detail' &&
+        snapshot.detailState &&
+        shortcutMatches(event, shortcuts.next)
+      ) {
         event.preventDefault();
         flowRef.current?.continueFromDetail().catch(console.error);
       }
@@ -385,6 +427,8 @@ const ReviewPage: React.FC = () => {
     snapshot.stage,
     snapshot.choiceState,
     snapshot.detailState,
+    activeWord,
+    shortcuts,
     killConfirmOpen,
     killSubmitting,
   ]);
@@ -421,7 +465,7 @@ const ReviewPage: React.FC = () => {
     return (
       <StudyLoadingState
         title="正在加载复习计划..."
-        subtitle={"正在同步今日计划和单词书信息，请稍候。\n可使用 1-4 快捷选择选项，单词详情页可按空格进入下一个。"}
+        subtitle={`正在同步今日计划和单词书信息，请稍候。\n可使用 ${formatShortcutCode(shortcuts.option1)}–${formatShortcutCode(shortcuts.option4)} 选择选项，答题后按 ${formatShortcutCode(shortcuts.next)} 进入下一步。`}
       />
     );
   }
@@ -430,7 +474,7 @@ const ReviewPage: React.FC = () => {
     return (
       <StudyLoadingState
         title="正在准备复习内容..."
-        subtitle={"正在整理复习单词和选项资源，完成后会自动进入复习。\n可使用 1-4 快捷选择选项，单词详情页可按空格进入下一个。"}
+        subtitle={`正在整理复习单词和选项资源，完成后会自动进入复习。\n可使用 ${formatShortcutCode(shortcuts.option1)}–${formatShortcutCode(shortcuts.option4)} 选择选项，答题后按 ${formatShortcutCode(shortcuts.next)} 进入下一步。`}
       />
     );
   }
@@ -488,6 +532,12 @@ const ReviewPage: React.FC = () => {
         totalWords={snapshot.totalWords}
         completedWords={snapshot.completedChoiceWords}
         showMedia={showMedia}
+        optionShortcuts={[
+          formatShortcutCode(shortcuts.option1),
+          formatShortcutCode(shortcuts.option2),
+          formatShortcutCode(shortcuts.option3),
+          formatShortcutCode(shortcuts.option4),
+        ]}
         onChoose={(optionId) => {
           if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.chooseOption(optionId).catch(console.error);
@@ -501,6 +551,7 @@ const ReviewPage: React.FC = () => {
     return renderActiveStage(
       <ReviewWordDetail
         state={snapshot.detailState}
+        nextShortcut={formatShortcutCode(shortcuts.next)}
         onNext={() => {
           if (killConfirmOpen || killSubmitting) return;
           flowRef.current?.continueFromDetail().catch(console.error);
@@ -516,6 +567,7 @@ const ReviewPage: React.FC = () => {
         state={snapshot.spellState}
         inputValue={spellInput}
         showMedia={showMedia}
+        pronunciationPreference={pronunciationPreference}
         onInputChange={(value) => {
           if (killConfirmOpen || killSubmitting) return;
           if (snapshot.spellState?.isWrong) {

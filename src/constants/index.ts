@@ -21,6 +21,7 @@ export const ROUTES = {
   REVIEW_VIEW: '/page/review',
   WORD_LIST: '/page/word-list',
   FEEDBACK: '/page/feedback',
+  SETTINGS: '/page/settings',
 } as const;
 
 // API端点常量

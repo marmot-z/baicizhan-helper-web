@@ -8,11 +8,9 @@ import {
   faArrowRightFromBracket,
   faCommentDots,
   faDownload,
-  faSun,
-  faMoon,
+  faGear,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
-import { useSettingsStore } from '../stores/settingsStore';
 import ExtensionsDownloadModel from './ExtensionsDownloadModel';
 import InviteShare from './InviteShare';
 import type { UserBindInfo } from '../types';
@@ -24,7 +22,6 @@ export default function Header() {
   const navigate = useNavigate();
   const [downloadModelShow, setDownloadModelShow] = React.useState(false);
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useSettingsStore();
 
   const getUserNickname = (): string => {
     if (!user || user.length === 0) return 'guest';
@@ -61,20 +58,6 @@ export default function Header() {
                     <span style={{ fontSize: '16px', fontWeight: 'bold' }}>邀请好友送会员</span>
                   </button>
                 </InviteShare>
-                <button
-                  title={theme === 'dark' ? '切换为明亮' : '切换为暗黑'}
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    role="switch"
-                    aria-checked={theme === 'dark'}
-                    className="theme-switch"
-                  >
-                    <span className="theme-switch-inner">
-                      <span className="track">
-                        <span className="thumb" />
-                      </span>
-                      <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
-                    </span>
-                  </button>
                   <div
                     className="user-profile"
                     onMouseEnter={(e) => {
@@ -110,6 +93,10 @@ export default function Header() {
                       <Link to={ROUTES.FEEDBACK}>
                         <FontAwesomeIcon icon={faCommentDots} style={{ marginRight: '8px' }} />
                         反馈
+                      </Link>
+                      <Link to={ROUTES.SETTINGS}>
+                        <FontAwesomeIcon icon={faGear} style={{ marginRight: '8px' }} />
+                        设置
                       </Link>
                       <a
                         href="#"

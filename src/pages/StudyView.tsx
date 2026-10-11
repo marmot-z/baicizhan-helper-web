@@ -22,8 +22,13 @@ import {
   shuffleStudyOptionIds,
 } from './studyOptionOrder';
 import KillWordConfirmModal from '../components/study/KillWordConfirmModal';
-import MediaModeToggle from '../components/study/MediaModeToggle';
-import { useSettingsStore } from '../stores/settingsStore';
+import {
+  formatShortcutCode,
+  resolvePreferredAudio,
+  shortcutMatches,
+  shouldIgnoreShortcutEvent,
+  useSettingsStore,
+} from '../stores/settingsStore';
 
 const StudyView: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +43,9 @@ const StudyView: React.FC = () => {
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
   const showMedia = useSettingsStore((state) => state.showMedia);
+  const studyReviewAutoPronounce = useSettingsStore((state) => state.studyReviewAutoPronounce);
+  const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
+  const shortcuts = useSettingsStore((state) => state.shortcuts);
   
   const { studyInstance, error, restored, draftSaveFailed, init } = useStudyStrategy();
 
@@ -118,7 +126,7 @@ const StudyView: React.FC = () => {
       disabled={killSubmitting}
       aria-label={`斩掉单词 ${uiModel?.word ?? ''}`}
     >
-      斩词
+      斩词 <kbd className={styles.killShortcutHint}>{formatShortcutCode(shortcuts.kill)}</kbd>
     </button>
   );
 
@@ -224,31 +232,38 @@ const StudyView: React.FC = () => {
   // 添加键盘事件监听
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (killConfirmOpen) {
+      if (killConfirmOpen || shouldIgnoreShortcutEvent(event)) {
         return;
       }
 
-      const key = event.key;
+      if (wordCard && !isCompleted && shortcutMatches(event, shortcuts.kill)) {
+        event.preventDefault();
+        setKillConfirmOpen(true);
+        return;
+      }
 
-      // 处理选项选择（1-4数字键）
-      if (!wordCard || wordCard.showAnswer || !wordCard.options) {
-        // 在背面或无选项时，处理空格键点击下一个按钮
-        if (key === ' ') {
+      if (!wordCard) {
+        return;
+      }
+
+      if (wordCard.showAnswer) {
+        if (shortcutMatches(event, shortcuts.next)) {
           event.preventDefault(); // 防止页面滚动
           handleNext();
-          return;
         }
         return;
       }
 
-      // 检查按键是否为1-4数字键
-      if (['1', '2', '3', '4'].includes(key)) {
-        const optionIndex = parseInt(key) - 1;
-
-        // 确保选项存在
-        if (optionIndex >= 0 && optionIndex < shuffledOptions.length) {
-          handleOptionClick(shuffledOptions[optionIndex].id, shuffledOptions[optionIndex].isCorrect);
-        }
+      const optionShortcuts = [
+        shortcuts.option1,
+        shortcuts.option2,
+        shortcuts.option3,
+        shortcuts.option4,
+      ];
+      const optionIndex = optionShortcuts.findIndex((code) => shortcutMatches(event, code));
+      if (optionIndex >= 0 && optionIndex < shuffledOptions.length) {
+        event.preventDefault();
+        handleOptionClick(shuffledOptions[optionIndex].id, shuffledOptions[optionIndex].isCorrect);
       }
     };
 
@@ -257,14 +272,18 @@ const StudyView: React.FC = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [wordCard, handleNext, handleOptionClick, shuffledOptions, killConfirmOpen]);
+  }, [wordCard, isCompleted, handleNext, handleOptionClick, shuffledOptions, shortcuts, killConfirmOpen]);
 
   useEffect(() => {
-    if (!wordCard) return;
+    if (!wordCard || !studyReviewAutoPronounce) return;
 
     const player = new AudioSequencePlayer();
     const audioUrls = [
-      uiModel?.front.accent.ukAudio,
+      resolvePreferredAudio(
+        uiModel?.front.accent.ukAudio,
+        uiModel?.front.accent.usAudio,
+        pronunciationPreference,
+      ),
       wordCard?.showSentence && uiModel?.back.sentences[0]?.audio,
     ];
 
@@ -273,16 +292,16 @@ const StudyView: React.FC = () => {
     return () => {
       player.stop();
     };
-  }, [wordCard, uiModel]);
+  }, [wordCard, uiModel, studyReviewAutoPronounce, pronunciationPreference]);
 
   return (
     <div className={styles.container}>
-      {wordCard && !isCompleted && <MediaModeToggle />}
       {wordCard ? (
         wordCard.showAnswer ? (
           <StudyBackCard 
             uiModel={uiModel} 
             next={handleNext}
+            shortcutHint={formatShortcutCode(shortcuts.next)}
             wordAction={renderKillButton(styles.cardKillButton)}
           />
         ) : (
@@ -295,13 +314,19 @@ const StudyView: React.FC = () => {
             optionClick={handleOptionClick}
             options={shuffledOptions}
             showMedia={showMedia}
+            optionShortcuts={[
+              formatShortcutCode(shortcuts.option1),
+              formatShortcutCode(shortcuts.option2),
+              formatShortcutCode(shortcuts.option3),
+              formatShortcutCode(shortcuts.option4),
+            ]}
             wordAction={renderKillButton(styles.cardKillButton)}
           />
         )
       ) : (
         <StudyLoadingState
           title="正在准备学习内容..."
-          subtitle={"单词资料与选项加载完成后，会自动进入学习页面。\n可使用 1-4 快捷选择选项，单词详情页可按空格进入下一个。"}
+          subtitle={`单词资料与选项加载完成后，会自动进入学习页面。\n可使用 ${formatShortcutCode(shortcuts.option1)}–${formatShortcutCode(shortcuts.option4)} 选择选项，答题后按 ${formatShortcutCode(shortcuts.next)} 进入下一步。`}
         />
       )}
       {wordCard && !isCompleted && (

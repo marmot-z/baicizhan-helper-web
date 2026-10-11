@@ -5,14 +5,14 @@ import type { StudyUIModel } from '../services/study/types';
 import { useStudyStore } from '../stores/studyStore';
 import { ROUTES } from '../constants';
 import SpellPracticePanel from '../components/spell/SpellPracticePanel';
-import MediaModeToggle from '../components/study/MediaModeToggle';
-import { useSettingsStore } from '../stores/settingsStore';
+import { resolvePreferredAudio, useSettingsStore } from '../stores/settingsStore';
 
 const SpellView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentBook } = useStudyStore();
   const showMedia = useSettingsStore((state) => state.showMedia);
+  const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
   
   // 从路由状态中获取单词数据
   const words = useMemo(() => (location.state as { words?: StudyUIModel[] })?.words || [], [location.state]);
@@ -91,7 +91,6 @@ const SpellView: React.FC = () => {
 
   return (
     <>
-      <MediaModeToggle />
       <SpellPracticePanel
         topHint={`需拼写 ${stats.remainingInRound + stats.retryCount + 1} 词`}
         mediaUrl={finalMediaUrl}
@@ -102,7 +101,11 @@ const SpellView: React.FC = () => {
         inputValue={inputValue}
         isWrong={spellStudy.isWrong}
         hintText={spellStudy.isWrong ? currentWord.word : currentWord.front.chnMean}
-        audioSrc={currentWord.front.accent.ukAudio}
+        audioSrc={resolvePreferredAudio(
+          currentWord.front.accent.ukAudio,
+          currentWord.front.accent.usAudio,
+          pronunciationPreference,
+        )}
         inputPlaceholder="Type the English word..."
         onInputChange={handleInputChange}
         onSubmit={handleSubmit}
