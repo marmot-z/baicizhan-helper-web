@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 import type { StudyStatistcs } from '../services/study/types';
@@ -14,6 +14,17 @@ import {
 } from '../types/studyRecord';
 
 const inflightBookSyncs = new Map<number, Promise<void>>();
+const STUDY_STORAGE_KEY = 'study-storage';
+const STUDY_STORAGE_VERSION = 1;
+
+type PersistedStudyStateV1 = Pick<
+  StudyState,
+  | 'currentBook'
+  | 'studyPlan'
+  | 'studyPlans'
+  | 'lastStudyStatistics'
+  | 'lastReviewStatistics'
+>;
 
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
@@ -40,6 +51,166 @@ interface StudyState {
   switchStudyBook: (plan: SelectBookPlanInfo) => Promise<void>;
   refreshStudyDataForBook: (book: UserBookBasicInfo) => Promise<void>;
   clearStudyData: () => void;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isBook(value: unknown): value is UserBookBasicInfo {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.id) &&
+    typeof value.name === 'string' &&
+    isFiniteNumber(value.total_words_count)
+  );
+}
+
+function isStudyPlan(value: unknown): value is SelectBookPlanInfo {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.book_id) &&
+    isFiniteNumber(value.learned_words_count) &&
+    isFiniteNumber(value.daily_plan_count) &&
+    isFiniteNumber(value.review_plan_count)
+  );
+}
+
+function isStudyStatistics(value: unknown): value is StudyStatistcs {
+  return (
+    isObject(value) &&
+    isObject(value.failMap) &&
+    isObject(value.usedTimeMap) &&
+    isFiniteNumber(value.totalTime) &&
+    Array.isArray(value.words) &&
+    isFiniteNumber(value.updateTime)
+  );
+}
+
+function normalizePersistedStudyState(value: unknown): PersistedStudyStateV1 {
+  const persisted = isObject(value) ? value : {};
+  const studyPlans = Array.isArray(persisted.studyPlans)
+    ? persisted.studyPlans.filter(isStudyPlan)
+    : [];
+
+  return {
+    currentBook: isBook(persisted.currentBook) ? persisted.currentBook : null,
+    studyPlan: isStudyPlan(persisted.studyPlan) ? persisted.studyPlan : null,
+    studyPlans,
+    lastStudyStatistics: isStudyStatistics(persisted.lastStudyStatistics)
+      ? persisted.lastStudyStatistics
+      : null,
+    lastReviewStatistics: isStudyStatistics(persisted.lastReviewStatistics)
+      ? persisted.lastReviewStatistics
+      : null,
+  };
+}
+
+function isQuotaExceededError(error: unknown): boolean {
+  if (!isObject(error)) {
+    return false;
+  }
+
+  return (
+    error.name === 'QuotaExceededError' ||
+    error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    error.code === 22 ||
+    error.code === 1014
+  );
+}
+
+let hasWarnedAboutStudyStorage = false;
+
+function warnAboutStudyStorage(message: string, error: unknown): void {
+  if (hasWarnedAboutStudyStorage) {
+    return;
+  }
+  hasWarnedAboutStudyStorage = true;
+  console.warn(`[study-storage] ${message}`, error);
+}
+
+function getLocalStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
+      return globalThis.localStorage;
+    }
+  } catch (error) {
+    warnAboutStudyStorage('localStorage 不可用，将仅保留内存状态。', error);
+  }
+  return null;
+}
+
+function createResilientStudyStorage(): StateStorage {
+  return {
+    getItem: (name) => {
+      const storage = getLocalStorage();
+      if (!storage) {
+        return null;
+      }
+
+      try {
+        const raw = storage.getItem(name);
+        if (raw !== null) {
+          JSON.parse(raw);
+        }
+        return raw;
+      } catch (error) {
+        try {
+          storage.removeItem(name);
+        } catch {
+          // 缓存本身可重建，清理失败时继续以内存默认值启动。
+        }
+        warnAboutStudyStorage('读取缓存失败，已忽略旧缓存。', error);
+        return null;
+      }
+    },
+    setItem: (name, value) => {
+      const storage = getLocalStorage();
+      if (!storage) {
+        return;
+      }
+
+      try {
+        storage.setItem(name, value);
+        return;
+      } catch (error) {
+        if (isQuotaExceededError(error)) {
+          try {
+            storage.removeItem(name);
+            storage.setItem(name, value);
+            return;
+          } catch (retryError) {
+            warnAboutStudyStorage(
+              '缓存空间不足，清理旧缓存后仍无法写入；学习流程将继续使用内存状态。',
+              retryError,
+            );
+            return;
+          }
+        }
+
+        warnAboutStudyStorage('写入缓存失败，学习流程将继续使用内存状态。', error);
+      }
+    },
+    removeItem: (name) => {
+      const storage = getLocalStorage();
+      if (!storage) {
+        return;
+      }
+
+      try {
+        storage.removeItem(name);
+      } catch (error) {
+        warnAboutStudyStorage('清理缓存失败。', error);
+      }
+    },
+  };
 }
 
 type StudyStoreSet = (partial: Partial<StudyState>) => void;
@@ -391,24 +562,27 @@ export const useStudyStore = create<StudyState>()(
       },
     }),
     {
-      name: 'study-storage',
+      name: STUDY_STORAGE_KEY,
+      version: STUDY_STORAGE_VERSION,
+      storage: createJSONStorage<PersistedStudyStateV1>(() =>
+        createResilientStudyStorage(),
+      ),
+      migrate: (persistedState) => normalizePersistedStudyState(persistedState),
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<StudyState>;
+        const persisted = normalizePersistedStudyState(persistedState);
         return {
           ...currentState,
-          ...persisted,
-          homeState: createEmptyHomeState(persisted.homeState ?? {}),
+          currentBook: persisted.currentBook,
+          studyPlan: persisted.studyPlan,
+          studyPlans: persisted.studyPlans,
+          lastStudyStatistics: persisted.lastStudyStatistics,
+          lastReviewStatistics: persisted.lastReviewStatistics,
         };
       },
       partialize: (state) => ({
         currentBook: state.currentBook,
         studyPlan: state.studyPlan,
         studyPlans: state.studyPlans,
-        wordList: state.wordList,
-        wordListBookId: state.wordListBookId,
-        learnRecords: state.learnRecords,
-        homeState: state.homeState,
-        syncedBookId: state.syncedBookId,
         lastStudyStatistics: state.lastStudyStatistics,
         lastReviewStatistics: state.lastReviewStatistics,
       }),
