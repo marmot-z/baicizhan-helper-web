@@ -13,7 +13,7 @@ import {
   type TopicLearnRecordMap,
 } from '../types/studyRecord';
 
-const inflightBookSyncs = new Map<number, Promise<void>>();
+const inflightBookSyncs = new Map<number, Promise<unknown[]>>();
 const STUDY_STORAGE_KEY = 'study-storage';
 const STUDY_STORAGE_VERSION = 1;
 
@@ -220,13 +220,20 @@ async function syncBookState(
   set: StudyStoreSet,
   get: StudyStoreGet,
   bookId: number,
+  requireSuccessfulSync = false,
 ): Promise<void> {
   const existingTask = inflightBookSyncs.get(bookId);
   if (existingTask) {
-    return existingTask;
+    const errors = await existingTask;
+    if (requireSuccessfulSync && errors.length) {
+      set({ syncedBookId: null });
+      throw errors[0];
+    }
+    return;
   }
 
   const task = (async () => {
+    const errors: unknown[] = [];
     set({ syncingBookId: bookId });
 
     const localRecords = studyRecordStore.getAllRecords(bookId);
@@ -284,6 +291,7 @@ async function syncBookState(
         studyRecordStore.updateSyncMeta(bookId, {
           lastUploadError: message,
         });
+        errors.push(error);
         console.error(`Failed to upload pending done data for book ${bookId}:`, error);
         break;
       }
@@ -310,6 +318,7 @@ async function syncBookState(
 
       nextRecordMap = createRecordMap(studyRecordStore.getAllRecords(bookId));
     } catch (error) {
+      errors.push(error);
       console.error(`Failed to sync remote learned words for book ${bookId}:`, error);
     }
 
@@ -327,6 +336,7 @@ async function syncBookState(
       homeState,
       syncedBookId: bookId,
     });
+    return errors;
   })().finally(() => {
     inflightBookSyncs.delete(bookId);
     if (get().syncingBookId === bookId) {
@@ -335,7 +345,11 @@ async function syncBookState(
   });
 
   inflightBookSyncs.set(bookId, task);
-  return task;
+  const errors = await task;
+  if (requireSuccessfulSync && errors.length) {
+    set({ syncedBookId: null });
+    throw errors[0];
+  }
 }
 
 async function hydrateStudyPlanForKnownBook(
@@ -346,10 +360,13 @@ async function hydrateStudyPlanForKnownBook(
   const planData = await studyService.getBookPlanInfo();
   set({ studyPlans: planData ?? [] });
   if (!planData || planData.length === 0) {
-    return;
+    throw new Error('未获取到已保存的学习计划，请重试');
   }
 
   const userPlan = planData[0];
+  if (userPlan.book_id !== book.id) {
+    throw new Error('学习计划尚未切换到目标词书，请重试');
+  }
   set({
     studyPlan: userPlan,
     currentBook: book,
@@ -357,7 +374,7 @@ async function hydrateStudyPlanForKnownBook(
 
   const roadmapData = await studyService.getRoadmap(userPlan.book_id);
   set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
-  await syncBookState(set, get, userPlan.book_id);
+  await syncBookState(set, get, userPlan.book_id, true);
 }
 
 async function hydrateStudyPlan(
@@ -381,7 +398,7 @@ async function hydrateStudyPlan(
 
   const roadmapData = await studyService.getRoadmap(plan.book_id);
   set({ wordList: roadmapData, wordListBookId: plan.book_id });
-  await syncBookState(set, get, plan.book_id);
+  await syncBookState(set, get, plan.book_id, true);
 }
 
 export const useStudyStore = create<StudyState>()(
@@ -538,11 +555,7 @@ export const useStudyStore = create<StudyState>()(
       },
 
       refreshStudyDataForBook: async (book: UserBookBasicInfo) => {
-        try {
-          await hydrateStudyPlanForKnownBook(set, get, book);
-        } catch (error) {
-          console.error('Failed to refresh study data for known book:', error);
-        }
+        await hydrateStudyPlanForKnownBook(set, get, book);
       },
 
       clearStudyData: () => {

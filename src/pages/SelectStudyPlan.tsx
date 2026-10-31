@@ -75,6 +75,7 @@ const SelectStudyPlan: React.FC = () => {
   const [reviewPlanInput, setReviewPlanInput] = useState('');
   const [mergeCount, setMergeCount] = useState(0);
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [mergeTaskSubmitted, setMergeTaskSubmitted] = useState(false);
 
   const routeBook = (location.state as { book?: UserBookBasicInfo } | null)?.book ?? null;
 
@@ -121,7 +122,7 @@ const SelectStudyPlan: React.FC = () => {
 
   const dailyPlanError = getIntegerError(dailyPlanInput, false);
   const reviewPlanError = getIntegerError(reviewPlanInput, true);
-  const canSubmit = !dailyPlanError && !reviewPlanError && !!book && !submitting;
+  const canSubmit = !dailyPlanError && !reviewPlanError && !!book && !submitting && !mergeModalOpen;
 
   const remainingWords = useMemo(() => {
     if (!book) {
@@ -173,10 +174,11 @@ const SelectStudyPlan: React.FC = () => {
     return String(Math.max(minValue, nextValue));
   };
 
-  const finalizePlanSelection = async () => {
+  const finalizePlanSelection = async (message = '学习计划已更新') => {
     if (book) {
       await refreshStudyDataForBook(book);
     }
+    toast.success(message);
     navigate(ROUTES.DASHBOARD);
   };
 
@@ -195,6 +197,7 @@ const SelectStudyPlan: React.FC = () => {
         0,
       );
 
+      setMergeTaskSubmitted(false);
       setMergeCount(selectedBookInfo.need_merge_count ?? 0);
 
       if ((selectedBookInfo.need_merge_count ?? 0) > 0) {
@@ -202,7 +205,6 @@ const SelectStudyPlan: React.FC = () => {
         return;
       }
 
-      toast.success('学习计划已更新');
       await finalizePlanSelection();
     } catch (error) {
       console.error('切换学习计划失败:', error);
@@ -213,19 +215,33 @@ const SelectStudyPlan: React.FC = () => {
   };
 
   const handleSkipMerge = async () => {
-    setMergeModalOpen(false);
-    toast.success('学习计划已更新');
-    await finalizePlanSelection();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await finalizePlanSelection();
+      setMergeModalOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '刷新学习计划失败，请重试');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleConfirmMerge = async () => {
+    if (!book || submitting) return;
+    setSubmitting(true);
     try {
+      if (!mergeTaskSubmitted) {
+        await studyService.importLearnedWordsFromOtherPlans(book.id);
+        setMergeTaskSubmitted(true);
+      }
+      await finalizePlanSelection('学习计划已更新，学习记录正在后台导入');
       setMergeModalOpen(false);
-      toast.success('学习计划已更新');
-      await finalizePlanSelection();
     } catch (error) {
-      console.error('更新学习计划失败:', error);
-      toast.error(error instanceof Error ? error.message : '更新学习计划失败');
+      console.error('导入或刷新学习计划失败:', error);
+      toast.error(error instanceof Error ? error.message : '导入或刷新失败，请重试');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -432,7 +448,8 @@ const SelectStudyPlan: React.FC = () => {
       <StudyPlanMergeModal
         open={mergeModalOpen}
         mergeCount={mergeCount}
-        loading={false}
+        loading={submitting}
+        importSubmitted={mergeTaskSubmitted}
         onSkip={() => {
           void handleSkipMerge();
         }}

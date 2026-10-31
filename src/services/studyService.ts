@@ -89,6 +89,16 @@ export const studyService = {
     return response.data;
   },
 
+  async importLearnedWordsFromOtherPlans(bookId: number): Promise<string> {
+    const plans = await this.getBookPlanInfo();
+    const oldBookIds = [...new Set(plans.map((plan) => plan.book_id))]
+      .filter((id) => id > 0 && id !== bookId);
+    if (oldBookIds.length === 0) {
+      throw new Error('没有可导入学习记录的其他词书');
+    }
+    return this.mergeAlreadyLearnedWordsAsync(bookId, oldBookIds);
+  },
+
   // 获取指定日期的学习内容
   async getCalendarDailyInfo(date: string): Promise<CalendarDailyInfo> {
     const response = await ApiService.get<CalendarDailyInfo>(`/calendarDailyInfo?date=${date}&pageOffset=0&pageSize=200`);

@@ -7,6 +7,7 @@ interface StudyPlanMergeModalProps {
   onSkip: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  importSubmitted?: boolean;
 }
 
 const StudyPlanMergeModal: React.FC<StudyPlanMergeModalProps> = ({
@@ -15,6 +16,7 @@ const StudyPlanMergeModal: React.FC<StudyPlanMergeModalProps> = ({
   onSkip,
   onConfirm,
   loading = false,
+  importSubmitted = false,
 }) => {
   if (!open) {
     return null;
@@ -25,14 +27,18 @@ const StudyPlanMergeModal: React.FC<StudyPlanMergeModalProps> = ({
       <div className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="merge-modal-title">
         <h2 id="merge-modal-title" className={styles.title}>导入学习记录</h2>
         <p className={styles.description}>
-          当前计划已有 {mergeCount} 个单词在其他计划中学过，导入后无需再次学习，是否需要导入学习记录？
+          {importSubmitted
+            ? '导入请求已提交，学习记录将在后台更新。请刷新以继续。'
+            : <>当前计划已有 {mergeCount} 个单词在其他计划中学过，导入后无需再次学习，是否需要导入学习记录？</>}
         </p>
         <div className={styles.actions}>
-          <button type="button" className={styles.secondaryButton} onClick={onSkip} disabled={loading}>
-            不导入
-          </button>
+          {!importSubmitted && (
+            <button type="button" className={styles.secondaryButton} onClick={onSkip} disabled={loading}>
+              不导入
+            </button>
+          )}
           <button type="button" className={styles.primaryButton} onClick={onConfirm} disabled={loading}>
-            {loading ? '导入中...' : '导入'}
+            {loading ? (importSubmitted ? '刷新中...' : '处理中...') : (importSubmitted ? '重试刷新' : '导入')}
           </button>
         </div>
       </div>

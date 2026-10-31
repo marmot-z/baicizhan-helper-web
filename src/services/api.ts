@@ -8,6 +8,16 @@ interface ApiErrorBody {
   message?: unknown;
 }
 
+export class ApiError extends Error {
+  readonly code: number;
+
+  constructor(code: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
+}
+
 interface ToastWindow extends Window {
   __lastToastTime?: number;
 }
@@ -57,59 +67,46 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器
+const rejectApiResponse = (response: AxiosResponse, code: number) => {
+  const fallback = code === 401 ? '请重新登录'
+    : code === 403 ? '权限不足'
+    : code >= 500 ? '服务器处理请求失败' : '请求失败';
+  const message = getResponseErrorMessage(response, fallback);
+
+  if (code === 401) {
+    const authState = useAuthStore.getState();
+    // 旧请求的迟到响应不能清除刚重新登录的账号。
+    if (authState.token && response.config.headers?.access_token === authState.token) {
+      void authState.logout();
+      window.location.href = '/page/login';
+    }
+  }
+
+  if (code === 403) {
+    const now = Date.now();
+    const toastWindow = window as ToastWindow;
+    if (now - (toastWindow.__lastToastTime || 0) > 5000) {
+      toastWindow.__lastToastTime = now;
+      setTimeout(() => toast.error(message), 0);
+    }
+  }
+
+  return Promise.reject(new ApiError(code, message));
+};
+
+// 同时处理 HTTP 状态码和响应体业务码；只有明确的 401 才清理登录态。
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    // 检查响应数据中的 code 字段
-    if (response.data?.code === 401) {
-      // 处理401错误（token过期）
-      const authState = useAuthStore.getState();
-      authState.logout();
-      
-      // 跳转到登录页面
-      window.location.href = '/page/login';
-      return Promise.reject(new Error('Token expired'));
+    const code = response.data?.code;
+    if (typeof code === 'number' && (code < 200 || code >= 300)) {
+      return rejectApiResponse(response, code);
     }
-    
-    if (response.data?.code === 403) {
-      // 处理403错误（权限不足）
-      console.error('Forbidden access');
-      const message = getResponseErrorMessage(response, '权限不足');
-      
-      // 防抖机制：5秒内只显示一次toast
-      const now = Date.now();
-      const toastWindow = window as ToastWindow;
-      const lastToastTime = toastWindow.__lastToastTime || 0;
-      
-      if (now - lastToastTime > 5000) {
-        toastWindow.__lastToastTime = now;
-        // 使用 setTimeout 确保在 React 上下文中调用 toast
-        setTimeout(() => {
-          toast.error(message);
-        }, 0);
-      }
-      
-      return Promise.reject(new Error(message));
-    }
-    
-    if (response.data?.code === 500) {
-      // 处理500错误（服务器内部错误）
-      return Promise.reject(new Error(getResponseErrorMessage(response, '服务器处理请求失败')));
-    }
-    
     return response;
   },
-  async (error) => {
-    // 处理网络错误或其他HTTP错误
+  (error) => {
     if (axios.isAxiosError(error) && error.response) {
-      const status = error.response.status;
-      const fallback = status >= 500
-        ? `服务器处理请求失败，HTTP ${status}`
-        : `请求失败，HTTP ${status}`;
-
-      return Promise.reject(new Error(getResponseErrorMessage(error.response, fallback)));
+      return rejectApiResponse(error.response, error.response.status);
     }
-
     return Promise.reject(error);
   }
 );

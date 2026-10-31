@@ -1,20 +1,12 @@
-import { ApiService } from './api';
+import { ApiError, ApiService } from './api';
 import type { ApiResponse, FeedbackItem, FeedbackPageResponse } from '../types';
 
-export class FeedbackApiError extends Error {
-  readonly code: number;
-
-  constructor(code: number, message: string) {
-    super(message);
-    this.name = 'FeedbackApiError';
-    this.code = code;
-  }
-}
+export { ApiError as FeedbackApiError } from './api';
 
 export const unwrapFeedbackResponse = <T>(response: ApiResponse<T>): T => {
   const code = response.code ?? 200;
   if (code !== 200) {
-    throw new FeedbackApiError(code, response.message || '反馈请求失败，请稍后重试');
+    throw new ApiError(code, response.message || '反馈请求失败，请稍后重试');
   }
   return response.data;
 };
