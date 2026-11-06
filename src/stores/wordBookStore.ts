@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UserBookWordDetail } from '../types';
 import { bookService } from '../services/bookService';
+import { accountSession } from '../services/accountSession';
 
 interface WordBookData {
   words: UserBookWordDetail[];
@@ -76,9 +77,11 @@ export const useWordBookStore = create<WordBookState>()(
       },
 
       initialize: async () => {
+        const version = accountSession.getVersion();
         const { wordBooks } = get();
 
         const books = await bookService.getBooks();
+        accountSession.assertCurrent(version);
         for (const book of books) {
           const wordBook = wordBooks[book.user_book_id.toString()];
           // 单词书不存在，过期，单词数不一致，需要刷新
@@ -89,6 +92,7 @@ export const useWordBookStore = create<WordBookState>()(
 
           if (refresh) {
             const words = await bookService.getBookWords(book.user_book_id);
+            accountSession.assertCurrent(version);
             get().setWordBook(book.user_book_id.toString(), words);
           }
         }

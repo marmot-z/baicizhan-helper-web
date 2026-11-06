@@ -3,6 +3,23 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { ApiResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
+import { accountSession, AccountSessionChangedError } from './accountSession';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    allowDuringAccountSwitch?: boolean;
+    accountVersion?: number;
+    finishAccountRequest?: () => void;
+  }
+}
+
+function checkResponseSession(config?: AxiosRequestConfig) {
+  config?.finishAccountRequest?.();
+
+  if (config?.accountVersion !== undefined) {
+    accountSession.assertCurrent(config.accountVersion);
+  }
+}
 
 interface ApiErrorBody {
   message?: unknown;
@@ -55,6 +72,12 @@ const apiClient: AxiosInstance = axios.create({
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config) => {
+    if (accountSession.isSwitching() && !config.allowDuringAccountSwitch) {
+      throw new AccountSessionChangedError();
+    }
+
+    config.accountVersion = accountSession.getVersion();
+    config.finishAccountRequest = accountSession.trackRequest();
     // 按照技术设计文档要求，添加access_token字段
     const token = useAuthStore.getState().token;
     if (token) {
@@ -87,7 +110,11 @@ const rejectApiResponse = (response: AxiosResponse, code: number) => {
     const toastWindow = window as ToastWindow;
     if (now - (toastWindow.__lastToastTime || 0) > 5000) {
       toastWindow.__lastToastTime = now;
-      setTimeout(() => toast.error(message), 0);
+      setTimeout(() => {
+        if (response.config.accountVersion === accountSession.getVersion() && !accountSession.isSwitching()) {
+          toast.error(message);
+        }
+      }, 0);
     }
   }
 
@@ -97,6 +124,8 @@ const rejectApiResponse = (response: AxiosResponse, code: number) => {
 // 同时处理 HTTP 状态码和响应体业务码；只有明确的 401 才清理登录态。
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    checkResponseSession(response.config);
+
     const code = response.data?.code;
     if (typeof code === 'number' && (code < 200 || code >= 300)) {
       return rejectApiResponse(response, code);
@@ -104,6 +133,8 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    checkResponseSession(error?.config);
+
     if (axios.isAxiosError(error) && error.response) {
       return rejectApiResponse(error.response, error.response.status);
     }

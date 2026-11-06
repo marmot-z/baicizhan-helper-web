@@ -391,3 +391,48 @@
   align-items: center;
   gap: 12px;
 }
+
+/* 微信账号切换 */
+.weixin-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: #16833c;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.weixin-login-btn:hover { background: #16833c12; }
+.weixin-login-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.weixin-login-btn:disabled { opacity: 0.6; cursor: wait; }
+.dark .weixin-login-btn { color: #65d88c; }
+
+.account-switch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  background: #0008;
+  cursor: wait;
+}
+
+.account-switch-overlay > div {
+  padding: 20px 28px;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+}
+
+.dark .account-switch-overlay > div { background: #1f2937; color: #f3f4f6; }
+
+@media (max-width: 768px) {
+  .weixin-login-btn span { display: none; }
+  .weixin-login-btn { padding: 6px; font-size: 18px; }
+  .theme-bar { gap: 8px; }
+}

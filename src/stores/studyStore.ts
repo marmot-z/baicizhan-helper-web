@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { accountSession, AccountSessionChangedError } from '../services/accountSession';
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 import type { StudyStatistcs } from '../services/study/types';
@@ -25,6 +26,10 @@ type PersistedStudyStateV1 = Pick<
   | 'lastStudyStatistics'
   | 'lastReviewStatistics'
 >;
+
+export async function waitForStudySyncs(): Promise<void> {
+  await Promise.allSettled([...inflightBookSyncs.values()]);
+}
 
 interface StudyState {
   currentBook: UserBookBasicInfo | null;
@@ -222,9 +227,18 @@ async function syncBookState(
   bookId: number,
   requireSuccessfulSync = false,
 ): Promise<void> {
+  if (accountSession.isSwitching()) {
+    if (requireSuccessfulSync) {
+      throw new AccountSessionChangedError();
+    }
+    return;
+  }
+
+  const version = accountSession.getVersion();
   const existingTask = inflightBookSyncs.get(bookId);
   if (existingTask) {
     const errors = await existingTask;
+    accountSession.assertCurrent(version);
     if (requireSuccessfulSync && errors.length) {
       set({ syncedBookId: null });
       throw errors[0];
@@ -257,6 +271,7 @@ async function syncBookState(
     let roadmap = get().wordList;
     if (get().wordListBookId !== bookId || roadmap.length === 0) {
       roadmap = await studyService.getRoadmap(bookId);
+      accountSession.assertCurrent(version);
       set({ wordList: roadmap, wordListBookId: bookId });
     }
 
@@ -272,6 +287,7 @@ async function syncBookState(
           pendingDoneRecords.map((item) => item.doneRecord),
           bookId,
         );
+        accountSession.assertCurrent(version);
 
         if (uploadResult.resultCode < 0) {
           throw new Error(`updateDoneData returned ${uploadResult.resultCode}`);
@@ -287,6 +303,7 @@ async function syncBookState(
           lastUploadError: null,
         });
       } catch (error) {
+        accountSession.assertCurrent(version);
         const message = error instanceof Error ? error.message : String(error);
         studyRecordStore.updateSyncMeta(bookId, {
           lastUploadError: message,
@@ -302,6 +319,7 @@ async function syncBookState(
 
     try {
       const syncMeta = await studyService.getStudySyncMeta(bookId);
+      accountSession.assertCurrent(version);
       const localSyncMeta = studyRecordStore.getSyncMeta(bookId);
       studyRecordStore.updateSyncMeta(bookId, {
         remoteSyncVer: syncMeta.remoteSyncVer,
@@ -309,6 +327,7 @@ async function syncBookState(
 
       if (syncMeta.remoteSyncVer > localSyncMeta.localSyncVer) {
         const remoteLearnedWords = await studyService.getLearnedWords(bookId);
+        accountSession.assertCurrent(version);
         studyRecordStore.mergeRemoteLearnedWords(bookId, remoteLearnedWords);
         studyRecordStore.updateSyncMeta(bookId, {
           localSyncVer: syncMeta.remoteSyncVer,
@@ -318,6 +337,7 @@ async function syncBookState(
 
       nextRecordMap = createRecordMap(studyRecordStore.getAllRecords(bookId));
     } catch (error) {
+      accountSession.assertCurrent(version);
       errors.push(error);
       console.error(`Failed to sync remote learned words for book ${bookId}:`, error);
     }
@@ -338,14 +358,18 @@ async function syncBookState(
     });
     return errors;
   })().finally(() => {
-    inflightBookSyncs.delete(bookId);
-    if (get().syncingBookId === bookId) {
+    if (inflightBookSyncs.get(bookId) === task) {
+      inflightBookSyncs.delete(bookId);
+    }
+
+    if (version === accountSession.getVersion() && get().syncingBookId === bookId) {
       set({ syncingBookId: null });
     }
   });
 
   inflightBookSyncs.set(bookId, task);
   const errors = await task;
+  accountSession.assertCurrent(version);
   if (requireSuccessfulSync && errors.length) {
     set({ syncedBookId: null });
     throw errors[0];
@@ -357,7 +381,9 @@ async function hydrateStudyPlanForKnownBook(
   get: StudyStoreGet,
   book: UserBookBasicInfo,
 ): Promise<void> {
+  const version = accountSession.getVersion();
   const planData = await studyService.getBookPlanInfo();
+  accountSession.assertCurrent(version);
   set({ studyPlans: planData ?? [] });
   if (!planData || planData.length === 0) {
     throw new Error('未获取到已保存的学习计划，请重试');
@@ -373,8 +399,10 @@ async function hydrateStudyPlanForKnownBook(
   });
 
   const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+  accountSession.assertCurrent(version);
   set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
   await syncBookState(set, get, userPlan.book_id, true);
+  accountSession.assertCurrent(version);
 }
 
 async function hydrateStudyPlan(
@@ -383,11 +411,13 @@ async function hydrateStudyPlan(
   plan: SelectBookPlanInfo,
   books?: UserBookBasicInfo[],
 ): Promise<void> {
+  const version = accountSession.getVersion();
   let matchedBook =
     get().currentBook?.id === plan.book_id ? get().currentBook : null;
 
   if (!matchedBook) {
     const availableBooks = books ?? (await studyService.getAllBooks()).books;
+    accountSession.assertCurrent(version);
     matchedBook = availableBooks.find((book) => book.id === plan.book_id) ?? null;
   }
 
@@ -397,8 +427,10 @@ async function hydrateStudyPlan(
   });
 
   const roadmapData = await studyService.getRoadmap(plan.book_id);
+  accountSession.assertCurrent(version);
   set({ wordList: roadmapData, wordListBookId: plan.book_id });
   await syncBookState(set, get, plan.book_id, true);
+  accountSession.assertCurrent(version);
 }
 
 export const useStudyStore = create<StudyState>()(
@@ -462,6 +494,7 @@ export const useStudyStore = create<StudyState>()(
       },
 
       syncCurrentBookState: async (bookId?: number) => {
+        const version = accountSession.getVersion();
         const targetBookId =
           bookId ?? get().studyPlan?.book_id ?? get().currentBook?.id;
         if (!targetBookId) {
@@ -470,6 +503,7 @@ export const useStudyStore = create<StudyState>()(
 
         const joinedExistingSync = inflightBookSyncs.has(targetBookId);
         await syncBookState(set, get, targetBookId);
+        accountSession.assertCurrent(version);
 
         // 如果本次调用加入的是旧同步任务，任务执行期间可能又写入了新状态；
         // 再启动一轮即可排空，当前调用自身失败时则保留 pending 等下次重试。
@@ -478,13 +512,16 @@ export const useStudyStore = create<StudyState>()(
           studyRecordStore.getPendingDoneRecords(targetBookId).length > 0
         ) {
           await syncBookState(set, get, targetBookId);
+          accountSession.assertCurrent(version);
         }
       },
 
       fetchStudyData: async () => {
+        const version = accountSession.getVersion();
         try {
           // 获取用户学习计划
           const planData = await studyService.getBookPlanInfo();
+          accountSession.assertCurrent(version);
           set({ studyPlans: planData ?? [] });
           if (planData && planData.length > 0) {
             const userPlan = planData[0];
@@ -503,25 +540,30 @@ export const useStudyStore = create<StudyState>()(
                 get().wordListBookId !== userPlan.book_id
               ) {
                 const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+                accountSession.assertCurrent(version);
                 set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
               }
 
               await get().syncCurrentBookState(userPlan.book_id);
+              accountSession.assertCurrent(version);
               return;
             } else {
               // 不匹配或无缓存，重新拉取单词书信息
               const booksData = await studyService.getAllBooks();
+              accountSession.assertCurrent(version);
               const matchedBook = booksData.books.find(book => book.id === userPlan.book_id);
               if (matchedBook) {
                 set({ currentBook: matchedBook });
                 
                 // 获取单词列表
                 const roadmapData = await studyService.getRoadmap(userPlan.book_id);
+                accountSession.assertCurrent(version);
                 set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
               }
             }
 
             await get().syncCurrentBookState(userPlan.book_id);
+            accountSession.assertCurrent(version);
           } else {
             set({
               studyPlan: null,
@@ -537,21 +579,27 @@ export const useStudyStore = create<StudyState>()(
       },
 
       refreshStudyPlans: async () => {
+        const version = accountSession.getVersion();
         const planData = await studyService.getBookPlanInfo();
+        accountSession.assertCurrent(version);
         set({ studyPlans: planData ?? [] });
         return planData ?? [];
       },
 
       switchStudyBook: async (plan: SelectBookPlanInfo) => {
+        const version = accountSession.getVersion();
         await studyService.switchSelectedBookPlan(plan);
+        accountSession.assertCurrent(version);
         const [planData, booksData] = await Promise.all([
           studyService.getBookPlanInfo(),
           studyService.getAllBooks(),
         ]);
+        accountSession.assertCurrent(version);
         const currentPlan = planData[0] ?? plan;
 
         set({ studyPlans: planData ?? [] });
         await hydrateStudyPlan(set, get, currentPlan, booksData.books);
+        accountSession.assertCurrent(version);
       },
 
       refreshStudyDataForBook: async (book: UserBookBasicInfo) => {
@@ -559,6 +607,7 @@ export const useStudyStore = create<StudyState>()(
       },
 
       clearStudyData: () => {
+        inflightBookSyncs.clear();
         set({
           currentBook: null,
           studyPlan: null,

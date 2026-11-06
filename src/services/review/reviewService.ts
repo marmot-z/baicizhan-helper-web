@@ -1,3 +1,4 @@
+import { accountSession } from '../accountSession';
 import { studyService } from '../studyService';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import type { UserRoadMapElementV2 } from '../../types';
@@ -204,6 +205,7 @@ export const reviewService = {
     context: ReviewContext,
     killedTopicIds: number[],
   ): Promise<void> {
+    const version = accountSession.getVersion();
     const updatedAt = Date.now();
     const killedTopicIdSet = new Set(killedTopicIds);
     const nextRecords = records
@@ -253,6 +255,7 @@ export const reviewService = {
       nextRecords.map((record) => toPendingDoneRecord(record)),
     );
     void store.syncCurrentBookState(context.bookId).then(() => {
+      accountSession.assertCurrent(version);
       const latestHomeState = useStudyStore.getState().homeState;
       return studyService.reportFinishDailyPlan(
         context.bookId,
