@@ -3,6 +3,23 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { ApiResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
+import { accountSession, AccountSessionChangedError } from './accountSession';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    allowDuringAccountSwitch?: boolean;
+    accountVersion?: number;
+    finishAccountRequest?: () => void;
+  }
+}
+
+function checkResponseSession(config?: AxiosRequestConfig) {
+  config?.finishAccountRequest?.();
+
+  if (config?.accountVersion !== undefined) {
+    accountSession.assertCurrent(config.accountVersion);
+  }
+}
 
 interface ApiErrorBody {
   message?: unknown;
@@ -45,6 +62,12 @@ const apiClient: AxiosInstance = axios.create({
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config) => {
+    if (accountSession.isSwitching() && !config.allowDuringAccountSwitch) {
+      throw new AccountSessionChangedError();
+    }
+
+    config.accountVersion = accountSession.getVersion();
+    config.finishAccountRequest = accountSession.trackRequest();
     // 按照技术设计文档要求，添加access_token字段
     const token = useAuthStore.getState().token;
     if (token) {
@@ -60,6 +83,8 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    checkResponseSession(response.config);
+
     // 检查响应数据中的 code 字段
     if (response.data?.code === 401) {
       // 处理401错误（token过期）
@@ -85,7 +110,9 @@ apiClient.interceptors.response.use(
         toastWindow.__lastToastTime = now;
         // 使用 setTimeout 确保在 React 上下文中调用 toast
         setTimeout(() => {
-          toast.error(message);
+          if (response.config.accountVersion === accountSession.getVersion() && !accountSession.isSwitching()) {
+            toast.error(message);
+          }
         }, 0);
       }
       
@@ -100,6 +127,8 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    checkResponseSession(error.config);
+
     // 处理网络错误或其他HTTP错误
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;

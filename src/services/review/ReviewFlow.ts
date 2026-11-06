@@ -1,3 +1,4 @@
+import { accountSession } from '../accountSession';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import { studyService } from '../studyService';
 import { feedbackSoundPlayer } from '../../utils/feedbackSound';
@@ -29,6 +30,7 @@ const createInitialSnapshot = (): ReviewSnapshot => ({
 });
 
 export class ReviewFlow {
+  private readonly accountVersion = accountSession.getVersion();
   private snapshot: ReviewSnapshot = createInitialSnapshot();
   private listeners = new Set<(snapshot: ReviewSnapshot) => void>();
   private records = new Map<number, ReviewWordRecord>();
@@ -192,6 +194,10 @@ export class ReviewFlow {
   }
 
   checkpoint(): void {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     if (['choice', 'detail', 'spelling'].includes(this.snapshot.stage)) {
       this.onCheckpoint?.(this.exportState());
     }
@@ -378,6 +384,10 @@ export class ReviewFlow {
   }
 
   private notify(): void {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     this.listeners.forEach((listener) => listener(this.snapshot));
   }
 
@@ -793,6 +803,10 @@ export class ReviewFlow {
   }
 
   private async complete(): Promise<void> {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     this.syncProgress();
     const records = Array.from(this.records.values());
 
@@ -802,6 +816,10 @@ export class ReviewFlow {
       this.context,
       Array.from(this.killedTopicIds),
     );
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     studySessionStore.clear('review', this.context.bookId);
 
     this.setSnapshot({

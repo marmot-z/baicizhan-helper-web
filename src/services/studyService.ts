@@ -116,11 +116,17 @@ export const studyService = {
   async updateDoneData(
     doneRecords: UserDoneWordRecord[],
     bookId: number,
+    allowDuringAccountSwitch = false,
   ): Promise<UpdateDoneDataResponse> {
     const response = await ApiService.post<UpdateDoneDataResponse>('/updateDoneData', {
       doneRecords,
       bookId,
-    });
+    }, { allowDuringAccountSwitch });
+
+    if (allowDuringAccountSwitch && response.code !== 200) {
+      throw new Error(response.message || '学习记录同步失败');
+    }
+
     return response.data;
   },
 

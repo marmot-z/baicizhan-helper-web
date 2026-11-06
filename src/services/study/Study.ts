@@ -1,3 +1,4 @@
+import { accountSession } from '../accountSession';
 import { ProcessIterator } from './ProcessIterator';
 import type { UserRoadMapElementV2 } from '../../types';
 import { WordCard } from './WordCard';
@@ -18,6 +19,7 @@ import { wordStatusService } from './wordStatusService';
  * 负责管理学习流程和整体状态
  */
 export class Study {
+  private readonly accountVersion = accountSession.getVersion();
   private processIterator: ProcessIterator;
   private currentWordCard: WordCard | null;
   private failMap: Map<number, number>;
@@ -120,6 +122,10 @@ export class Study {
   }
 
   private notify(): void {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     if (!this.completed) {
       this.onCheckpoint?.(this.exportState());
     }
@@ -137,6 +143,10 @@ export class Study {
   }
 
   public checkpoint(): void {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     if (!this.completed) {
       this.onCheckpoint?.(this.exportState());
     }
@@ -375,6 +385,10 @@ export class Study {
   }
   
   public async complete(): Promise<void> {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     if (this.completed) {
       return;
     }
@@ -505,6 +519,10 @@ export class Study {
   }
 
   private reportFinishDailyPlan(): void {
+    if (this.accountVersion !== accountSession.getVersion()) {
+      return;
+    }
+
     const { homeState } = useStudyStore.getState();
     const currentBook = useStudyStore.getState().currentBook;
     const bookFinished =

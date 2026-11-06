@@ -16,9 +16,24 @@ export const authService = {
     return response.data;
   },
 
+  async loginWithWeixin(): Promise<string> {
+    const response = await ApiService.post<string>('/login/weixin', undefined, { allowDuringAccountSwitch: true, timeout: 30000 });
+
+    if (response.code !== 200 || typeof response.data !== 'string' || !response.data.trim()) {
+      throw new Error('登录微信账号失败');
+    }
+
+    return response.data;
+  },
+
   // 获取用户信息
-  async getUserInfo(): Promise<UserBindInfo[]> {
-    const response = await ApiService.get<UserBindInfo[]>('/userInfo');
+  async getUserInfo(allowDuringAccountSwitch = false): Promise<UserBindInfo[]> {
+    const response = await ApiService.get<UserBindInfo[]>('/userInfo', { allowDuringAccountSwitch });
+
+    if (response.code !== 200 || !Array.isArray(response.data)) {
+      throw new Error('获取用户信息失败');
+    }
+
     return response.data;
   },
 
