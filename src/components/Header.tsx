@@ -10,9 +10,7 @@ import {
   faDownload,
   faGear,
 } from '@fortawesome/free-solid-svg-icons';
-import { canLoginWithWeixin, useAuthStore } from '../stores/authStore';
-import { faWeixin } from '@fortawesome/free-brands-svg-icons';
-import toast from 'react-hot-toast';
+import { useAuthStore } from '../stores/authStore';
 import ExtensionsDownloadModel from './ExtensionsDownloadModel';
 import InviteShare from './InviteShare';
 import type { UserBindInfo } from '../types';
@@ -23,19 +21,7 @@ import '../pages/Dashboard.css';
 export default function Header() {
   const navigate = useNavigate();
   const [downloadModelShow, setDownloadModelShow] = React.useState(false);
-  const auth = useAuthStore();
-  const { user, logout, loginWithWeixin, isSwitchingAccount } = auth;
-
-  const handleWeixinLogin = async () => {
-    try {
-      const discardedRecords = await loginWithWeixin();
-      const message = discardedRecords ? '已登录微信账号，原账号未同步记录已清理' : '已登录微信账号';
-      sessionStorage.setItem('account-switch-message', message);
-      window.location.replace(ROUTES.DASHBOARD);
-    } catch {
-      toast.error('登录微信账号失败');
-    }
-  };
+  const { user, logout } = useAuthStore();
 
   const getUserNickname = (): string => {
     if (!user || user.length === 0) return 'guest';
@@ -72,19 +58,6 @@ export default function Header() {
                     <span style={{ fontSize: '16px', fontWeight: 'bold' }}>邀请好友送会员</span>
                   </button>
                 </InviteShare>
-                {canLoginWithWeixin(auth) && (
-                  <button
-                    type="button"
-                    className="weixin-login-btn"
-                    title="已绑定微信，可登录对应微信账号"
-                    aria-label="登录微信账号"
-                    disabled={isSwitchingAccount}
-                    onClick={handleWeixinLogin}
-                  >
-                    <FontAwesomeIcon icon={faWeixin} />
-                    <span>{isSwitchingAccount ? '登录中…' : '登录微信账号'}</span>
-                  </button>
-                )}
                   <div
                     className="user-profile"
                     onMouseEnter={(e) => {

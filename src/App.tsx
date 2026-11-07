@@ -1,5 +1,5 @@
 import { RouterProvider } from 'react-router-dom';
-import { Toaster, toast } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { router } from './router';
 import { useEffect } from 'react';
 import { useAuthInit } from './hooks';
@@ -10,13 +10,6 @@ function App() {
   const isSwitchingAccount = useAuthStore((state) => state.isSwitchingAccount);
 
   useEffect(() => {
-    const switchMessage = sessionStorage.getItem('account-switch-message');
-
-    if (switchMessage) {
-      sessionStorage.removeItem('account-switch-message');
-      toast.success(switchMessage);
-    }
-
     // 检查URL中是否有邀请码
     const params = new URLSearchParams(window.location.search);
     const inviteCode = params.get('inviteCode');
