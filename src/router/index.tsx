@@ -3,6 +3,7 @@ import { ROUTES } from '../constants';
 import {
   Home,
   Login,
+  AccountGuide,
   Dashboard,
   Search,
   SelectStudyPlan,
@@ -38,6 +39,10 @@ export const router = createBrowserRouter([
         <Login />
       </PublicRoute>
     ),
+  },
+  {
+    path: ROUTES.ACCOUNT_GUIDE,
+    element: <AccountGuide />,
   },
   {
     element: (

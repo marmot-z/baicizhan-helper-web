@@ -2,6 +2,7 @@
 export { default as Dashboard } from './Dashboard';
 export { default as Home } from './Home';
 export { default as Login } from './Login';
+export { default as AccountGuide } from './AccountGuide';
 export { default as PaymentPage } from './PaymentPage';
 export { default as SelectWordBook } from './SelectWordBook';
 export { default as SwitchStudyBook } from './SwitchStudyBook';

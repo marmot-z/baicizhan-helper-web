@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
@@ -164,6 +164,9 @@ const Login: React.FC = () => {
               </button>
             </div>
           </form>
+          <Link className={styles.guideLink} to={ROUTES.ACCOUNT_GUIDE}>
+            如何登录微信账户？
+          </Link>
         </div>
       </div>
     </div>

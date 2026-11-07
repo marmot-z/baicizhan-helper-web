@@ -2,6 +2,7 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/page/login',
+  ACCOUNT_GUIDE: '/page/account-guide',
   DASHBOARD: '/page/dashboard',
   ALL_BOOKS: '/page/all-books',
   SWITCH_STUDY_BOOK: '/page/switch-study-book',
