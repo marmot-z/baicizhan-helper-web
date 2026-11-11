@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ReviewFlow } from './ReviewFlow';
+import { reviewService } from './reviewService';
 import type { ReviewInitData } from './types';
 import type { ReviewSessionState } from '../study/sessionTypes';
 import type { StudyUIModel } from '../study/types';
@@ -23,9 +24,12 @@ const createModel = (topicId: number): StudyUIModel => ({
 
 const initData: ReviewInitData = {
   words: [createModel(1), createModel(2)],
+  missingTopicIds: [],
   roadmapMap: new Map(),
   context: { bookId: 10, planType: 'XModelReviewStudy' },
 };
+
+afterEach(() => vi.restoreAllMocks());
 
 const state: ReviewSessionState = {
   wordTopicIds: [1, 2],
@@ -76,6 +80,48 @@ describe('ReviewFlow snapshots', () => {
       { ...initData, words: [createModel(1)] },
       state,
     )).toThrow(/Cannot restore review/);
+  });
+
+  it('resumes the next choice and keeps the other word’s attempt history when the current word is unavailable', async () => {
+    vi.spyOn(reviewService, 'reportWordShown').mockResolvedValue();
+    const flow = ReviewFlow.restore(
+      { ...initData, words: [createModel(2)], missingTopicIds: [1] },
+      { ...state, records: [state.records[0], { ...state.records[1], errorCount: 2 }] },
+    );
+
+    await flow.resume();
+
+    expect(flow.getSnapshot().choiceState?.word.topicId).toBe(2);
+    expect(flow.getSnapshot().totalWords).toBe(1);
+    expect(flow.exportState()).toMatchObject({
+      wordTopicIds: [2],
+      records: [{ topicId: 2, errorCount: 2 }],
+      choiceRetryQueueTopicIds: [],
+      choiceRetryTopicIds: [],
+      currentChoiceAttemptCount: 0,
+      currentChoiceClickedOptionIds: [],
+    });
+  });
+
+  it('resumes spelling when the missing word was showing spelling feedback', async () => {
+    const flow = ReviewFlow.restore(
+      { ...initData, words: [createModel(2)], missingTopicIds: [1] },
+      {
+        ...state,
+        stage: 'detail',
+        detailTopicId: 1,
+        detailReason: 'spell_error',
+        currentChoiceTopicId: null,
+        spellQueueTopicIds: [2],
+        spellRetryQueueTopicIds: [1],
+        spellRetryTopicIds: [1],
+      },
+    );
+
+    await flow.resume();
+
+    expect(flow.getSnapshot().spellState?.word.topicId).toBe(2);
+    expect(flow.exportState().spellRetryQueueTopicIds).toEqual([]);
   });
 
   it('restores the detail phase', () => {

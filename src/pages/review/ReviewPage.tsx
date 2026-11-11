@@ -97,76 +97,46 @@ const ReviewPage: React.FC = () => {
         const planDate = getLocalPlanDate();
         studySessionStore.removeExpired(planDate);
         const savedDraft = studySessionStore.load('review', studyPlan.book_id);
-        let flow: ReviewFlow;
-        let restored = false;
-        let initData;
+        const resumeTopicIds = savedDraft?.state.wordTopicIds.length ? savedDraft.state.wordTopicIds : undefined;
+        let initData = await reviewService.initializeReviewWords(studyPlan.book_id, studyPlan.review_plan_count, resumeTopicIds);
+        if (!isActive) {
+          return;
+        }
 
-        if (savedDraft) {
+        let flow: ReviewFlow | undefined;
+        let restored = false;
+        const newDraft = {
+          version: 1 as const,
+          mode: 'review' as const,
+          bookId: studyPlan.book_id,
+          planDate,
+          createdAt: Date.now(),
+          sessionId: createStudySessionId(),
+        };
+        const persistCheckpoint = (state: ReviewSessionState) => {
+          const saved = studySessionStore.save({
+            ...(restored && savedDraft ? savedDraft : newDraft),
+            updatedAt: Date.now(),
+            state,
+          });
+          if (isActive) setDraftSaveFailed(!saved);
+        };
+
+        if (savedDraft && resumeTopicIds) {
           try {
-            initData = await reviewService.initializeReviewWords(
-              studyPlan.book_id,
-              studyPlan.review_plan_count,
-              savedDraft.state.wordTopicIds,
-            );
-            const persistCheckpoint = (state: ReviewSessionState) => {
-              const saved = studySessionStore.save({
-                ...savedDraft,
-                updatedAt: Date.now(),
-                state,
-              });
-              if (isActive) setDraftSaveFailed(!saved);
-            };
             flow = ReviewFlow.restore(initData, savedDraft.state, persistCheckpoint);
             restored = true;
           } catch (restoreError) {
-            console.error('恢复复习进度失败，将重新开始:', restoreError);
-            studySessionStore.clear('review', studyPlan.book_id);
-            initData = await reviewService.initializeReviewWords(
-              studyPlan.book_id,
-              studyPlan.review_plan_count,
-            );
-            const now = Date.now();
-            const sessionId = createStudySessionId();
-            flow = new ReviewFlow(initData, (state) => {
-              const saved = studySessionStore.save({
-                version: 1,
-                mode: 'review',
-                bookId: studyPlan.book_id,
-                planDate,
-                createdAt: now,
-                updatedAt: Date.now(),
-                sessionId,
-                state,
-              });
-              if (isActive) setDraftSaveFailed(!saved);
-            });
+            console.error('恢复复习草稿失败，将重新开始:', restoreError);
+            initData = await reviewService.initializeReviewWords(studyPlan.book_id, studyPlan.review_plan_count);
           }
-        } else {
-          initData = await reviewService.initializeReviewWords(
-            studyPlan.book_id,
-            studyPlan.review_plan_count,
-          );
-          const now = Date.now();
-          const sessionId = createStudySessionId();
-          flow = new ReviewFlow(initData, (state) => {
-            const saved = studySessionStore.save({
-              version: 1,
-              mode: 'review',
-              bookId: studyPlan.book_id,
-              planDate,
-              createdAt: now,
-              updatedAt: Date.now(),
-              sessionId,
-              state,
-            });
-            if (isActive) setDraftSaveFailed(!saved);
-          });
         }
 
         if (!isActive) {
           return;
         }
 
+        flow ??= new ReviewFlow(initData, persistCheckpoint);
         reviewWordsRef.current = initData.words;
         flowRef.current = flow;
         unsubscribe = flow.subscribe((nextSnapshot) => {
@@ -188,9 +158,14 @@ const ReviewPage: React.FC = () => {
 
         if (restored) {
           await flow.resume();
-          toast.success('已恢复上次复习进度');
         } else {
           await flow.start();
+        }
+
+        if (isActive && initData.missingTopicIds.length > 0) {
+          toast(`有 ${initData.missingTopicIds.length} 个单词暂时无法加载，已跳过本轮`);
+        } else if (isActive && restored) {
+          toast.success('已恢复上次复习进度');
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : '复习初始化失败';

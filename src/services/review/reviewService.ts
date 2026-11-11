@@ -39,60 +39,38 @@ export const reviewService = {
     resumeTopicIds?: number[],
   ): Promise<ReviewInitData> {
     await useStudyStore.getState().syncCurrentBookState(bookId);
-    const { homeState, syncedBookId } = useStudyStore.getState();
+    const { homeState, syncedBookId, wordList } = useStudyStore.getState();
 
     if (syncedBookId !== bookId) {
-      return {
-        words: [],
-        roadmapMap: new Map(),
-        context: {
-          bookId,
-          planType: REVIEW_PLAN_TYPE,
-        },
-      };
+      throw new Error('当前书学习状态同步未完成，请重新加载');
     }
 
     const targetCount = reviewPlanCount || 10;
-    const roadmap = useStudyStore.getState().wordList;
-    const roadmapByTopicId = new Map(roadmap.map((word) => [word.topic_id, word]));
+    const roadmapByTopicId = new Map(wordList.map((word) => [word.topic_id, word]));
     const reviewWords = resumeTopicIds
       ? resumeTopicIds
           .map((topicId) => roadmapByTopicId.get(topicId))
-          .filter((word): word is UserRoadMapElementV2 => Boolean(word))
+          .filter((word): word is UserRoadMapElementV2 => word !== undefined)
       : homeState.unreviewedWords.slice(0, targetCount);
 
-    if (resumeTopicIds && reviewWords.length !== resumeTopicIds.length) {
-      throw new Error('复习草稿中的单词已不在当前路线图中');
-    }
-
-    if (!reviewWords.length) {
-      return {
-        words: [],
-        roadmapMap: new Map(),
-        context: {
-          bookId,
-          planType: REVIEW_PLAN_TYPE,
-        },
-      };
-    }
-
     const topicIds = reviewWords.map((word) => word.topic_id);
-    const words = await studyService.getXModeWordDetails(bookId, topicIds);
+    const { words, missingTopicIds } = await studyService.getXModeWordDetails(bookId, topicIds);
 
-    if (
-      words.length !== topicIds.length ||
-      topicIds.some((topicId) => !words.some((word) => word.topicId === topicId))
-    ) {
-      throw new Error('复习单词资源不完整，请重新加载');
+    if ((resumeTopicIds ?? topicIds).length > 0 && words.length === 0) {
+      throw new Error('本轮单词暂时无法加载，请重新加载');
     }
 
-    // 这三个接口只用于对齐百词斩 X 模式的辅助初始化，当前页面不消费其返回值。
-    // 上游偶发失败时不应阻断已经可以开始的本地复习流程。
-    runOptionalReviewInitialization(bookId, topicIds);
+    const availableIds = new Set(words.map((word) => word.topicId));
+    if (words.length > 0) {
+      // 这三个接口只用于对齐百词斩 X 模式的辅助初始化，当前页面不消费其返回值。
+      runOptionalReviewInitialization(bookId, [...availableIds]);
+    }
 
+    const availableRoadmapWords = reviewWords.filter((word) => availableIds.has(word.topic_id));
     return {
       words,
-      roadmapMap: new Map(reviewWords.map((word) => [word.topic_id, word])),
+      missingTopicIds: resumeTopicIds ? resumeTopicIds.filter((topicId) => !availableIds.has(topicId)) : missingTopicIds,
+      roadmapMap: new Map(availableRoadmapWords.map((word) => [word.topic_id, word])),
       context: {
         bookId,
         planType: REVIEW_PLAN_TYPE,

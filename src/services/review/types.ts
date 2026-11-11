@@ -34,6 +34,7 @@ export interface ReviewContext {
 
 export interface ReviewInitData {
   words: StudyUIModel[];
+  missingTopicIds: number[];
   roadmapMap: Map<number, UserRoadMapElementV2>;
   context: ReviewContext;
 }

@@ -16,6 +16,11 @@ import { wordStatusService } from './wordStatusService';
 import { studyRecordStore } from './recordStore';
 import { studyService } from '../studyService';
 import { useStudyStore } from '../../stores/studyStore';
+import { ApiService } from '../api';
+import { ReviewFlow } from '../review/ReviewFlow';
+import { reviewService } from '../review/reviewService';
+import { feedbackSoundPlayer } from '../../utils/feedbackSound';
+import type { LearnSessionState } from './sessionTypes';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -321,5 +326,118 @@ describe('Study.killCurrent', () => {
     expect(study.completed).toBe(true);
     expect(studyRecordStore.getRecord(10, 1)?.topicScore).toBe(-1);
     expect(useStudyStore.getState().lastStudyStatistics?.killedTopicIds).toEqual([1]);
+  });
+});
+
+describe('sessions with unavailable word resources', () => {
+  const roadmap = [1, 2, 3].map(createRoadmapWord);
+  const learnContext = { bookId: 10, planType: 'XModelNewStudy' };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { localStorage: new MemoryStorage() },
+    });
+    useStudyStore.setState({
+      wordList: roadmap,
+      wordListBookId: 10,
+      syncedBookId: 10,
+      homeState: createEmptyHomeState(),
+      learnRecords: {},
+      lastStudyStatistics: null,
+    });
+    vi.spyOn(useStudyStore.getState(), 'syncCurrentBookState').mockResolvedValue();
+    vi.spyOn(studyService, 'reportEvent').mockResolvedValue();
+    vi.spyOn(studyService, 'reportFinishDailyPlan').mockResolvedValue();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('resumes learning at the same stage after removing the unavailable card and retries', async () => {
+    const state: LearnSessionState = {
+      wordTopicIds: [1, 2, 3],
+      process: { currentIteratorIndex: 1, queues: { recognition: [], understanding: [2, 3], mastery: [1, 2, 3] } },
+      currentCard: { topicId: 2, stage: 'understanding', showAnswer: false, attemptCount: 1, clickedOptionIds: [10] },
+      failMap: { 1: 1, 2: 2 },
+      useTimeMap: { 1: 100, 2: 200 },
+      elapsedTime: 400,
+      currentWordElapsedTime: 50,
+    };
+    const study = Study.restore(roadmap, [createModel(1), createModel(3)], learnContext, state);
+
+    await study.resume();
+
+    expect(study.getCurrentWord()).toMatchObject({ stage: 'understanding', uiModel: { topicId: 3 } });
+    expect(study.exportState()).toMatchObject({
+      wordTopicIds: [1, 3],
+      failMap: { 1: 1 },
+      useTimeMap: { 1: 100 },
+      process: { currentIteratorIndex: 1, queues: { recognition: [], understanding: [], mastery: [1, 3] } },
+    });
+    expect(study.getFailMap().has(2)).toBe(false);
+    expect(study.getUseTimeMap().has(2)).toBe(false);
+  });
+
+  it('completes learning for the available words and leaves the missing word pending', async () => {
+    vi.spyOn(studyService, 'xModeDaka').mockResolvedValue();
+    const study = new Study(roadmap, [createModel(1), createModel(3)], learnContext);
+
+    await study.start();
+    for (const topicId of [1, 1, 3, 3, 1, 3, 1, 3]) {
+      expect(study.getCurrentWord()?.getId()).toBe(topicId);
+      await study.pass();
+    }
+
+    expect(study.completed).toBe(true);
+    expect(studyRecordStore.getAllRecords(10).map((record) => record.topicId)).toEqual([1, 3]);
+    expect(studyRecordStore.getPendingDoneRecords(10).map((record) => record.topicId)).toEqual([1, 3]);
+    expect(useStudyStore.getState().homeState.unlearnedWords.map((word) => word.topic_id)).toEqual([2]);
+    expect(studyService.reportFinishDailyPlan).toHaveBeenCalledWith(10, 2, 2, false);
+  });
+
+  it('continues a partial review after a failed batch and only saves completed words', async () => {
+    const priorRecords = roadmap.map((word) => createTopicLearnRecord({ bookId: 10, topicId: word.topic_id, topicScore: 2 }));
+    studyRecordStore.upsertRecords(10, priorRecords);
+    useStudyStore.getState().loadLocalLearnRecords(10);
+    useStudyStore.getState().recomputeHomeState(10);
+    vi.spyOn(studyService, 'getSettings').mockResolvedValue();
+    vi.spyOn(studyService, 'getCreditStatus').mockResolvedValue({
+      inExperiment: false, reviewCreditObtained: false, studyCreditObtained: false,
+    });
+    vi.spyOn(studyService, 'getStudyRecord').mockResolvedValue();
+    vi.spyOn(studyService, 'saveStudyRecord').mockResolvedValue();
+    vi.spyOn(feedbackSoundPlayer, 'playCorrect').mockImplementation(() => {});
+    vi.spyOn(ApiService, 'post')
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce({ code: 200, success: true, data: [null, null, null] })
+      .mockResolvedValueOnce({
+        code: 200,
+        success: true,
+        data: [3, 1].map((topicId) => ({ resource: { word: { topicId, word: `word-${topicId}` } } })),
+      });
+
+    await expect(reviewService.initializeReviewWords(10, 3, [1, 2, 3])).rejects.toThrow('network error');
+    await expect(reviewService.initializeReviewWords(10, 3, [1, 2, 3])).rejects.toThrow('本轮单词暂时无法加载');
+    const initData = await reviewService.initializeReviewWords(10, 3, [1, 2, 3]);
+    expect(initData.missingTopicIds).toEqual([2]);
+    expect([...initData.roadmapMap.keys()]).toEqual([1, 3]);
+
+    const flow = new ReviewFlow(initData);
+    await flow.start();
+    for (const topicId of [1, 3]) {
+      expect(flow.getSnapshot().choiceState?.word.topicId).toBe(topicId);
+      await flow.chooseOption(topicId);
+    }
+
+    for (const topicId of [1, 3]) {
+      expect(flow.getSnapshot().spellState?.word.topicId).toBe(topicId);
+      await flow.submitSpell(`word-${topicId}`);
+    }
+
+    expect(flow.getSnapshot().summaryState).toMatchObject({ totalWords: 2, completedWords: 2 });
+    expect(studyRecordStore.getRecord(10, 2)).toEqual(priorRecords[1]);
+    expect(studyRecordStore.getPendingDoneRecords(10).map((record) => record.topicId)).toEqual([1, 3]);
+    expect(useStudyStore.getState().homeState.unreviewedWords.map((word) => word.topic_id)).toEqual([2]);
+    expect(studyService.saveStudyRecord).not.toHaveBeenCalledWith(10, 2, expect.any(Number));
   });
 });

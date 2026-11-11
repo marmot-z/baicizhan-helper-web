@@ -10,6 +10,7 @@ import { ROUTES } from '../constants';
 import StudyFrontCard from './StudyFrontCard';
 import StudyBackCard from './StudyBackCard';
 import styles from './StudyView.module.css';
+import statusStyles from './review/review.module.css';
 import StudyLoadingState from '../components/study/StudyLoadingState';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
 import { useStudyState } from '../hooks/useStudyState';
@@ -39,6 +40,9 @@ const StudyView: React.FC = () => {
   const { wordCard, isCompleted } = useStudyState(study);
   const [studyPlan, setStudyPlan] = useState<SelectBookPlanInfo | null>(null);
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
+  const [retryKey, setRetryKey] = useState(0);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState(true);
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
@@ -47,7 +51,7 @@ const StudyView: React.FC = () => {
   const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
   const shortcuts = useSettingsStore((state) => state.shortcuts);
   
-  const { studyInstance, error, restored, draftSaveFailed, init } = useStudyStrategy();
+  const { studyInstance, loading, error, restored, draftSaveFailed, skippedWordCount, init } = useStudyStrategy();
 
   // Create UI Model from current word card
   const uiModel: StudyUIModel | null = useMemo(() => {
@@ -132,23 +136,37 @@ const StudyView: React.FC = () => {
 
   // 初始化学习流程
   useEffect(() => {
+    if (study) return;
+
+    let isActive = true;
     const startStudy = async () => {
-      // 如果已经有实例，跳过初始化
-      if (study) return;
-      
+      setLoadingPlan(true);
+      setPlanError(null);
+
       try {
         const studyPlans = await studyService.getBookPlanInfo();
-        if (studyPlans && studyPlans.length > 0) {
-          setStudyPlan(studyPlans[0]);
-          await init(mode, studyPlans);
+        if (!isActive) return;
+
+        if (!studyPlans?.length) {
+          throw new Error('学习计划未就绪');
         }
+
+        setStudyPlan(studyPlans[0]);
+        await init(mode, studyPlans);
       } catch (err) {
-        console.error('获取学习计划失败:', err);
+        if (isActive) {
+          setPlanError(err instanceof Error ? err.message : '获取学习计划失败');
+        }
+      } finally {
+        if (isActive) setLoadingPlan(false);
       }
     };
-    
-    startStudy();
-  }, [mode, init, study]);
+
+    void startStudy();
+    return () => {
+      isActive = false;
+    };
+  }, [mode, init, study, retryKey]);
 
   // 监听策略Hook返回的实例
   useEffect(() => {
@@ -163,25 +181,12 @@ const StudyView: React.FC = () => {
   }, [studyInstance, mode]);
 
   useEffect(() => {
-    if (restored) {
+    if (skippedWordCount > 0) {
+      toast(`有 ${skippedWordCount} 个单词暂时无法加载，已跳过本轮`);
+    } else if (restored) {
       toast.success('已恢复上次学习进度');
     }
-  }, [restored]);
-
-  // 处理初始化错误
-  useEffect(() => {
-    if (error) {
-      // 区分不同错误类型进行提示
-      if (error.message.includes('未就绪')) {
-        toast.loading('等待数据加载...');
-      } else if (error.message.includes('已学习完成')) {
-        toast.success('所有单词都已学习完成！');
-      } else {
-        console.error('初始化学习流程失败:', error);
-        toast.error('初始化失败: ' + error.message);
-      }
-    }
-  }, [error]);
+  }, [restored, skippedWordCount]);
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -293,6 +298,34 @@ const StudyView: React.FC = () => {
       player.stop();
     };
   }, [wordCard, uiModel, studyReviewAutoPronounce, pronunciationPreference]);
+
+  const initializationError = planError ?? error?.message;
+  if (!loadingPlan && !loading && initializationError) {
+    return (
+      <div className={statusStyles.placeholderPage}>
+        <div className={statusStyles.placeholderCard}>
+          <p>{initializationError}</p>
+          <div className={statusStyles.summaryActions}>
+            {!initializationError.includes('已学习完成') && (
+              <button
+                type="button"
+                className={statusStyles.primaryButton}
+                onClick={() => {
+                  setLoadingPlan(true);
+                  setRetryKey((current) => current + 1);
+                }}
+              >
+                重新加载
+              </button>
+            )}
+            <button type="button" className={statusStyles.secondaryButton} onClick={() => navigate(ROUTES.DASHBOARD)}>
+              返回首页
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

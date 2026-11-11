@@ -1,5 +1,6 @@
 import type {StudyOption, StudyUIModel, StudyMedia, StudyAccent, StudySentence, StudyMean, StudyPhrase, StudyVariant, StudyRelatedWord } from './types';
-import type { TopicResourceV2, UserRoadMapElementV2, XModeWordDetail } from '../../types';
+import type { UserRoadMapElementV2, XModeWordDetail } from '../../types';
+import { accountSession } from '../accountSession';
 import {bookService} from '../bookService'
 
 /**
@@ -58,7 +59,8 @@ export class StudyUtils {
     word: UserRoadMapElementV2,
     uiModel: StudyUIModel
   ): Promise<StudyOption[]> {
-    const words: TopicResourceV2[] = await Promise.all(
+    const accountVersion = accountSession.getVersion();
+    const results = await Promise.allSettled(
       word.options.map((id) =>
         bookService.getWordDetail({
           topicId: id,
@@ -71,22 +73,33 @@ export class StudyUtils {
         })
       )
     );
-    const options: StudyOption[] = words
-      .map((item) => ({
-        id: item.dict.word_basic_info.topic_id,
-        word: item.dict.word_basic_info.word,
-        translation:
-          item.dict.chn_means[0]?.mean_type + item.dict.chn_means[0]?.mean,
+    accountSession.assertCurrent(accountVersion);
+    const options: StudyOption[] = [];
+    for (const result of results) {
+      if (result.status !== 'fulfilled') {
+        continue;
+      }
+
+      const { word_basic_info: optionWord, chn_means: meanings } = result.value?.dict ?? {};
+      const meaning = meanings?.[0];
+      if (!optionWord?.word || optionWord.topic_id === uiModel.topicId || !meaning?.mean) {
+        continue;
+      }
+
+      options.push({
+        id: optionWord.topic_id,
+        word: optionWord.word,
+        translation: `${meaning.mean_type ?? ''}${meaning.mean}`,
         isCorrect: false,
-      }))
-      .concat([
-        {
-          id: uiModel.topicId,
-          word: uiModel.word,
-          translation: uiModel.front.chnMean,
-          isCorrect: true,
-        },
-      ]);
+      });
+    }
+
+    options.push({
+      id: uiModel.topicId,
+      word: uiModel.word,
+      translation: uiModel.front.chnMean,
+      isCorrect: true,
+    });
     this.optionsCache.set(word.topic_id, options);
     return options;
   }
@@ -104,10 +117,6 @@ export class StudyUtils {
     const { resource, xModeTopic } = detail;
     const { word } = resource;
     const options = this.buildOptionsFromSimilarWordList(detail);
-
-    if (options.length) {
-      this.optionsCache.set(word.topicId, options);
-    }
 
     // 1. FrontCard - Media
     let media: StudyMedia | null = null;
@@ -217,6 +226,10 @@ export class StudyUtils {
       word: s.word || '',
       topicId: s.sId,
     }));
+
+    if (options.length) {
+      this.optionsCache.set(word.topicId, options);
+    }
 
     return {
       topicId: word.topicId,

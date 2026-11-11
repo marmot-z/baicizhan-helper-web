@@ -90,7 +90,7 @@ export class ReviewFlow {
     };
 
     if (restoredState) {
-      this.restoreState(restoredState);
+      this.restoreState(restoredState, initData.missingTopicIds);
     }
   }
 
@@ -391,31 +391,37 @@ export class ReviewFlow {
     this.listeners.forEach((listener) => listener(this.snapshot));
   }
 
-  private restoreState(state: ReviewSessionState): void {
+  private restoreState(state: ReviewSessionState, missingTopicIds: number[]): void {
     const wordsByTopicId = new Map(this.allWords.map((word) => [word.topicId, word]));
+    const skippedTopicIds = new Set(missingTopicIds);
+    const keepTopic = (topicId: number) => !skippedTopicIds.has(topicId);
     const getWord = (topicId: number | null): StudyUIModel | null => {
-      if (topicId === null) return null;
+      if (topicId === null || !keepTopic(topicId)) return null;
       const word = wordsByTopicId.get(topicId);
       if (!word) throw new Error(`Cannot restore review word ${topicId}`);
       return word;
     };
     const getWords = (topicIds: number[]): StudyUIModel[] =>
-      topicIds.map((topicId) => {
+      topicIds.filter(keepTopic).map((topicId) => {
         const word = getWord(topicId);
         if (!word) throw new Error(`Cannot restore review queue word ${topicId}`);
         return word;
       });
 
-    this.records = new Map(state.records.map((record) => [record.topicId, { ...record }]));
+    this.records = new Map(
+      state.records
+        .filter((record) => keepTopic(record.topicId))
+        .map((record) => [record.topicId, { ...record }]),
+    );
     if (this.allWords.some((word) => !this.records.has(word.topicId))) {
       throw new Error('Cannot restore review records: missing word record');
     }
     this.choiceQueue = getWords(state.choiceQueueTopicIds);
     this.choiceRetryQueue = getWords(state.choiceRetryQueueTopicIds);
-    this.choiceRetrySet = new Set(state.choiceRetryTopicIds);
+    this.choiceRetrySet = new Set(state.choiceRetryTopicIds.filter(keepTopic));
     this.currentChoiceWord = getWord(state.currentChoiceTopicId);
-    this.currentChoiceAttemptCount = state.currentChoiceAttemptCount;
-    this.currentChoiceClickedOptionIds = new Set(state.currentChoiceClickedOptionIds);
+    this.currentChoiceAttemptCount = this.currentChoiceWord ? state.currentChoiceAttemptCount : 0;
+    this.currentChoiceClickedOptionIds = new Set(this.currentChoiceWord ? state.currentChoiceClickedOptionIds : []);
     const choiceOptions = this.currentChoiceWord?.front.options ?? [];
     const choiceOptionsById = new Map(choiceOptions.map((option) => [option.id, option]));
     this.currentChoiceOptions = state.currentChoiceOptionIds
@@ -425,16 +431,16 @@ export class ReviewFlow {
     this.detailReason = state.detailReason;
     this.spellQueue = getWords(state.spellQueueTopicIds);
     this.spellRetryQueue = getWords(state.spellRetryQueueTopicIds);
-    this.spellRetrySet = new Set(state.spellRetryTopicIds);
+    this.spellRetrySet = new Set(state.spellRetryTopicIds.filter(keepTopic));
     this.currentSpellWord = getWord(state.currentSpellTopicId);
-    this.currentSpellWrong = state.currentSpellWrong;
+    this.currentSpellWrong = this.currentSpellWord ? state.currentSpellWrong : false;
     const persistedKilledTopicIds = this.allWords
       .filter((word) =>
         isKilledRecord(studyRecordStore.getRecord(this.context.bookId, word.topicId)),
       )
       .map((word) => word.topicId);
     this.killedTopicIds = new Set([
-      ...(state.killedTopicIds ?? []),
+      ...(state.killedTopicIds ?? []).filter(keepTopic),
       ...persistedKilledTopicIds,
     ]);
     this.killedTopicIds.forEach((topicId) => this.removeTopicFromQueues(topicId));

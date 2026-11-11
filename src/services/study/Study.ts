@@ -52,7 +52,8 @@ export class Study {
     this.currentWordCard = null;
     this.failMap = new Map();
     this.useTimeMap = new Map();
-    this.words = words;
+    const availableIds = new Set(uiModels.map((model) => model.topicId));
+    this.words = words.filter((word) => availableIds.has(word.topic_id));
     this.context = context;
     this.wordStudyTime = Date.now();
     this.completed = false;
@@ -74,8 +75,19 @@ export class Study {
   ): Study {
     const instance = new Study(words, uiModels, context, onUpload, onCheckpoint);
     const modelsByTopicId = new Map(uiModels.map((model) => [model.topicId, model]));
-    instance.processIterator = ProcessIterator.restore(uiModels, state.process);
-    if (state.currentCard) {
+    const skippedTopicIds = new Set(state.wordTopicIds.filter((topicId) => !modelsByTopicId.has(topicId)));
+    const keepTopic = (topicId: number) => !skippedTopicIds.has(topicId);
+    const { queues } = state.process;
+    instance.processIterator = ProcessIterator.restore(uiModels, {
+      ...state.process,
+      queues: {
+        recognition: queues.recognition?.filter(keepTopic) ?? [],
+        understanding: queues.understanding?.filter(keepTopic) ?? [],
+        mastery: queues.mastery?.filter(keepTopic) ?? [],
+      },
+    });
+
+    if (state.currentCard && keepTopic(state.currentCard.topicId)) {
       const model = modelsByTopicId.get(state.currentCard.topicId);
       if (!model) {
         throw new Error(`Cannot restore study card ${state.currentCard.topicId}`);
@@ -83,18 +95,22 @@ export class Study {
       instance.currentWordCard = WordCard.restore(model, state.currentCard);
     }
     instance.failMap = new Map(
-      Object.entries(state.failMap).map(([topicId, count]) => [Number(topicId), count]),
+      Object.entries(state.failMap)
+        .filter(([topicId]) => keepTopic(Number(topicId)))
+        .map(([topicId, count]) => [Number(topicId), count]),
     );
     instance.useTimeMap = new Map(
-      Object.entries(state.useTimeMap).map(([topicId, time]) => [Number(topicId), time]),
+      Object.entries(state.useTimeMap)
+        .filter(([topicId]) => keepTopic(Number(topicId)))
+        .map(([topicId, time]) => [Number(topicId), time]),
     );
-    const persistedKilledTopicIds = state.wordTopicIds.filter((topicId) =>
-      isKilledRecord(studyRecordStore.getRecord(context.bookId, topicId)),
-    );
+    const persistedKilledTopicIds = instance.words
+      .filter((word) => isKilledRecord(studyRecordStore.getRecord(context.bookId, word.topic_id)))
+      .map((word) => word.topic_id);
     // 草稿记录本会话已经“斩并跳过”的单词，正式记录补充其他入口产生的斩词。
     // 即使用户随后从管理页取消斩词，本轮也不应把未作答的词按普通完成再次结算。
     instance.killedTopicIds = new Set([
-      ...(state.killedTopicIds ?? []),
+      ...(state.killedTopicIds ?? []).filter(keepTopic),
       ...persistedKilledTopicIds,
     ]);
     instance.killedTopicIds.forEach((topicId) => {
@@ -139,6 +155,9 @@ export class Study {
   public async resume(): Promise<void> {
     if (!this.currentWordCard && !this.completed) {
       await this.process();
+    } else if (this.currentWordCard) {
+      this.loadCurrentOptions();
+      this.checkpoint();
     }
   }
 
@@ -195,7 +214,6 @@ export class Study {
 
     this.currentWordCard = this.processIterator.next();
     
-    // Progressive Option Loading: Check and load options if missing
     if (this.currentWordCard) {
       const topicId = this.currentWordCard.getId();
       
@@ -210,23 +228,33 @@ export class Study {
         'study-detail-common'
       ).catch(console.error);
 
-      if (!StudyUtils.getCachedOptions(topicId)) {
-        if (this.currentWordCard.uiModel.front.options.length) {
-          StudyUtils.setCachedOptions(topicId, this.currentWordCard.uiModel.front.options);
-        } else {
-        const wordInfo = this.words.find(w => w.topic_id === topicId);
-        if (wordInfo) {
-          // Fire and forget - notify when loaded to update UI
-          StudyUtils.loadOptionsForTopic(wordInfo, this.currentWordCard.uiModel).then(() => {
-            this.notify();
-          }).catch(console.error);
-        }
-        }
-      }
+      this.loadCurrentOptions();
     }
 
     this.wordStudyTime = Date.now();
     this.notify();
+  }
+
+  private loadCurrentOptions(): void {
+    const card = this.currentWordCard;
+    if (!card || StudyUtils.getCachedOptions(card.getId())) {
+      return;
+    }
+
+    const { options } = card.uiModel.front;
+    if (options.length > 0) {
+      StudyUtils.setCachedOptions(card.getId(), options);
+      return;
+    }
+
+    const word = this.words.find((item) => item.topic_id === card.getId());
+    if (word) {
+      StudyUtils.loadOptionsForTopic(word, card.uiModel).then(() => {
+        if (this.currentWordCard === card) {
+          this.notify();
+        }
+      }).catch(console.error);
+    }
   }
 
   public getCurrentWord(): WordCard | null {

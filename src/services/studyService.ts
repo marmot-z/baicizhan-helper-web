@@ -30,6 +30,11 @@ export interface UpdateDoneDataResponse {
   syncVersion: number;
 }
 
+export interface XModeWordDetailsResult {
+  words: StudyUIModel[];
+  missingTopicIds: number[];
+}
+
 export const studyService = {
   // 获取用户学习计划信息
   async getBookPlanInfo(): Promise<SelectBookPlanInfo[]> {
@@ -220,14 +225,52 @@ export const studyService = {
   },
 
   // 获取x模式单词详情
-  async getXModeWordDetails(bookId: number, topicIds: number[]): Promise<StudyUIModel[]> {
+  async getXModeWordDetails(bookId: number, topicIds: number[]): Promise<XModeWordDetailsResult> {
+    const requestedIds = new Set(topicIds);
+    if (requestedIds.size === 0) {
+      return { words: [], missingTopicIds: [] };
+    }
+
     const params = new URLSearchParams();
     params.append('bookId', bookId.toString());
+    params.append('topicIds', [...requestedIds].join(','));
     
-    // 处理数组参数，以逗号连接
-    params.append('topicIds', topicIds.join(','));
+    const response = await ApiService.post<(XModeWordDetail | null)[]>(`/xmode/wordDetails?${params.toString()}`);
+    if (!Array.isArray(response?.data)) {
+      throw new Error('单词详情响应格式异常，请重新加载');
+    }
 
-    const response = await ApiService.post<XModeWordDetail[]>(`/xmode/wordDetails?${params.toString()}`);
-    return response.data.map(detail => StudyUtils.adaptXModeToUIModel(detail, detail.collected));
+    const wordsByTopicId = new Map<number, StudyUIModel>();
+    for (const detail of response.data) {
+      const word = detail?.resource?.word;
+      if (!detail || !word || typeof word.word !== 'string' || !word.word.trim()
+        || !requestedIds.has(word.topicId) || wordsByTopicId.has(word.topicId)) {
+        continue;
+      }
+
+      try {
+        const model = StudyUtils.adaptXModeToUIModel(detail, detail.collected === true);
+        wordsByTopicId.set(word.topicId, model);
+      } catch {
+        // 单条详情转换失败时，继续处理本批其他单词。
+      }
+    }
+
+    const words: StudyUIModel[] = [];
+    const missingTopicIds: number[] = [];
+    for (const topicId of requestedIds) {
+      const word = wordsByTopicId.get(topicId);
+      if (word) {
+        words.push(word);
+      } else {
+        missingTopicIds.push(topicId);
+      }
+    }
+
+    if (missingTopicIds.length > 0) {
+      console.warn('部分单词详情不可用', { bookId, topicIds: missingTopicIds });
+    }
+
+    return { words, missingTopicIds };
   },
 };
