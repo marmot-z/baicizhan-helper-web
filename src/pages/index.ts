@@ -20,3 +20,4 @@ export { default as ReviewPage } from './review/ReviewPage';
 export { default as CurrentBookWordList } from './CurrentBookWordList';
 export { default as Feedback } from './Feedback';
 export { default as Settings } from './Settings';
+export { default as LearningAgent } from './LearningAgent';

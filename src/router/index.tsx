@@ -22,6 +22,7 @@ import {
   CurrentBookWordList,
   Feedback,
   Settings,
+  LearningAgent,
 } from '../pages';
 import { ProtectedRoute, PublicRoute } from '../components/RouteGuards';
 import MainLayout from '../layouts/MainLayout';
@@ -107,6 +108,7 @@ export const router = createBrowserRouter([
         path: ROUTES.SETTINGS,
         element: <Settings />,
       },
+      ...(import.meta.env.DEV ? [{ path: ROUTES.LEARNING_AGENT, element: <LearningAgent /> }] : []),
     ],
   },
   {

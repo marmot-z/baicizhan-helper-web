@@ -23,6 +23,7 @@ export const ROUTES = {
   WORD_LIST: '/page/word-list',
   FEEDBACK: '/page/feedback',
   SETTINGS: '/page/settings',
+  LEARNING_AGENT: '/page/learning-agent',
 } as const;
 
 // API端点常量

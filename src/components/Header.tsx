@@ -9,6 +9,7 @@ import {
   faCommentDots,
   faDownload,
   faGear,
+  faGraduationCap,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuthStore } from '../stores/authStore';
 import ExtensionsDownloadModel from './ExtensionsDownloadModel';
@@ -98,6 +99,12 @@ export default function Header() {
                         <FontAwesomeIcon icon={faGear} style={{ marginRight: '8px' }} />
                         设置
                       </Link>
+                      {import.meta.env.DEV && (
+                        <Link to={ROUTES.LEARNING_AGENT}>
+                          <FontAwesomeIcon icon={faGraduationCap} style={{ marginRight: '8px' }} />
+                          英语学习 Agent
+                        </Link>
+                      )}
                       <a
                         href="#"
                         onClick={(e) => {
