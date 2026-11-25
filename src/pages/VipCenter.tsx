@@ -8,6 +8,7 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { VipService } from '../services/vipService';
+import apiClient from '../services/api';
 import { toast } from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQrcode } from '@fortawesome/free-solid-svg-icons';
@@ -382,13 +383,11 @@ const VipCenter: React.FC = () => {
       </div>
 
       {/* 售后群悬浮图标 */}
-      <a 
-        href="#" 
+      <a
+        href={apiClient.getUri({ url: '/qrcode' })}
+        target="_blank"
+        rel="noreferrer"
         className={`${styles.floatingBanner} fixed flex justify-center items-center no-underline transition-colors duration-300`}
-        onClick={(e) => {
-          e.preventDefault();
-          window.open('http://www.baicizhan-helper.cn/qrcode', '_blank');
-        }}
       >
         <div>
           <div 

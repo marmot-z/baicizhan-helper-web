@@ -145,6 +145,11 @@
   background: #fff;
 }
 
+.bookTile[aria-pressed='true'] {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
 .cardTop {
   display: flex;
   align-items: flex-start;

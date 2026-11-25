@@ -57,8 +57,7 @@ const getResponseErrorMessage = (
 
 // API基础配置
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? '/api' : '//www.baicizhan-helper.cn/');
+  import.meta.env.DEV ? import.meta.env.VITE_API_BASE_URL || '/api' : '/';
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({

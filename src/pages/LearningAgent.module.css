@@ -1,0 +1,520 @@
+.page {
+  --text: #172439;
+  --muted: #50627a;
+  --surface: #fff;
+  --border: #e1e8f1;
+  --book-panel: #eff5ff;
+  --plan-panel: #f5f8fc;
+  --progress-track: #d5e2f5;
+  --progress-fill: #2563eb;
+  --control-border: #afc0d6;
+  --control-accent: #1d4ed8;
+  --disabled-button: #e2e8f0;
+  --disabled-text: #52637a;
+  --error: #b91c1c;
+  --card-shadow: 0 4px 18px rgb(15 23 42 / 5%);
+
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 36px 20px 48px;
+  color: var(--text);
+}
+
+:global(.dark) .page {
+  --text: #f1f5f9;
+  --muted: #aebdd1;
+  --surface: #111827;
+  --border: #2c3b51;
+  --book-panel: #1a2942;
+  --plan-panel: #1b2638;
+  --progress-track: #344561;
+  --progress-fill: #60a5fa;
+  --control-border: #60738f;
+  --control-accent: #93c5fd;
+  --disabled-button: #2d3a50;
+  --disabled-text: #aebdd1;
+  --error: #fca5a5;
+  --card-shadow: none;
+}
+
+.pageTitle {
+  margin: 0 0 20px;
+  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+  gap: 32px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+}
+
+.bookPanel {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 24px;
+  min-width: 0;
+  padding: 26px 20px;
+  border-radius: 10px;
+  background: var(--book-panel);
+}
+
+.coverFrame {
+  position: relative;
+}
+
+.cover,
+.coverImage,
+.emptyCover {
+  inline-size: clamp(168px, 24vw, 224px);
+  aspect-ratio: 3 / 4;
+}
+
+.cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  padding: 14px 22px 30px;
+  border-radius: 4px 9px 9px 4px;
+  background:
+    repeating-radial-gradient(circle at 110% 110%, transparent 0 15px, #bcd9ff25 16px 17px, transparent 18px 26px),
+    linear-gradient(145deg, #2562ba, #172f65 78%);
+  box-shadow: inset 5px 0 #132f685c, 0 9px 16px #102b5c38;
+  color: #fff;
+}
+
+.coverImage {
+  display: block;
+  object-fit: contain;
+  border-radius: 4px 9px 9px 4px;
+  box-shadow: 0 9px 16px #102b5c38;
+}
+
+.overview[data-empty] .bookPanel {
+  min-height: 400px;
+}
+
+.emptyCover {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--control-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.emptyCover:hover {
+  border-color: var(--control-accent);
+  color: var(--control-accent);
+}
+
+.coverTitle {
+  color: #deecff;
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.progress {
+  width: 100%;
+  max-width: 224px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.progressCount {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressCount strong {
+  color: var(--text);
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.progress progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--progress-track);
+}
+
+.progress progress::-webkit-progress-bar {
+  background: var(--progress-track);
+}
+
+.progress progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--progress-fill);
+}
+
+.progress progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--progress-fill);
+}
+
+.details {
+  min-width: 0;
+  align-self: center;
+  padding-block: 6px;
+}
+
+.introduction h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  line-height: 1.35;
+}
+
+.details p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.detailSection {
+  margin-top: 19px;
+  padding-top: 17px;
+  border-top: 1px solid var(--border);
+}
+
+.detailSection h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.overview[data-empty] .details > section:not(:last-child) {
+  min-height: 76px;
+}
+
+.planHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.planHeader h3 {
+  margin: 0;
+}
+
+.editButton {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--control-accent);
+  cursor: pointer;
+}
+
+.editButton:hover,
+.editButton[aria-expanded='true'] {
+  border-color: var(--control-accent);
+  background: var(--plan-panel);
+}
+
+.bookEditButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.plan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+.planEntry {
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--plan-panel);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.plan dd {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.plan dd strong {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.planInput {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 5px;
+  padding: 5px 8px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.planActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.planActions button {
+  min-height: 36px;
+  padding: 5px 14px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.planActions .savePlan {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.editButton:focus-visible,
+.emptyCover:focus-visible,
+.planInput:focus-visible,
+.planActions button:focus-visible,
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 2px solid var(--control-accent);
+  outline-offset: 2px;
+}
+
+.feedback {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.bookPicker {
+  width: min(880px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 20%);
+}
+
+.bookPicker::backdrop {
+  background: rgb(15 23 42 / 56%);
+}
+
+.bookPicker:has(.pickerConfirmation) {
+  width: min(440px, calc(100% - 32px));
+}
+
+.pickerCatalog {
+  display: grid;
+  max-height: calc(100dvh - 34px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.pickerCatalog[hidden] {
+  display: none;
+}
+
+.pickerTitle {
+  margin: 0;
+  padding: 18px 20px 0;
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+.pickerBody {
+  min-height: 0;
+  padding: 0 20px 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pickerConfirmation {
+  max-height: calc(100dvh - 34px);
+  overflow-y: auto;
+}
+
+.pickerConfirmation p {
+  margin: 12px 20px;
+  overflow-wrap: anywhere;
+}
+
+.pickerError {
+  color: var(--error);
+}
+
+.pickerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 38px;
+  padding: 6px 15px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.primaryAction {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.primaryAction:disabled,
+.secondaryAction:disabled {
+  border-color: var(--border);
+  background: var(--disabled-button);
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.startButton {
+  min-height: 46px;
+  min-width: 168px;
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+}
+
+.startButton:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.startButton[data-empty]:disabled {
+  background: var(--disabled-button);
+  color: var(--disabled-text);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 16px 36px;
+  }
+
+  .pageTitle {
+    margin-bottom: 14px;
+  }
+
+  .overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .bookPanel {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .cover,
+  .coverImage {
+    inline-size: 104px;
+  }
+
+  .cover {
+    padding: 5px 10px 16px;
+  }
+
+  .overview[data-empty] .bookPanel {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .emptyCover {
+    inline-size: 100%;
+    min-height: 104px;
+    aspect-ratio: auto;
+  }
+
+  .coverTitle {
+    font-size: 0.9rem;
+  }
+
+  .details {
+    padding-block: 0;
+  }
+
+  .actions {
+    margin-top: 16px;
+  }
+
+  .startButton {
+    width: 100%;
+  }
+}

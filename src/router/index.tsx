@@ -108,7 +108,10 @@ export const router = createBrowserRouter([
         path: ROUTES.SETTINGS,
         element: <Settings />,
       },
-      ...(import.meta.env.DEV ? [{ path: ROUTES.LEARNING_AGENT, element: <LearningAgent /> }] : []),
+      {
+        path: ROUTES.LEARNING_AGENT,
+        element: <LearningAgent />,
+      },
     ],
   },
   {

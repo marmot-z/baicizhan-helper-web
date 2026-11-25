@@ -43,8 +43,8 @@ export const studyService = {
   },
 
   // 获取全部单词书信息
-  async getAllBooks(): Promise<AllBooksResponse> {
-    const response = await ApiService.get<BooksInfoResponse>('/booksInfo');
+  async getAllBooks(signal?: AbortSignal): Promise<AllBooksResponse> {
+    const response = await ApiService.get<BooksInfoResponse>('/booksInfo', { signal });
     return {
       books: response.data.books_info ?? [],
       categories: response.data.categories_info ?? [],

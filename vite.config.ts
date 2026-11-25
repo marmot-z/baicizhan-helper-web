@@ -12,12 +12,13 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '^/api/learning-agent(?:/|\\?|$)': {
+        '^/(?:agent|api/learning-agent)(?:/|\\?|$)': {
           target: LEARNING_AGENT_PROXY_TARGET || 'http://127.0.0.1:18034',
-          changeOrigin: true
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/agent(?=\/|\?|$)/, '/api/learning-agent')
         },
-        '/api': {
-          target: API_PROXY_TARGET || 'http://localhost:18033',
+        '^/api(?:/|\\?|$)': {
+          target: API_PROXY_TARGET || 'https://www.baicizhan-helper.cn',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }
