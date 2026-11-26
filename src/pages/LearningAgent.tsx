@@ -7,6 +7,7 @@ import { learningAgentService } from '../services/learningAgentService';
 import type { LearningAgentProfile } from '../services/learningAgentService';
 import { useAuthStore } from '../stores/authStore';
 import LearningAgentBookPicker from './LearningAgentBookPicker';
+import LearningAgentRouteDialog from './LearningAgentRouteDialog';
 import styles from './LearningAgent.module.css';
 
 const planFields = [
@@ -25,6 +26,8 @@ function LearningAgentPage() {
   const [loadError, setLoadError] = useState('');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [routeOpen, setRouteOpen] = useState(false);
+  const routeAction = useRef<HTMLButtonElement>(null);
   const bookAction = useRef<HTMLButtonElement>(null);
   const [plan, setPlan] = useState({ dailyNew: 10, dailyReview: 5 });
   const [isEditing, setIsEditing] = useState(false);
@@ -148,6 +151,11 @@ function LearningAgentPage() {
           <section className={styles.detailSection}>
             <h3>学习路线概要</h3>
             {profile?.learningRoute && <p>{profile.learningRoute}</p>}
+            {profile && !profile.learningRoute && (
+              <button ref={routeAction} className={styles.secondaryAction} type="button" aria-haspopup="dialog" onClick={() => setRouteOpen(true)}>
+                生成学习路线
+              </button>
+            )}
           </section>
 
           <section className={styles.detailSection}>
@@ -221,6 +229,17 @@ function LearningAgentPage() {
           onSelected={(updatedProfile) => {
             setProfile(updatedProfile);
             closeBookPicker();
+            setRouteOpen(true);
+          }}
+        />
+      )}
+      {routeOpen && profile && (
+        <LearningAgentRouteDialog
+          profile={profile}
+          onSaved={setProfile}
+          onClose={() => {
+            setRouteOpen(false);
+            window.requestAnimationFrame(() => (routeAction.current ?? bookAction.current)?.focus());
           }}
         />
       )}

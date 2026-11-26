@@ -15,7 +15,18 @@ export default defineConfig(({ mode }) => {
         '^/(?:agent|api/learning-agent)(?:/|\\?|$)': {
           target: LEARNING_AGENT_PROXY_TARGET || 'http://127.0.0.1:18034',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/agent(?=\/|\?|$)/, '/api/learning-agent')
+          rewrite: (path) => path.replace(/^\/agent(?=\/|\?|$)/, '/api/learning-agent'),
+          configure: (proxy) => {
+            // Propagate cancellation even before the Agent sends SSE headers.
+            proxy.on('proxyReq', (proxyRequest, request, response) => {
+              if (request.url?.split('?', 1)[0] !== '/api/learning-agent/profile/learning-route') return;
+              const onClose = () => {
+                if (!response.writableEnded) proxyRequest.destroy();
+              };
+              response.once('close', onClose);
+              proxyRequest.once('close', () => response.removeListener('close', onClose));
+            });
+          },
         },
         '^/api(?:/|\\?|$)': {
           target: API_PROXY_TARGET || 'https://www.baicizhan-helper.cn',
