@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [userBooks, setUserBooks] = useState<UserBookItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { checkAndGetUserInfo } = useAuthStore();
-  const { currentBook, studyPlan, fetchStudyData, homeState, lastStudyStatistics, lastReviewStatistics } =
+  const { currentBook, studyPlan, fetchStudyData, homeState, lastStudyStatistics, lastReviewStatistics, planLoadError, studyStateError } =
     useStudyStore();
   const [studiedWordNum, setStudiedWordNum] = useState(0);
   const [reviewedWordNum, setReviewedWordNum] = useState(0);
@@ -37,8 +37,20 @@ export default function Dashboard() {
     // 检查并获取用户信息
     checkAndGetUserInfo();
     
-    fetchStudyData();
+    void fetchStudyData().catch(() => {});
 
+    const fetchUserBooks = async () => {
+      try {
+        const books = await bookService.getBooks();
+        setUserBooks(books);
+      } catch (error) {
+        console.error('Failed to fetch user books:', error);
+      }
+    };
+    void fetchUserBooks();
+  }, [fetchStudyData, checkAndGetUserInfo]);
+
+  useEffect(() => {
     const beginOfToday = new Date().setHours(0, 0, 0, 0);
     if (lastStudyStatistics?.updateTime &&
         lastStudyStatistics.updateTime > beginOfToday) {
@@ -54,20 +66,7 @@ export default function Dashboard() {
       setReviewedWordNum(0);
     }
     
-    // 获取用户单词本信息
-    const fetchUserBooks = async () => {
-      try {
-        const books = await bookService.getBooks();
-        setUserBooks(books);
-      } catch (error) {
-        console.error('Failed to fetch user books:', error);
-      }
-    };
-    
-    fetchUserBooks();
   }, [
-    fetchStudyData,
-    checkAndGetUserInfo,
     lastStudyStatistics?.updateTime,
     lastStudyStatistics?.words.length,
     lastReviewStatistics?.updateTime,
@@ -95,6 +94,10 @@ export default function Dashboard() {
       </div>
 
       <main className="container">
+        {(planLoadError || studyStateError) && <div role="alert">
+          <p>{planLoadError ?? studyStateError}</p>
+          <button type="button" onClick={() => { void fetchStudyData().catch(() => {}); }}>重新加载学习进度</button>
+        </div>}
         <section className="study-review" style={{
            flexDirection: isMobile ? 'column' : 'row'
          }}>

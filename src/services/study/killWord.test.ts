@@ -1,11 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { closeStudyDatabase, mutateStudyAccount } from './database';
 import type { UserRoadMapElementV2 } from '../../types';
 import {
+  createEmptyBookStateSnapshot,
   createEmptyHomeState,
   createTopicLearnRecord,
   isKilledScore,
   toKilledScore,
   toUnkilledScore,
+  type TopicLearnRecord,
 } from '../../types/studyRecord';
 import { calculateHomeState } from './homeStateCalculator';
 import { ProcessIterator } from './ProcessIterator';
@@ -31,6 +35,26 @@ class MemoryStorage implements Storage {
   removeItem(key: string) { this.values.delete(key); }
   setItem(key: string, value: string) { this.values.set(key, value); }
 }
+
+beforeEach(async () => {
+  await closeStudyDatabase();
+  Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: new IDBFactory() });
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true, value: { localStorage: new MemoryStorage() },
+  });
+  await studyRecordStore.initialize();
+});
+afterEach(async () => { vi.restoreAllMocks(); await closeStudyDatabase(); });
+
+const seedRecords = (...records: TopicLearnRecord[]) => mutateStudyAccount((account) => {
+  for (const record of records) {
+    const book = account.books[record.bookId] ??= createEmptyBookStateSnapshot();
+    book.totalRecords[record.topicId] = record;
+  }
+});
+
+const synced = { upload: 'synced' as const, download: 'synced' as const,
+  pendingCount: 0, needsFullPull: false, errors: [] };
 
 const createModel = (topicId: number): StudyUIModel => ({
   topicId,
@@ -77,7 +101,7 @@ describe('kill score protocol', () => {
     expect(toUnkilledScore(score)).toBe(expected);
   });
 
-  it('records kill once and does not turn negative scores positive across days', () => {
+  it('records kill once and does not turn negative scores positive across days', async () => {
     const killed = applyKill(undefined, {
       bookId: 10,
       topicId: 1,
@@ -116,7 +140,7 @@ describe('kill score protocol', () => {
 });
 
 describe('killed word scheduling', () => {
-  it('counts a newly killed word as learned but excludes it from learn and review pools', () => {
+  it('counts a newly killed word as learned but excludes it from learn and review pools', async () => {
     const killedRecord = createTopicLearnRecord({
       bookId: 10,
       topicId: 1,
@@ -136,7 +160,7 @@ describe('killed word scheduling', () => {
     expect(state.unreviewedWords).toEqual([]);
   });
 
-  it('preserves the APP today-reviewed classification for a review word killed today', () => {
+  it('preserves the APP today-reviewed classification for a review word killed today', async () => {
     const killedRecord = createTopicLearnRecord({
       bookId: 10,
       topicId: 1,
@@ -156,7 +180,7 @@ describe('killed word scheduling', () => {
     expect(state.unreviewedWords).toEqual([]);
   });
 
-  it('removes a topic from all three learning queues', () => {
+  it('removes a topic from all three learning queues', async () => {
     const iterator = new ProcessIterator([createModel(1), createModel(2)]);
     iterator.removeTopic(1);
     const state = iterator.exportState();
@@ -189,11 +213,11 @@ describe('wordStatusService', () => {
     vi.spyOn(
       useStudyStore.getState(),
       'syncCurrentBookState'
-    ).mockResolvedValue();
+    ).mockResolvedValue(synced);
   });
 
-  it('persists a killed word, updates live lists and queues the remote payload', () => {
-    const killed = wordStatusService.killWord({
+  it('persists a killed word, updates live lists and queues the remote payload', async () => {
+    const killed = await wordStatusService.killWord({
       bookId: 10,
       topicId: 1,
       tagId: 7,
@@ -218,14 +242,14 @@ describe('wordStatusService', () => {
     );
   });
 
-  it('replaces the pending kill with an unkill and moves the word out of killed lists', () => {
-    wordStatusService.killWord({
+  it('replaces the pending kill with an unkill and moves the word out of killed lists', async () => {
+    await wordStatusService.killWord({
       bookId: 10,
       topicId: 1,
       isTodayNew: true,
     });
 
-    const restored = wordStatusService.unkillWord(10, 1);
+    const restored = await wordStatusService.unkillWord(10, 1);
 
     expect(restored.topicScore).toBe(5);
     expect(studyRecordStore.getRecord(10, 1)?.topicScore).toBe(5);
@@ -242,8 +266,8 @@ describe('wordStatusService', () => {
     ).toEqual([1]);
   });
 
-  it('rejects unkill when the word is not currently killed', () => {
-    expect(() => wordStatusService.unkillWord(10, 1)).toThrow(
+  it('rejects unkill when the word is not currently killed', async () => {
+    await expect(wordStatusService.unkillWord(10, 1)).rejects.toThrow(
       '该单词当前不是已斩状态'
     );
     expect(studyRecordStore.getPendingDoneRecords(10)).toEqual([]);
@@ -261,7 +285,7 @@ describe('Study.killCurrent', () => {
   });
 
   it('persists once, removes retries and advances to the next word', async () => {
-    const killSpy = vi.spyOn(wordStatusService, 'killWord').mockReturnValue(
+    const killSpy = vi.spyOn(wordStatusService, 'killWord').mockResolvedValue(
       createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 }),
     );
     const study = new Study(
@@ -275,7 +299,7 @@ describe('Study.killCurrent', () => {
     await Promise.all([study.killCurrent(), study.killCurrent()]);
 
     expect(killSpy).toHaveBeenCalledTimes(1);
-    expect(killSpy).toHaveBeenCalledWith(expect.objectContaining({ topicId: 1, errNumDelta: 2 }));
+    expect(killSpy).toHaveBeenCalledWith(expect.objectContaining({ topicId: 1, errNumDelta: 0 }));
     expect(study.getCurrentWord()?.getId()).toBe(2);
     expect(study.exportState().killedTopicIds).toEqual([1]);
     expect(Object.values(study.exportState().process.queues).flat()).not.toContain(1);
@@ -283,7 +307,7 @@ describe('Study.killCurrent', () => {
   });
 
   it('completes normally when the final word is killed', async () => {
-    vi.spyOn(wordStatusService, 'killWord').mockReturnValue(
+    vi.spyOn(wordStatusService, 'killWord').mockResolvedValue(
       createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 }),
     );
     const study = new Study(
@@ -308,12 +332,12 @@ describe('Study.killCurrent', () => {
       doNum: 1,
       isTodayNew: true,
     });
-    studyRecordStore.upsertRecord(10, killed);
-    vi.spyOn(wordStatusService, 'killWord').mockReturnValue(killed);
+    await seedRecords(killed);
+    vi.spyOn(wordStatusService, 'killWord').mockResolvedValue(killed);
     vi.spyOn(studyService, 'xModeDaka').mockResolvedValue();
     vi.spyOn(studyService, 'reportEvent').mockResolvedValue();
     vi.spyOn(studyService, 'reportFinishDailyPlan').mockResolvedValue();
-    vi.spyOn(useStudyStore.getState(), 'syncCurrentBookState').mockResolvedValue();
+    vi.spyOn(useStudyStore.getState(), 'syncCurrentBookState').mockResolvedValue(synced);
     const study = new Study(
       [createRoadmapWord(1)],
       [createModel(1)],
@@ -342,12 +366,12 @@ describe('sessions with unavailable word resources', () => {
     useStudyStore.setState({
       wordList: roadmap,
       wordListBookId: 10,
-      syncedBookId: 10,
+      preparedBookId: 10,
       homeState: createEmptyHomeState(),
       learnRecords: {},
       lastStudyStatistics: null,
     });
-    vi.spyOn(useStudyStore.getState(), 'syncCurrentBookState').mockResolvedValue();
+    vi.spyOn(useStudyStore.getState(), 'syncCurrentBookState').mockResolvedValue(synced);
     vi.spyOn(studyService, 'reportEvent').mockResolvedValue();
     vi.spyOn(studyService, 'reportFinishDailyPlan').mockResolvedValue();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -355,6 +379,8 @@ describe('sessions with unavailable word resources', () => {
 
   it('resumes learning at the same stage after removing the unavailable card and retries', async () => {
     const state: LearnSessionState = {
+      sessionId: 'learn-session',
+      question: { questionId: 'learn-question-2', topicId: 2, phase: 'understanding', hadWrong: true, elapsedTime: 50, committed: false },
       wordTopicIds: [1, 2, 3],
       process: { currentIteratorIndex: 1, queues: { recognition: [], understanding: [2, 3], mastery: [1, 2, 3] } },
       currentCard: { topicId: 2, stage: 'understanding', showAnswer: false, attemptCount: 1, clickedOptionIds: [10] },
@@ -397,14 +423,9 @@ describe('sessions with unavailable word resources', () => {
 
   it('continues a partial review after a failed batch and only saves completed words', async () => {
     const priorRecords = roadmap.map((word) => createTopicLearnRecord({ bookId: 10, topicId: word.topic_id, topicScore: 2 }));
-    studyRecordStore.upsertRecords(10, priorRecords);
+    await seedRecords(...priorRecords);
     useStudyStore.getState().loadLocalLearnRecords(10);
     useStudyStore.getState().recomputeHomeState(10);
-    vi.spyOn(studyService, 'getSettings').mockResolvedValue();
-    vi.spyOn(studyService, 'getCreditStatus').mockResolvedValue({
-      inExperiment: false, reviewCreditObtained: false, studyCreditObtained: false,
-    });
-    vi.spyOn(studyService, 'getStudyRecord').mockResolvedValue();
     vi.spyOn(studyService, 'saveStudyRecord').mockResolvedValue();
     vi.spyOn(feedbackSoundPlayer, 'playCorrect').mockImplementation(() => {});
     vi.spyOn(ApiService, 'post')

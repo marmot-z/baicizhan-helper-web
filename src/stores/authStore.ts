@@ -7,7 +7,7 @@ import { useWordBookStore } from './wordBookStore';
 import { studySessionStore } from '../services/study/sessionStore';
 import { studyRecordStore } from '../services/study/recordStore';
 import { syncBeforeAccountSwitch } from '../services/study/syncBeforeAccountSwitch';
-import { accountSession } from '../services/accountSession';
+import { accountSession, createAccountStorageId } from '../services/accountSession';
 
 export type LoginMethod = 'phone' | 'weixin' | null;
 
@@ -17,6 +17,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loginMethod: LoginMethod;
   isSwitchingAccount: boolean;
+  accountStorageId: string | null;
   login: (credentials: LoginRequest, inviteCode?: string) => Promise<void>;
   loginWithWeixin: () => Promise<boolean>;
   logout: () => Promise<void>;
@@ -28,10 +29,12 @@ export function canLoginWithWeixin(state: Pick<AuthState, 'isAuthenticated' | 'l
   return state.isAuthenticated && state.loginMethod !== 'weixin' && Boolean(state.user?.some((user) => user.provider === 'weixin'));
 }
 
-function clearAccountData() {
+async function clearAccountData() {
   useStudyStore.getState().clearStudyData();
-  studySessionStore.clearAll();
-  studyRecordStore.clearAll();
+  await studyRecordStore.clearAll();
+  await studySessionStore.clearAll();
+  window.localStorage.removeItem('study-record-store');
+  window.localStorage.removeItem('study-session-store');
   useWordBookStore.getState().clearAllData();
 }
 
@@ -45,7 +48,10 @@ export const useAuthStore = create<AuthState>()(
 
         accountSession.invalidate();
         const version = accountSession.getVersion();
-        set({ user: null, token, loginMethod, isAuthenticated: true });
+        const accountStorageId = createAccountStorageId();
+        accountSession.bindStorageSession(token, accountStorageId);
+        set({ user: null, token, loginMethod, isAuthenticated: true, accountStorageId });
+        studyRecordStore.configureAccount(accountStorageId);
 
         try {
           const user = await authService.getUserInfo(true);
@@ -64,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: false,
         loginMethod: null,
         isSwitchingAccount: false,
+        accountStorageId: null,
 
         login: async (credentials, inviteCode) => {
           const version = accountSession.getVersion();
@@ -77,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('当前无法切换微信账号');
           }
 
+          accountSession.assertPersistedSession(get().token);
           set({ isSwitchingAccount: true });
           accountSession.setSwitching(true);
 
@@ -86,25 +94,37 @@ export const useAuthStore = create<AuthState>()(
             const token = await authService.loginWithWeixin();
             accountSession.assertCurrent(version);
 
-            // 成功取得新凭据后才登出旧账号；清理与安装新会话之间不让出执行权。
+            // Clear the captured old namespace while its credentials still own it.
+            await clearAccountData();
+            accountSession.assertCurrent(version);
             accountSession.invalidate();
             set({ user: null, token: null, loginMethod: null, isAuthenticated: false });
-            clearAccountData();
             await completeLogin(token, 'weixin');
             return discardedRecords;
           } catch (error) {
-            accountSession.setSwitching(false);
-            set({ isSwitchingAccount: false });
+            // A stale tab must not persist its old credentials over another tab's login.
+            if (!accountSession.invalidateIfPersistedSessionChanged()) {
+              accountSession.setSwitching(false);
+              set({ isSwitchingAccount: false });
+            }
             throw error;
           }
           // 成功后保持页面锁定，由入口重新加载首页。
         },
 
         logout: async () => {
+          accountSession.assertPersistedSession(get().token);
           accountSession.invalidate();
-          accountSession.setSwitching(false);
-          set({ user: null, token: null, loginMethod: null, isAuthenticated: false, isSwitchingAccount: false });
-          clearAccountData();
+          accountSession.setSwitching(true);
+          try { await clearAccountData(); }
+          finally {
+            if (!accountSession.invalidateIfPersistedSessionChanged()) {
+              accountSession.setSwitching(false);
+              set({ user: null, token: null, loginMethod: null, isAuthenticated: false, isSwitchingAccount: false, accountStorageId: null });
+              accountSession.bindStorageSession(null);
+              studyRecordStore.configureAccount('__signed_out__');
+            }
+          }
         },
 
         getUserInfo: async () => {
@@ -135,6 +155,7 @@ export const useAuthStore = create<AuthState>()(
           token: persisted?.token ?? null,
           isAuthenticated: persisted?.isAuthenticated ?? false,
           loginMethod: persisted?.isAuthenticated ? (persisted.loginMethod ?? 'phone') : null,
+          accountStorageId: persisted?.token ? (persisted.accountStorageId ?? accountSession.getStorageKey()) : null,
         };
       },
       partialize: (state) => ({
@@ -142,7 +163,13 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
         loginMethod: state.loginMethod,
+        accountStorageId: state.accountStorageId,
       }),
     },
   ),
 );
+
+// Freeze this tab's hydrated credentials before any learning data can be opened.
+// A later localStorage change belongs to another tab until this tab reloads.
+const hydratedAuth = useAuthStore.getState();
+if (hydratedAuth.token) accountSession.bindStorageSession(hydratedAuth.token, hydratedAuth.accountStorageId);

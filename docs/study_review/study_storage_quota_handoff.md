@@ -6,7 +6,7 @@
 - **页面**：`http://localhost:5173/page/study-view`
 - **问题**：
   `Failed to execute 'setItem' on 'Storage': Setting the value of 'study-storage' exceeded the quota.`
-- **当前状态**：已完成原因定位，尚未实施业务代码修复
+- **当前状态**：历史诊断。当前实现已改为轻量元信息 localStorage + `baicizhan-study` IndexedDB，详见 [学习同步说明](study_sync_v3.md)。下述代码位置和方案仅对应 2026-10-11 的旧实现。
 - **本轮代码状态**：未保留代码修改
 - **诊断日期**：2026-10-11
 
@@ -101,7 +101,7 @@ localStorage.removeItem('study-storage')
 
 1. 在 `merge` 中只读取允许保留的字段。
 2. 提升 persist 版本号。
-3. 为旧版本增加迁移逻辑，只迁移小型字段。
+3. 当前方案不兼容旧版本缓存，只接受当前版本的小型字段。
 4. 确保下一次写入会覆盖旧的巨大 `study-storage` 值。
 
 ### P1：持久化失败降级
@@ -123,7 +123,7 @@ localStorage.removeItem('study-storage')
 1. 为 `study-storage` 定义明确的轻量持久化类型。
 2. 修改 `partialize`，移除路线图、记录映射和派生首页状态。
 3. 修改 `merge`，采用字段白名单。
-4. 增加 persist 版本和迁移逻辑。
+4. 增加 persist 版本并忽略旧版本。
 5. 增加配额异常降级处理。
 6. 清理本地旧缓存后执行构建和测试。
 7. 使用已登录的同一浏览器 origin 验收真实学习流程。
@@ -138,10 +138,10 @@ localStorage.removeItem('study-storage')
 - 完成学习后，正式学习记录仍能写入 `study-record-store` 并按原流程同步。
 - Dashboard、学习统计页和当前词书页仍能通过重新获取的数据正常工作。
 
-### 缓存迁移
+### 当前缓存格式
 
 - 浏览器中存在旧的巨大 `study-storage` 时，刷新后不会再次因旧值初始化失败。
-- 迁移后 `study-storage` 不再包含 `wordList`、`learnRecords` 和 `homeState`。
+- 当前 `study-storage` 不包含 `wordList`、`learnRecords` 和 `homeState`；旧版本整体忽略，不执行迁移。
 - 删除 `study-storage` 后，应用能够从接口和记录库恢复必要状态。
 
 ### 异常场景

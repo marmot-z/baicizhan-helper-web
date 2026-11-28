@@ -1,4 +1,5 @@
 import { accountSession } from '../accountSession';
+import { useStudyStore } from '../../stores/studyStore';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import { studyService } from '../studyService';
 import { feedbackSoundPlayer } from '../../utils/feedbackSound';
@@ -11,11 +12,12 @@ import type {
   ReviewSummaryState,
   ReviewWordRecord,
 } from './types';
-import type { ReviewSessionState } from '../study/sessionTypes';
-import { studySessionStore } from '../study/sessionStore';
+import type { ReviewSessionState, StudyQuestionState } from '../study/sessionTypes';
+import { createStudySessionId, studySessionStore } from '../study/sessionStore';
 import { studyRecordStore } from '../study/recordStore';
 import { wordStatusService } from '../study/wordStatusService';
 import { isKilledRecord } from '../../types/studyRecord';
+import { applyStudyCorrect, applyReviewCorrect, applyReviewWrong } from '../study/recordReducers';
 
 const createInitialSnapshot = (): ReviewSnapshot => ({
   stage: 'loading',
@@ -40,6 +42,13 @@ export class ReviewFlow {
   private onCheckpoint?: (state: ReviewSessionState) => void;
   private killedTopicIds = new Set<number>();
   private killInProgress = false;
+  private answerInProgress = false;
+  private preparingCommit = false;
+  private sessionId = createStudySessionId();
+  private question: StudyQuestionState | undefined;
+  private paused = false;
+  private activeSince = Date.now();
+  private completionTask?: Promise<void>;
 
   private choiceQueue: StudyUIModel[];
   private choiceRetryQueue: StudyUIModel[] = [];
@@ -81,6 +90,10 @@ export class ReviewFlow {
         spellingPassed: false,
         choiceFailed: false,
         spellingFailed: false,
+        activeTime: 0,
+        scoreSettled: false,
+        scoreBeforeReview: studyRecordStore.getRecord(this.context.bookId, word.topicId)?.topicScore ?? 0,
+        reviewRoundBeforeReview: studyRecordStore.getRecord(this.context.bookId, word.topicId)?.reviewRound ?? 0,
       });
     });
 
@@ -115,7 +128,80 @@ export class ReviewFlow {
     return this.snapshot;
   }
 
+  getCurrentQuestionId(): string | undefined { return this.question?.questionId; }
+
+  setPaused(paused: boolean): void {
+    if (this.paused === paused) return;
+    if (!this.paused && this.question && !this.question.committed) {
+      this.question.elapsedTime += Math.max(0, Date.now() - this.activeSince);
+    }
+    this.paused = paused;
+    this.activeSince = Date.now();
+    this.checkpoint();
+  }
+
+  private beginQuestion(word: StudyUIModel, phase: string): void {
+    this.question = {
+      questionId: `${this.sessionId}:${createStudySessionId()}`, topicId: word.topicId,
+      phase, hadWrong: false, elapsedTime: 0, committed: false,
+    };
+    this.activeSince = Date.now();
+  }
+
+  private questionElapsed(): number {
+    if (!this.question) return 0;
+    return this.question.elapsedTime + (!this.paused && !this.question.committed
+      ? Math.max(0, Date.now() - this.activeSince) : 0);
+  }
+
+  private async commitAnswer(before: ReviewSessionState, settleScore = false): Promise<void> {
+    if (!this.question || this.question.committed) return;
+    const topicId = this.question.topicId;
+    const elapsed = this.questionElapsed();
+    const hadWrong = this.question.hadWrong;
+    this.question.elapsedTime = elapsed;
+    this.question.committed = true;
+    const reviewRecord = this.mustGetRecord(topicId);
+    reviewRecord.activeTime = reviewRecord.activeTime + elapsed;
+    if (settleScore) reviewRecord.scoreSettled = true;
+    try {
+      await studyRecordStore.commitQuestionResult({
+        bookId: this.context.bookId, topicId, eventId: this.question.questionId,
+        mutate: (existing) => {
+          const input = {
+            bookId: this.context.bookId, topicId,
+            tagId: this.roadmapMap.get(topicId)?.tag_id,
+            usedTime: elapsed, doNumDelta: 1, errNumDelta: hadWrong ? 1 : 0,
+            now: Date.now(), isFirstDoAtToday: false, nextSpanDays: 0,
+            nextScore: existing?.topicScore ?? 0, nextReviewRound: existing?.reviewRound ?? 0,
+          };
+          if (!settleScore) return applyStudyCorrect(existing, input);
+          const errorFree = reviewRecord.errorCount === 0;
+          input.nextScore = errorFree
+            ? Math.max(reviewRecord.scoreBeforeReview, 5)
+            : Math.min(Math.max(reviewRecord.scoreBeforeReview, 0), 4);
+          input.nextReviewRound = reviewRecord.reviewRoundBeforeReview
+            + (errorFree ? 1 : 0);
+          return errorFree ? applyReviewCorrect(existing, input) : applyReviewWrong(existing, input);
+        },
+        checkpoint: studySessionStore.buildCheckpoint('review', this.context.bookId, this.exportState()),
+      });
+      accountSession.assertCurrent(this.accountVersion);
+      const store = useStudyStore.getState();
+      store.loadLocalLearnRecords(this.context.bookId);
+      store.recomputeHomeState(this.context.bookId);
+    } catch (error) {
+      this.restoreState(before, []);
+      this.notify();
+      throw error;
+    }
+  }
+
   async resume(): Promise<void> {
+    if (!this.question) {
+      const word = this.currentChoiceWord ?? this.currentSpellWord;
+      if (word) this.beginQuestion(word, this.snapshot.stage);
+    }
     if (this.snapshot.stage === 'choice' && !this.currentChoiceWord) {
       await this.advanceChoiceQueue();
       return;
@@ -139,6 +225,7 @@ export class ReviewFlow {
       this.snapshot.stage === 'spelling' &&
       this.currentSpellWord &&
       this.mustGetRecord(this.currentSpellWord.topicId).spellingPassed
+      && this.question?.committed
     ) {
       await this.advanceSpellQueue();
       return;
@@ -148,6 +235,7 @@ export class ReviewFlow {
       this.snapshot.stage === 'choice' &&
       this.currentChoiceWord &&
       this.mustGetRecord(this.currentChoiceWord.topicId).choicePassed
+      && this.question?.committed
     ) {
       await this.advanceChoiceQueue();
       return;
@@ -168,6 +256,8 @@ export class ReviewFlow {
 
   exportState(): ReviewSessionState {
     return {
+      sessionId: this.sessionId,
+      question: this.question ? { ...this.question, elapsedTime: this.questionElapsed() } : undefined,
       wordTopicIds: this.allWords.map((word) => word.topicId),
       ...(this.killedTopicIds.size > 0
         ? { killedTopicIds: Array.from(this.killedTopicIds) }
@@ -198,7 +288,7 @@ export class ReviewFlow {
       return;
     }
 
-    if (['choice', 'detail', 'spelling'].includes(this.snapshot.stage)) {
+    if (!this.preparingCommit && ['choice', 'detail', 'spelling'].includes(this.snapshot.stage)) {
       this.onCheckpoint?.(this.exportState());
     }
   }
@@ -219,61 +309,53 @@ export class ReviewFlow {
     await this.enterChoiceWord(this.choiceQueue.shift() || null);
   }
 
-  async chooseOption(optionId: number): Promise<void> {
-    if (this.killInProgress || !this.currentChoiceWord || this.snapshot.stage !== 'choice') {
-      return;
-    }
-
-    if (this.currentChoiceClickedOptionIds.has(optionId)) {
-      return;
-    }
-
+  async chooseOption(optionId: number, expectedQuestionId?: string): Promise<void> {
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || this.killInProgress || this.answerInProgress || !this.currentChoiceWord
+      || this.snapshot.stage !== 'choice' || this.question?.committed
+      || (expectedQuestionId !== undefined && expectedQuestionId !== this.question?.questionId)) return;
+    if (this.currentChoiceClickedOptionIds.has(optionId)) return;
     const option = this.currentChoiceOptions.find((item) => item.id === optionId);
-    if (!option) {
-      return;
-    }
-
-    const record = this.mustGetRecord(this.currentChoiceWord.topicId);
-
-    if (option.isCorrect) {
-      feedbackSoundPlayer.playCorrect();
-      reviewService
-        .reportChoiceResult(this.currentChoiceWord, optionId, true)
-        .catch(console.error);
-
-      if (this.currentChoiceAttemptCount >= 1) {
-        this.enterDetail(this.currentChoiceWord, 'choice_retry');
+    if (!option) return;
+    this.answerInProgress = true;
+    const before = this.exportState();
+    const word = this.currentChoiceWord;
+    const record = this.mustGetRecord(word.topicId);
+    try {
+      if (!this.question) this.beginQuestion(word, 'choice');
+      void reviewService.reportChoiceResult(word, optionId, option.isCorrect).catch(console.error);
+      if (option.isCorrect) {
+        feedbackSoundPlayer.playCorrect();
+        this.preparingCommit = true;
+        if (this.currentChoiceAttemptCount >= 1) this.enterDetail(word, 'choice_retry');
+        else record.choicePassed = true;
+        await this.commitAnswer(before);
+        this.preparingCommit = false;
+        if (this.currentChoiceAttemptCount >= 1) { this.checkpoint(); this.notify(); }
+        else { this.syncProgress(); await this.advanceChoiceQueue(); }
         return;
       }
-
-      record.choicePassed = true;
-      this.syncProgress();
-      await this.advanceChoiceQueue();
-      return;
-    }
-
-    feedbackSoundPlayer.playIncorrect();
-    this.currentChoiceAttemptCount += 1;
-    this.currentChoiceClickedOptionIds.add(optionId);
-    record.errorCount += 1;
-    record.choiceFailed = true;
-    this.enqueueChoiceRetry(this.currentChoiceWord);
-
-    reviewService
-      .reportChoiceResult(this.currentChoiceWord, optionId, false)
-      .catch(console.error);
-
-    if (this.currentChoiceAttemptCount > 2) {
-      this.enterDetail(this.currentChoiceWord, 'choice_max_errors');
-      return;
-    }
-
-    this.updateChoiceSnapshot(false);
+      feedbackSoundPlayer.playIncorrect();
+      this.currentChoiceAttemptCount += 1;
+      this.currentChoiceClickedOptionIds.add(optionId);
+      record.errorCount += 1;
+      record.choiceFailed = true;
+      if (this.question) this.question.hadWrong = true;
+      this.enqueueChoiceRetry(word);
+      if (this.currentChoiceAttemptCount > 2) {
+        this.preparingCommit = true;
+        this.enterDetail(word, 'choice_max_errors');
+        await this.commitAnswer(before);
+        this.preparingCommit = false;
+        this.checkpoint(); this.notify();
+      } else this.updateChoiceSnapshot(false);
+    } finally { this.preparingCommit = false; this.answerInProgress = false; }
   }
 
   async continueFromDetail(): Promise<void> {
     if (
-      this.killInProgress ||
+      this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || this.killInProgress || this.answerInProgress ||
       this.snapshot.stage !== 'detail' ||
       !this.detailWord ||
       !this.detailReason
@@ -289,74 +371,53 @@ export class ReviewFlow {
     await this.advanceChoiceQueue();
   }
 
-  async submitSpell(input: string): Promise<void> {
-    if (this.killInProgress || !this.currentSpellWord || this.snapshot.stage !== 'spelling') {
-      return;
-    }
-
-    if (this.currentSpellWrong) {
-      return;
-    }
-
-    const normalizedInput = input.trim().toLowerCase();
-    const normalizedWord = this.currentSpellWord.word.trim().toLowerCase();
-    const isCorrect = normalizedInput === normalizedWord;
-    const record = this.mustGetRecord(this.currentSpellWord.topicId);
-
-    if (isCorrect) {
-      feedbackSoundPlayer.playCorrect();
-      const completedAt = Date.now();
-      record.spellingPassed = true;
-      record.completedAt = completedAt;
-      this.checkpoint();
-
-      reviewService
-        .reportSpellResult(this.currentSpellWord, true)
-        .catch(console.error);
-
-      if (!record.choiceFailed && !record.spellingFailed && !record.savedStudyRecord) {
-        const startedAt = record.reviewStartedAt ?? completedAt;
-        const costMilliseconds = Math.max(0, completedAt - startedAt);
-        await studyService
-          .saveStudyRecord(this.context.bookId, this.currentSpellWord.topicId, costMilliseconds)
-          .catch(console.error);
-        record.savedStudyRecord = true;
-        this.checkpoint();
+  async submitSpell(input: string, expectedQuestionId?: string): Promise<void> {
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || this.killInProgress || this.answerInProgress || !this.currentSpellWord
+      || this.snapshot.stage !== 'spelling' || this.currentSpellWrong || this.question?.committed
+      || (expectedQuestionId !== undefined && expectedQuestionId !== this.question?.questionId)) return;
+    this.answerInProgress = true;
+    const before = this.exportState();
+    const word = this.currentSpellWord;
+    try {
+      if (!this.question) this.beginQuestion(word, 'spelling');
+      const isCorrect = input.trim().toLowerCase() === word.word.trim().toLowerCase();
+      const record = this.mustGetRecord(word.topicId);
+      void reviewService.reportSpellResult(word, isCorrect).catch(console.error);
+      if (isCorrect) {
+        feedbackSoundPlayer.playCorrect();
+        const completedAt = Date.now();
+        record.spellingPassed = true;
+        record.completedAt = completedAt;
+        await this.commitAnswer(before, !record.scoreSettled);
+        if (!record.choiceFailed && !record.spellingFailed && !record.savedStudyRecord) {
+          await studyService.saveStudyRecord(this.context.bookId, word.topicId, record.activeTime)
+            .then(() => { record.savedStudyRecord = true; })
+            .catch(console.error);
+          this.checkpoint();
+        }
+        this.syncProgress();
+        await this.advanceSpellQueue();
+        return;
       }
-
-      this.syncProgress();
-      await this.advanceSpellQueue();
-      return;
-    }
-
-    feedbackSoundPlayer.playIncorrect();
-    record.errorCount += 1;
-    record.spellingFailed = true;
-    this.currentSpellWrong = true;
-    this.enqueueSpellRetry(this.currentSpellWord);
-
-    reviewService
-      .reportSpellResult(this.currentSpellWord, false)
-      .catch(console.error);
-
-    this.setSnapshot({
-      stage: 'spelling',
-      choiceState: null,
-      detailState: null,
-      summaryState: null,
-      errorMessage: null,
-      spellState: {
-        word: this.currentSpellWord,
-        isWrong: true,
-        remainingInRound: this.spellQueue.length,
-        retryCount: this.spellRetryQueue.length,
-      },
-    });
+      feedbackSoundPlayer.playIncorrect();
+      record.errorCount += 1;
+      record.spellingFailed = true;
+      if (this.question) this.question.hadWrong = true;
+      this.currentSpellWrong = true;
+      this.enqueueSpellRetry(word);
+      this.setSnapshot({
+        stage: 'spelling', choiceState: null, detailState: null, summaryState: null, errorMessage: null,
+        spellState: { word, isWrong: true, remainingInRound: this.spellQueue.length,
+          retryCount: this.spellRetryQueue.length },
+      });
+    } finally { this.answerInProgress = false; }
   }
 
   clearSpellWrongOnInput(): void {
     if (
-      this.killInProgress ||
+      this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || this.killInProgress || this.answerInProgress ||
       this.snapshot.stage !== 'spelling' ||
       !this.currentSpellWord ||
       !this.currentSpellWrong ||
@@ -379,8 +440,7 @@ export class ReviewFlow {
       ...this.snapshot,
       ...patch,
     };
-    this.checkpoint();
-    this.notify();
+    if (!this.preparingCommit) { this.checkpoint(); this.notify(); }
   }
 
   private notify(): void {
@@ -392,6 +452,9 @@ export class ReviewFlow {
   }
 
   private restoreState(state: ReviewSessionState, missingTopicIds: number[]): void {
+    this.sessionId = state.sessionId;
+    this.question = state.question ? { ...state.question } : undefined;
+    this.activeSince = Date.now();
     const wordsByTopicId = new Map(this.allWords.map((word) => [word.topicId, word]));
     const skippedTopicIds = new Set(missingTopicIds);
     const keepTopic = (topicId: number) => !skippedTopicIds.has(topicId);
@@ -541,47 +604,34 @@ export class ReviewFlow {
   async killCurrent(): Promise<void> {
     const stage = this.snapshot.stage;
     const activeWord = this.getActiveWord();
-    if (this.killInProgress || !activeWord || !['choice', 'detail', 'spelling'].includes(stage)) {
-      return;
-    }
-
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || this.killInProgress || this.answerInProgress || !activeWord
+      || !['choice', 'detail', 'spelling'].includes(stage)) return;
+    const before = this.exportState();
     const detailReason = this.detailReason;
     const record = this.mustGetRecord(activeWord.topicId);
     const now = Date.now();
-    const usedTime = record.reviewStartedAt == null
-      ? 0
-      : Math.max(0, now - record.reviewStartedAt);
-
+    const usedTime = this.question?.committed ? 0 : this.questionElapsed();
     this.killInProgress = true;
     try {
-      wordStatusService.killWord({
-        bookId: this.context.bookId,
-        topicId: activeWord.topicId,
-        tagId: this.roadmapMap.get(activeWord.topicId)?.tag_id,
-        usedTime,
-        errNumDelta: record.errorCount,
-        isTodayNew: false,
-      });
-
       record.completedAt = now;
+      record.activeTime = record.activeTime + usedTime;
       this.killedTopicIds.add(activeWord.topicId);
       this.removeTopicFromQueues(activeWord.topicId);
+      const eventId = `${this.question?.questionId ?? this.sessionId}:kill`;
+      if (this.question) { this.question.elapsedTime = usedTime; this.question.committed = true; }
+      await wordStatusService.killWord({
+        bookId: this.context.bookId, topicId: activeWord.topicId,
+        tagId: this.roadmapMap.get(activeWord.topicId)?.tag_id, usedTime,
+        errNumDelta: 0, isTodayNew: false, eventId,
+        checkpoint: studySessionStore.buildCheckpoint('review', this.context.bookId, this.exportState()),
+      });
       this.syncProgress();
-
-      if (stage === 'choice') {
+      if (stage === 'choice' || (stage === 'detail' && detailReason !== 'spell_error'))
         await this.advanceChoiceQueue();
-        return;
-      }
-
-      if (stage === 'detail' && detailReason !== 'spell_error') {
-        await this.advanceChoiceQueue();
-        return;
-      }
-
-      await this.advanceSpellQueue();
-    } finally {
-      this.killInProgress = false;
-    }
+      else await this.advanceSpellQueue();
+    } catch (error) { this.restoreState(before, []); this.notify(); throw error; }
+    finally { this.killInProgress = false; }
   }
 
   private mustGetRecord(topicId: number): ReviewWordRecord {
@@ -646,6 +696,7 @@ export class ReviewFlow {
     }
 
     this.currentChoiceWord = word;
+    this.beginQuestion(word, 'choice');
     this.currentChoiceAttemptCount = 0;
     this.currentChoiceClickedOptionIds = new Set();
     this.currentChoiceOptions = [];
@@ -748,6 +799,7 @@ export class ReviewFlow {
     }
 
     this.currentSpellWord = word;
+    this.beginQuestion(word, 'spelling');
     this.currentSpellWrong = false;
     this.detailWord = null;
     this.detailReason = null;
@@ -808,7 +860,17 @@ export class ReviewFlow {
     this.checkpoint();
   }
 
-  private async complete(): Promise<void> {
+  private complete(): Promise<void> {
+    if (!this.completionTask) {
+      this.completionTask = this.finishComplete().catch((error) => {
+        this.completionTask = undefined;
+        throw error;
+      });
+    }
+    return this.completionTask;
+  }
+
+  private async finishComplete(): Promise<void> {
     if (this.accountVersion !== accountSession.getVersion()) {
       return;
     }
@@ -816,17 +878,13 @@ export class ReviewFlow {
     this.syncProgress();
     const records = Array.from(this.records.values());
 
-    // 先完成正式本地记录与 pending 队列，再清理草稿并展示总结。
-    await reviewService.finishReview(
-      records,
-      this.context,
-      Array.from(this.killedTopicIds),
-    );
+    // 作答结果已逐题提交；整组完成只更新汇总并触发同步。
+    await reviewService.finishReview(records, this.context);
     if (this.accountVersion !== accountSession.getVersion()) {
       return;
     }
 
-    studySessionStore.clear('review', this.context.bookId);
+    await studySessionStore.clear('review', this.context.bookId);
 
     this.setSnapshot({
       stage: 'summary',

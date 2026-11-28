@@ -1,15 +1,17 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
 import { ProcessIterator } from './ProcessIterator';
 import { Study } from './Study';
 import {
   getLocalPlanDate,
   studySessionStore,
 } from './sessionStore';
-import type { LearnSessionDraftV1, LearnSessionState } from './sessionTypes';
+import type { LearnSessionDraft, LearnSessionState, ReviewSessionState } from './sessionTypes';
 import type { StudyUIModel } from './types';
 import type { UserRoadMapElementV2 } from '../../types';
-import { createTopicLearnRecord } from '../../types/studyRecord';
+import { createEmptyBookStateSnapshot, createTopicLearnRecord } from '../../types/studyRecord';
 import { studyRecordStore } from './recordStore';
+import { mutateStudyAccount } from './database';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -36,6 +38,8 @@ const createModel = (topicId: number): StudyUIModel => ({
 });
 
 const createLearnState = (): LearnSessionState => ({
+  sessionId: 'session-1',
+  question: { questionId: 'current-question', topicId: 1, phase: 'understanding', hadWrong: true, elapsedTime: 600, committed: true },
   wordTopicIds: [1, 2],
   process: {
     currentIteratorIndex: 1,
@@ -54,36 +58,121 @@ const createLearnState = (): LearnSessionState => ({
   currentWordElapsedTime: 600,
 });
 
-describe('studySessionStore', () => {
-  beforeEach(() => {
+beforeEach(async () => {
+    await studyRecordStore.closeDatabase();
+    Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: new IDBFactory() });
     Object.defineProperty(globalThis, 'window', {
       configurable: true,
       value: { localStorage: new MemoryStorage() },
     });
-  });
+    await studyRecordStore.initialize();
+});
+afterEach(() => studyRecordStore.closeDatabase());
 
-  it('saves, loads, expires and clears a versioned draft', () => {
-    const draft: LearnSessionDraftV1 = {
+describe('studySessionStore', () => {
+
+  it('saves, loads, expires and clears a versioned draft', async () => {
+    const draft: LearnSessionDraft = {
       version: 1,
       mode: 'learn',
       bookId: 10,
-      planDate: '2026-07-17',
+      planDate: getLocalPlanDate(),
       createdAt: 1,
       updatedAt: 2,
       sessionId: 'session-1',
       state: createLearnState(),
     };
 
-    expect(studySessionStore.save(draft)).toBe(true);
+    expect(await studySessionStore.save(draft)).toBe(true);
     expect(studySessionStore.load('learn', 10)).toEqual(draft);
-    studySessionStore.removeExpired('2026-07-18');
+    await studySessionStore.removeExpired('2000-01-01');
     expect(studySessionStore.load('learn', 10)).toBeNull();
   });
 
-  it('drops corrupted storage safely', () => {
+  it('ignores and cleans corrupted old storage without loading a draft', async () => {
+    await studyRecordStore.closeDatabase();
+    Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: new IDBFactory() });
     window.localStorage.setItem('study-session-store', '{bad json');
+    await studyRecordStore.initialize();
     expect(studySessionStore.load('learn', 1)).toBeNull();
     expect(window.localStorage.getItem('study-session-store')).toBeNull();
+  });
+
+  it('ignores malformed current drafts and permits a fresh session', async () => {
+    const valid = studySessionStore.buildCheckpoint('learn', 10, createLearnState());
+    await mutateStudyAccount((account) => {
+      account.drafts['learn:10'] = { ...valid, state: null } as unknown as LearnSessionDraft;
+    });
+    expect(studySessionStore.load('learn', 10)).toBeNull();
+    expect(await studySessionStore.save(valid)).toBe(true);
+    expect(studySessionStore.load('learn', 10)).toEqual(valid);
+    await mutateStudyAccount((account) => {
+      account.drafts['learn:10'] = { ...valid, state: { ...valid.state, sessionId: 'mismatched' } };
+    });
+    expect(studySessionStore.load('learn', 10)).toBeNull();
+    expect(await studySessionStore.save(valid)).toBe(true);
+  });
+
+  it.each(['missing question', 'missing question ID'])('ignores an active learn draft with %s and retains saved records', async (damage) => {
+    const valid = studySessionStore.buildCheckpoint('learn', 10, createLearnState());
+    await mutateStudyAccount((account) => {
+      account.books[10] = createEmptyBookStateSnapshot({ totalRecords: {
+        1: createTopicLearnRecord({ bookId: 10, topicId: 1, doNum: 7, topicScore: 5 }),
+      } });
+      account.drafts['learn:10'] = { ...valid, state: {
+        ...valid.state,
+        question: damage === 'missing question' ? undefined : { ...valid.state.question!, questionId: '' },
+      } };
+    });
+    await studyRecordStore.closeDatabase();
+    await studyRecordStore.initialize();
+    expect(studySessionStore.load('learn', 10)).toBeNull();
+    expect(studyRecordStore.getRecord(10, 1)?.doNum).toBe(7);
+    expect(studyRecordStore.getPendingDoneRecords(10)).toEqual([]);
+    const fresh = studySessionStore.buildCheckpoint('learn', 10, {
+      ...createLearnState(), sessionId: 'fresh-session',
+    });
+    expect(await studySessionStore.save(fresh)).toBe(true);
+    expect(studySessionStore.load('learn', 10)?.sessionId).toBe('fresh-session');
+    expect(studyRecordStore.getRecord(10, 1)?.doNum).toBe(7);
+  });
+
+  it('ignores an active review draft without its question and preserves the account', async () => {
+    const state: ReviewSessionState = {
+      sessionId: 'review-session', wordTopicIds: [1], stage: 'choice',
+      question: { questionId: 'review-question', topicId: 1, phase: 'choice', elapsedTime: 100, hadWrong: false, committed: false },
+      completedChoiceWords: 0, completedSpellWords: 0,
+      records: [{ topicId: 1, word: 'word-1', errorCount: 0, completedAt: null, reviewStartedAt: 100,
+        savedStudyRecord: false, choicePassed: false, spellingPassed: false, choiceFailed: false, spellingFailed: false,
+        activeTime: 100, scoreSettled: false, scoreBeforeReview: 5, reviewRoundBeforeReview: 1 }],
+      choiceQueueTopicIds: [], choiceRetryQueueTopicIds: [], choiceRetryTopicIds: [],
+      currentChoiceTopicId: 1, currentChoiceOptionIds: [1, 2], currentChoiceAttemptCount: 0, currentChoiceClickedOptionIds: [],
+      detailTopicId: null, detailReason: null, spellQueueTopicIds: [1], spellRetryQueueTopicIds: [], spellRetryTopicIds: [],
+      currentSpellTopicId: null, currentSpellWrong: false,
+    };
+    const valid = studySessionStore.buildCheckpoint('review', 10, state);
+    expect(await studySessionStore.save(valid)).toBe(true);
+    await mutateStudyAccount((account) => {
+      account.books[10] = createEmptyBookStateSnapshot({ totalRecords: {
+        1: createTopicLearnRecord({ bookId: 10, topicId: 1, doNum: 7, topicScore: 5 }),
+      } });
+      account.drafts['review:10'] = { ...valid, state: { ...state, question: undefined } };
+    });
+    await studyRecordStore.closeDatabase();
+    await studyRecordStore.initialize();
+    expect(studySessionStore.load('review', 10)).toBeNull();
+    expect(studyRecordStore.getRecord(10, 1)?.doNum).toBe(7);
+    expect(await studySessionStore.save(valid)).toBe(true);
+    expect(studySessionStore.load('review', 10)?.state.question?.questionId).toBe('review-question');
+  });
+
+  it('does not load expired drafts or accept malformed writes', async () => {
+    const draft = studySessionStore.buildCheckpoint('learn', 10, createLearnState());
+    expect(await studySessionStore.save({ ...draft, planDate: '2000-01-01' })).toBe(true);
+    expect(studySessionStore.load('learn', 10)).toBeNull();
+    expect(await studySessionStore.save({ ...draft, state: { ...draft.state, failMap: null } } as unknown as LearnSessionDraft)).toBe(false);
+    await studySessionStore.removeExpired(getLocalPlanDate());
+    expect(studySessionStore.load('learn', 10)).toBeNull();
   });
 
   it('uses a local calendar date instead of UTC slicing', () => {
@@ -133,10 +222,11 @@ describe('learn flow snapshots', () => {
   });
 
   it('uses formal killed records to remove stale cards from an old draft', async () => {
-    studyRecordStore.upsertRecord(
-      10,
-      createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 }),
-    );
+    await mutateStudyAccount((account) => {
+      account.books[10] = createEmptyBookStateSnapshot({ totalRecords: {
+        1: createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: -1 }),
+      } });
+    });
     const models = [createModel(1), createModel(2)];
     const words = [
       { topic_id: 1, tag_id: 1 },
@@ -157,10 +247,11 @@ describe('learn flow snapshots', () => {
   });
 
   it('keeps a word skipped for the current session after it is un-killed elsewhere', async () => {
-    studyRecordStore.upsertRecord(
-      10,
-      createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: 5 }),
-    );
+    await mutateStudyAccount((account) => {
+      account.books[10] = createEmptyBookStateSnapshot({ totalRecords: {
+        1: createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: 5 }),
+      } });
+    });
     const models = [createModel(1), createModel(2)];
     const words = [
       { topic_id: 1, tag_id: 1 },

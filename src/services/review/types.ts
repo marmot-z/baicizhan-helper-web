@@ -25,6 +25,10 @@ export interface ReviewWordRecord {
   spellingPassed: boolean;
   choiceFailed: boolean;
   spellingFailed: boolean;
+  activeTime: number;
+  scoreSettled: boolean;
+  scoreBeforeReview: number;
+  reviewRoundBeforeReview: number;
 }
 
 export interface ReviewContext {

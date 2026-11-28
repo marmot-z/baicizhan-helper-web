@@ -2,8 +2,6 @@ import { accountSession } from '../accountSession';
 import { studyService } from '../studyService';
 import type { StudyOption, StudyUIModel } from '../study/types';
 import type { UserRoadMapElementV2 } from '../../types';
-import { applyReviewCorrect, applyReviewWrong, studyRecordStore } from '../study';
-import { toPendingDoneRecord } from '../study/uploadAdapter';
 import { useStudyStore } from '../../stores/studyStore';
 import type {
   ReviewContext,
@@ -18,20 +16,6 @@ const REVIEW_PLAN_TYPE = 'XModelReviewStudy';
 const DETAIL_PLAN_TYPE = 'XModelNewStudy';
 const DETAIL_CHANNEL = 'study_mainstream';
 
-const runOptionalReviewInitialization = (bookId: number, topicIds: number[]) => {
-  const requests = [
-    ['复习设置', studyService.getSettings()],
-    ['信用状态', studyService.getCreditStatus()],
-    ['远端学习记录', studyService.getStudyRecord(bookId, topicIds)],
-  ] as const;
-
-  requests.forEach(([label, request]) => {
-    void request.catch((error) => {
-      console.warn(`${label}加载失败，继续使用本地复习状态:`, error);
-    });
-  });
-};
-
 export const reviewService = {
   async initializeReviewWords(
     bookId: number,
@@ -39,10 +23,10 @@ export const reviewService = {
     resumeTopicIds?: number[],
   ): Promise<ReviewInitData> {
     await useStudyStore.getState().syncCurrentBookState(bookId);
-    const { homeState, syncedBookId, wordList } = useStudyStore.getState();
+    const { homeState, preparedBookId, wordList } = useStudyStore.getState();
 
-    if (syncedBookId !== bookId) {
-      throw new Error('当前书学习状态同步未完成，请重新加载');
+    if (preparedBookId !== bookId) {
+      throw new Error('当前词书学习进度加载失败，请重新加载');
     }
 
     const targetCount = reviewPlanCount || 10;
@@ -61,11 +45,6 @@ export const reviewService = {
     }
 
     const availableIds = new Set(words.map((word) => word.topicId));
-    if (words.length > 0) {
-      // 这三个接口只用于对齐百词斩 X 模式的辅助初始化，当前页面不消费其返回值。
-      runOptionalReviewInitialization(bookId, [...availableIds]);
-    }
-
     const availableRoadmapWords = reviewWords.filter((word) => availableIds.has(word.topic_id));
     return {
       words,
@@ -181,65 +160,16 @@ export const reviewService = {
   async finishReview(
     records: ReviewWordRecord[],
     context: ReviewContext,
-    killedTopicIds: number[],
   ): Promise<void> {
     const version = accountSession.getVersion();
-    const updatedAt = Date.now();
-    const killedTopicIdSet = new Set(killedTopicIds);
-    const nextRecords = records
-      .filter((reviewRecord) => !killedTopicIdSet.has(reviewRecord.topicId))
-      .map((reviewRecord) => {
-        const existingRecord = studyRecordStore.getRecord(context.bookId, reviewRecord.topicId);
-        const usedTime =
-          reviewRecord.completedAt && reviewRecord.reviewStartedAt
-            ? Math.max(0, reviewRecord.completedAt - reviewRecord.reviewStartedAt)
-            : 0;
-
-        const nextScore =
-          reviewRecord.errorCount === 0
-            ? Math.max(existingRecord?.topicScore ?? 0, 5)
-            : Math.min(Math.max(existingRecord?.topicScore ?? 0, 0), 4);
-
-        const input = {
-          bookId: context.bookId,
-          topicId: reviewRecord.topicId,
-          usedTime,
-          doNumDelta: 1,
-          errNumDelta: reviewRecord.errorCount,
-          now: reviewRecord.completedAt ?? updatedAt,
-          isFirstDoAtToday: false,
-          nextScore,
-          nextSpanDays: existingRecord?.topicDay ?? 0,
-          nextReviewRound:
-            reviewRecord.errorCount === 0
-              ? (existingRecord?.reviewRound ?? 0) + 1
-              : existingRecord?.reviewRound ?? 0,
-        };
-
-        if (reviewRecord.errorCount === 0) {
-          return applyReviewCorrect(existingRecord, input);
-        }
-
-        return applyReviewWrong(existingRecord, input);
-      });
-
-    studyRecordStore.upsertRecords(context.bookId, nextRecords);
     const store = useStudyStore.getState();
     store.loadLocalLearnRecords(context.bookId);
     store.recomputeHomeState(context.bookId);
-
-    studyRecordStore.queuePendingDoneRecords(
-      context.bookId,
-      nextRecords.map((record) => toPendingDoneRecord(record)),
-    );
-    void store.syncCurrentBookState(context.bookId).then(() => {
+    void store.syncCurrentBookState(context.bookId).then((result) => {
       accountSession.assertCurrent(version);
-      const latestHomeState = useStudyStore.getState().homeState;
+      if (result?.upload !== 'synced') return;
       return studyService.reportFinishDailyPlan(
-        context.bookId,
-        records.length,
-        0,
-        latestHomeState.unlearnedWords.length === 0,
+        context.bookId, records.length, 0, useStudyStore.getState().homeState.unlearnedWords.length === 0,
       );
     }).catch(console.error);
   },

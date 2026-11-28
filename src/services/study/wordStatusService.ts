@@ -1,8 +1,10 @@
+import { accountSession, AccountSessionChangedError } from '../accountSession';
 import { useStudyStore } from '../../stores/studyStore';
 import { isKilledRecord, type TopicLearnRecord } from '../../types/studyRecord';
 import { applyKill, applyUnkill } from './recordReducers';
 import { studyRecordStore } from './recordStore';
-import { toPendingDoneRecord } from './uploadAdapter';
+import { createStudySessionId } from './sessionStore';
+import type { StudySessionDraft } from './sessionTypes';
 
 export interface KillWordInput {
   bookId: number;
@@ -11,66 +13,57 @@ export interface KillWordInput {
   usedTime?: number;
   errNumDelta?: number;
   isTodayNew?: boolean;
+  eventId?: string;
+  checkpoint?: StudySessionDraft;
 }
 
-function persistAndRefresh(bookId: number, record: TopicLearnRecord): TopicLearnRecord {
-  studyRecordStore.upsertAndQueue(
-    bookId,
-    [record],
-    [toPendingDoneRecord(record)],
-  );
-
+function refresh(bookId: number): void {
   const store = useStudyStore.getState();
   store.loadLocalLearnRecords(bookId);
   store.recomputeHomeState(bookId);
-
   void store.syncCurrentBookState(bookId).catch((error) => {
     console.error(`Failed to sync word status for book ${bookId}:`, error);
   });
-
-  return record;
 }
 
 export const wordStatusService = {
-  killWord(input: KillWordInput): TopicLearnRecord {
-    const existingRecord = studyRecordStore.getRecord(input.bookId, input.topicId);
-    if (isKilledRecord(existingRecord)) {
-      return existingRecord!;
-    }
-
-    const record = applyKill(existingRecord, {
+  async killWord(input: KillWordInput): Promise<TopicLearnRecord> {
+    if (accountSession.isSwitching()) throw new AccountSessionChangedError();
+    const version = accountSession.getVersion();
+    const record = await studyRecordStore.commitMutation({
       bookId: input.bookId,
       topicId: input.topicId,
-      tagId: input.tagId,
-      usedTime: input.usedTime ?? 0,
-      doNumDelta: 1,
-      errNumDelta: input.errNumDelta ?? 0,
-      now: Date.now(),
-      isFirstDoAtToday: input.isTodayNew ?? existingRecord?.isTodayNew ?? true,
-      nextReviewRound: existingRecord?.reviewRound ?? 0,
+      eventId: input.eventId ?? `kill:${createStudySessionId()}`,
+      checkpoint: input.checkpoint,
+      mutate: (existing) => isKilledRecord(existing) ? existing! : applyKill(existing, {
+        bookId: input.bookId, topicId: input.topicId, tagId: input.tagId,
+        usedTime: input.usedTime ?? 0, doNumDelta: 1,
+        errNumDelta: input.errNumDelta ?? 0, now: Date.now(),
+        isFirstDoAtToday: input.isTodayNew ?? existing?.isTodayNew ?? true,
+        nextReviewRound: existing?.reviewRound ?? 0,
+      }),
     });
-
-    return persistAndRefresh(input.bookId, record);
+    accountSession.assertCurrent(version);
+    refresh(input.bookId);
+    return record;
   },
 
-  unkillWord(bookId: number, topicId: number): TopicLearnRecord {
-    const existingRecord = studyRecordStore.getRecord(bookId, topicId);
-    if (!existingRecord || !isKilledRecord(existingRecord)) {
-      throw new Error('该单词当前不是已斩状态');
-    }
-
-    const record = applyUnkill(existingRecord, {
-      bookId,
-      topicId,
-      tagId: existingRecord.tagId,
-      usedTime: 0,
-      doNumDelta: 0,
-      errNumDelta: 0,
-      now: Date.now(),
-      isFirstDoAtToday: existingRecord.isTodayNew,
-      nextReviewRound: existingRecord.reviewRound,
+  async unkillWord(bookId: number, topicId: number): Promise<TopicLearnRecord> {
+    if (accountSession.isSwitching()) throw new AccountSessionChangedError();
+    const version = accountSession.getVersion();
+    const record = await studyRecordStore.commitMutation({
+      bookId, topicId, eventId: `unkill:${createStudySessionId()}`,
+      mutate: (existing) => {
+        if (!existing || !isKilledRecord(existing)) throw new Error('该单词当前不是已斩状态');
+        return applyUnkill(existing, {
+          bookId, topicId, tagId: existing.tagId, usedTime: 0,
+          doNumDelta: 0, errNumDelta: 0, now: Date.now(),
+          isFirstDoAtToday: existing.isTodayNew, nextReviewRound: existing.reviewRound,
+        });
+      },
     });
-
-    return persistAndRefresh(bookId, record);
+    accountSession.assertCurrent(version);
+    refresh(bookId);
+    return record;
   },
 };

@@ -1,10 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Study } from '../services/study/Study';
 import type { SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { useStudyStore } from '../stores/studyStore';
 import { studyService } from '../services/studyService';
 import {
-  createStudySessionId,
   getLocalPlanDate,
   studySessionStore,
 } from '../services/study/sessionStore';
@@ -20,6 +19,7 @@ interface UseStudyStrategyResult {
   draftSaveFailed: boolean;
   skippedWordCount: number;
   init: (mode: StudyMode, studyPlans: SelectBookPlanInfo[]) => Promise<void>;
+  cancelInit: () => void;
 }
 
 async function loadStudyWords(bookId: number, candidates: UserRoadMapElementV2[]) {
@@ -31,8 +31,51 @@ async function loadStudyWords(bookId: number, candidates: UserRoadMapElementV2[]
   return result;
 }
 
+// Pending initialization and installed flow lifetimes differ: StudyView cleans up
+// its initializer effect once the installed instance becomes available.
+export function createStudyInitializationScope() {
+  let sequence = 0;
+  let pending: number | null = null;
+  let live: number | null = null;
+  let mounted = true;
+  return {
+    mount() { mounted = true; },
+    dispose() { mounted = false; pending = null; live = null; },
+    begin(): number | null {
+      if (!mounted) return null;
+      pending = ++sequence;
+      live = null;
+      return pending;
+    },
+    isPending(token: number): boolean { return mounted && pending === token; },
+    canWrite(token: number): boolean { return mounted && (pending === token || live === token); },
+    activate(token: number): boolean {
+      if (!mounted || pending !== token) return false;
+      live = token;
+      pending = null;
+      return true;
+    },
+    cancelPending(): boolean {
+      const cancelled = pending !== null;
+      pending = null;
+      return cancelled;
+    },
+    discard(token: number) {
+      if (pending === token) pending = null;
+      if (live === token) live = null;
+    },
+  };
+}
+
 export const useStudyStrategy = (): UseStudyStrategyResult => {
   const { syncCurrentBookState } = useStudyStore();
+  const scopeRef = useRef<ReturnType<typeof createStudyInitializationScope> | null>(null);
+  if (!scopeRef.current) scopeRef.current = createStudyInitializationScope();
+  const scope = scopeRef.current;
+  useEffect(() => {
+    scope.mount();
+    return () => scope.dispose();
+  }, [scope]);
   const [studyInstance, setStudyInstance] = useState<Study | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -40,8 +83,14 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   const [skippedWordCount, setSkippedWordCount] = useState(0);
 
+  const cancelInit = useCallback(() => {
+    if (scope.cancelPending()) setLoading(false);
+  }, [scope]);
+
   const init = useCallback(
     async (mode: StudyMode, studyPlans: SelectBookPlanInfo[]) => {
+      const token = scope.begin();
+      if (token === null) return;
       setError(null);
       setLoading(true);
       setRestored(false);
@@ -56,14 +105,16 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
 
         if (mode === 'learn') {
           await syncCurrentBookState(currentStudyPlan.book_id);
-          const { homeState, syncedBookId, wordList } = useStudyStore.getState();
+          if (!scope.isPending(token)) return;
+          const { homeState, preparedBookId, wordList } = useStudyStore.getState();
 
-          if (syncedBookId !== currentStudyPlan.book_id) {
-            throw new Error('当前书学习状态同步未完成');
+          if (preparedBookId !== currentStudyPlan.book_id) {
+            throw new Error('当前词书学习进度尚未就绪，请重试');
           }
 
           const planDate = getLocalPlanDate();
-          studySessionStore.removeExpired(planDate);
+          await studySessionStore.removeExpired(planDate);
+          if (!scope.isPending(token)) return;
           const savedDraft = studySessionStore.load('learn', currentStudyPlan.book_id);
 
           if (savedDraft?.state.wordTopicIds.length) {
@@ -72,13 +123,16 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
               .map((topicId) => roadmapByTopicId.get(topicId))
               .filter((word): word is UserRoadMapElementV2 => word !== undefined);
             const batch = await loadStudyWords(currentStudyPlan.book_id, savedWords);
-            const persistCheckpoint = (state: LearnSessionState) => {
-              const saved = studySessionStore.save({
+            if (!scope.isPending(token)) return;
+            const persistCheckpoint = async (state: LearnSessionState) => {
+              if (!scope.canWrite(token)) return;
+              const saved = await studySessionStore.save({
                 ...savedDraft,
+                sessionId: state.sessionId,
                 updatedAt: Date.now(),
                 state,
-              });
-              setDraftSaveFailed(!saved);
+              }, () => scope.canWrite(token));
+              if (scope.canWrite(token)) setDraftSaveFailed(!saved);
             };
 
             let instance: Study | undefined;
@@ -98,7 +152,9 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
             }
 
             if (instance) {
+              if (!scope.isPending(token)) return;
               await instance.resume();
+              if (!scope.activate(token)) return;
               setStudyInstance(instance);
               setRestored(true);
               setSkippedWordCount(savedDraft.state.wordTopicIds.length - savedWords.length + batch.missingTopicIds.length);
@@ -115,21 +171,22 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
           }
 
           const batch = await loadStudyWords(currentStudyPlan.book_id, unlearnedWords);
+          if (!scope.isPending(token)) return;
 
           const now = Date.now();
-          const sessionId = createStudySessionId();
-          const persistCheckpoint = (state: LearnSessionState) => {
-            const saved = studySessionStore.save({
+          const persistCheckpoint = async (state: LearnSessionState) => {
+            if (!scope.canWrite(token)) return;
+            const saved = await studySessionStore.save({
               version: 1,
               mode: 'learn',
               bookId: currentStudyPlan.book_id,
               planDate,
               createdAt: now,
               updatedAt: Date.now(),
-              sessionId,
+              sessionId: state.sessionId,
               state,
-            });
-            setDraftSaveFailed(!saved);
+            }, () => scope.canWrite(token));
+            if (scope.canWrite(token)) setDraftSaveFailed(!saved);
           };
           const instance = new Study(
             unlearnedWords,
@@ -141,7 +198,9 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
             undefined,
             persistCheckpoint,
           );
+          if (!scope.isPending(token)) return;
           await instance.start();
+          if (!scope.activate(token)) return;
           setStudyInstance(instance);
           setSkippedWordCount(batch.missingTopicIds.length);
           setLoading(false);
@@ -152,12 +211,14 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
         // 不再经由 StudyView 的旧 updateReviewData 链路。
         throw new Error('复习请使用复习页面（ReviewPage）');
       } catch (e) {
+        if (!scope.isPending(token)) return;
+        scope.discard(token);
         const err = e instanceof Error ? e : new Error(String(e));
         setError(err);
         setLoading(false);
       }
     },
-    [syncCurrentBookState]
+    [syncCurrentBookState, scope]
   );
 
   return {
@@ -168,5 +229,6 @@ export const useStudyStrategy = (): UseStudyStrategyResult => {
     draftSaveFailed,
     skippedWordCount,
     init,
+    cancelInit,
   };
 };

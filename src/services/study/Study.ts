@@ -6,11 +6,10 @@ import { studyService } from '../studyService';
 import { StudyUtils } from './StudyUtils';
 import { applyStudyCorrect } from './recordReducers';
 import { studyRecordStore } from './recordStore';
-import { toPendingDoneRecord } from './uploadAdapter';
 import type { StudyStatistcs, StudyUIModel, StudyContext } from './types';
 import { useStudyStore } from '../../stores/studyStore';
-import type { LearnSessionState } from './sessionTypes';
-import { studySessionStore } from './sessionStore';
+import type { LearnSessionState, StudyQuestionState } from './sessionTypes';
+import { createStudySessionId, getLocalPlanDate, studySessionStore } from './sessionStore';
 import { isKilledRecord } from '../../types/studyRecord';
 import { wordStatusService } from './wordStatusService';
 
@@ -34,6 +33,12 @@ export class Study {
   private listeners: Set<(wordCard: WordCard | null) => void>;
   private killedTopicIds: Set<number>;
   private killInProgress: boolean;
+  private sessionId = createStudySessionId();
+  private question: StudyQuestionState | undefined;
+  private answerInProgress = false;
+  private paused = false;
+  private activeSince = Date.now();
+  private completionTask?: Promise<void>;
   
   /**
    * 构造函数
@@ -122,6 +127,9 @@ export class Study {
     ) {
       instance.currentWordCard = null;
     }
+    instance.sessionId = state.sessionId;
+    instance.question = state.question ? { ...state.question } : undefined;
+    instance.activeSince = Date.now();
     instance.startTime = Date.now() - Math.max(0, state.elapsedTime);
     instance.wordStudyTime = Date.now() - Math.max(0, state.currentWordElapsedTime);
     return instance;
@@ -153,6 +161,11 @@ export class Study {
   }
 
   public async resume(): Promise<void> {
+    if (this.question?.committed && this.currentWordCard && !this.currentWordCard.showAnswer) {
+      await this.process();
+      return;
+    }
+    if (!this.question && this.currentWordCard) this.beginQuestion();
     if (!this.currentWordCard && !this.completed) {
       await this.process();
     } else if (this.currentWordCard) {
@@ -202,17 +215,91 @@ export class Study {
     ).catch(console.error);
   }
 
-  private async process(): Promise<void> {
-    if (this.currentWordCard) {
-      this.useTimeMap.set(this.currentWordCard.getId(), Date.now() - this.wordStudyTime);
-    }
+  public getCurrentQuestionId(): string | undefined {
+    return this.question?.questionId;
+  }
 
+  public setPaused(paused: boolean): void {
+    if (this.paused === paused) return;
+    if (!this.paused && this.question && !this.question.committed) {
+      this.question.elapsedTime += Math.max(0, Date.now() - this.activeSince);
+    }
+    this.paused = paused;
+    this.activeSince = Date.now();
+    this.checkpoint();
+  }
+
+  private beginQuestion(): void {
+    if (!this.currentWordCard) { this.question = undefined; return; }
+    this.question = {
+      questionId: `${this.sessionId}:${createStudySessionId()}`,
+      topicId: this.currentWordCard.getId(),
+      phase: this.currentWordCard.stage,
+      hadWrong: false,
+      elapsedTime: 0,
+      committed: false,
+    };
+    this.activeSince = Date.now();
+  }
+
+  private questionElapsed(): number {
+    if (!this.question) return 0;
+    return this.question.elapsedTime + (!this.paused && !this.question.committed
+      ? Math.max(0, Date.now() - this.activeSince) : 0);
+  }
+
+  private restoreCheckpoint(state: LearnSessionState): void {
+    const restored = Study.restore(this.words, this.processIterator.getAllWords(), this.context, state);
+    this.processIterator = restored.processIterator;
+    this.currentWordCard = restored.currentWordCard;
+    this.failMap = restored.failMap;
+    this.useTimeMap = restored.useTimeMap;
+    this.killedTopicIds = restored.killedTopicIds;
+    this.question = restored.question;
+    this.activeSince = Date.now();
+  }
+
+  private async commitAnswer(before: LearnSessionState): Promise<void> {
+    if (!this.currentWordCard || !this.question || this.question.committed) return;
+    const topicId = this.currentWordCard.getId();
+    const elapsed = this.questionElapsed();
+    this.question.elapsedTime = elapsed;
+    this.question.committed = true;
+    this.useTimeMap.set(topicId, (this.useTimeMap.get(topicId) ?? 0) + elapsed);
+    const word = this.words.find((item) => item.topic_id === topicId);
+    try {
+      await studyRecordStore.commitQuestionResult({
+        bookId: this.context.bookId,
+        topicId,
+        eventId: this.question.questionId,
+        mutate: (existing) => applyStudyCorrect(existing, {
+          bookId: this.context.bookId, topicId, tagId: word?.tag_id,
+          usedTime: elapsed, doNumDelta: 1, errNumDelta: this.question?.hadWrong ? 1 : 0,
+          now: Date.now(), isFirstDoAtToday: existing?.isTodayNew ?? true,
+          nextScore: Math.max(existing?.topicScore ?? 0, 0),
+          nextSpanDays: 0, nextReviewRound: existing?.reviewRound ?? 0,
+        }),
+        checkpoint: studySessionStore.buildCheckpoint('learn', this.context.bookId, this.exportState()),
+      });
+      accountSession.assertCurrent(this.accountVersion);
+      const store = useStudyStore.getState();
+      store.loadLocalLearnRecords(this.context.bookId);
+      store.recomputeHomeState(this.context.bookId);
+    } catch (error) {
+      this.restoreCheckpoint(before);
+      this.listeners.forEach((listener) => listener(this.currentWordCard));
+      throw error;
+    }
+  }
+
+  private async process(): Promise<void> {
     if (!this.processIterator.hasNext()) {
       await this.complete();
       return;
     }    
 
     this.currentWordCard = this.processIterator.next();
+    this.beginQuestion();
     
     if (this.currentWordCard) {
       const topicId = this.currentWordCard.getId();
@@ -276,34 +363,31 @@ export class Study {
   }
 
   public async killCurrent(): Promise<void> {
-    if (!this.currentWordCard || this.killInProgress || this.completed) {
-      return;
-    }
-
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || !this.currentWordCard || this.killInProgress || this.answerInProgress || this.completed) return;
     this.killInProgress = true;
+    const before = this.exportState();
     const topicId = this.currentWordCard.getId();
     const word = this.words.find((item) => item.topic_id === topicId);
-    const elapsed = Math.max(0, Date.now() - this.wordStudyTime);
-    const usedTime = (this.useTimeMap.get(topicId) ?? 0) + elapsed;
-
+    const usedTime = this.question?.committed ? 0 : this.questionElapsed();
     try {
-      wordStatusService.killWord({
-        bookId: this.context.bookId,
-        topicId,
-        tagId: word?.tag_id,
-        usedTime,
-        errNumDelta: this.failMap.get(topicId) ?? 0,
-        isTodayNew: true,
-      });
-      this.useTimeMap.set(topicId, usedTime);
       this.killedTopicIds.add(topicId);
       this.processIterator.removeTopic(topicId);
       this.currentWordCard = null;
-      this.onCheckpoint?.(this.exportState());
+      const eventId = `${this.question?.questionId ?? this.sessionId}:kill`;
+      if (this.question) { this.question.elapsedTime = usedTime; this.question.committed = true; }
+      await wordStatusService.killWord({
+        bookId: this.context.bookId, topicId, tagId: word?.tag_id,
+        usedTime, errNumDelta: 0, isTodayNew: true, eventId,
+        checkpoint: studySessionStore.buildCheckpoint('learn', this.context.bookId, this.exportState()),
+      });
+      this.useTimeMap.set(topicId, (this.useTimeMap.get(topicId) ?? 0) + usedTime);
       await this.process();
-    } finally {
-      this.killInProgress = false;
-    }
+    } catch (error) {
+      this.restoreCheckpoint(before);
+      this.listeners.forEach((listener) => listener(this.currentWordCard));
+      throw error;
+    } finally { this.killInProgress = false; }
   }
 
   public getFailMap(): Map<number, number> {
@@ -314,77 +398,67 @@ export class Study {
     return this.useTimeMap;
   }
 
-  public async pass(choiceTopicId?: number): Promise<void> {
-    // Report event: choose_in_recite_click (correct)
-    if (choiceTopicId !== undefined && this.currentWordCard) {
-      studyService.reportEvent(
-        'choose_in_recite_click',
-        JSON.stringify({
-          topic_id: this.currentWordCard.getId(),
-          strategy_id: this.getCurrentStrategyId(),
-          choice_topic_id: choiceTopicId,
-          is_right: 1,
-          plan_type: this.context.planType
-        }),
-        'study-detail-common'
-      ).catch(console.error);
-    }
-
-    // 当前为反面
-    if (this.currentWordCard?.showAnswer) {
-      // 选项全部错误时，展示答案，继续背该单词
-      if (this.currentWordCard?.attemptCount == 0) {
-        this.currentWordCard.showAnswer = false;
-        this.notify();
-      } 
-      // 下一个单词
-      else {
-        await this.process();
-      }
-    } 
-    // 当前为正面
-    else {
-      // 第二三个环节，如果没有选错，则不展示单词详情，直接下一个单词
-      if (this.currentWordCard?.stage != 'recognition' &&
-         !this.failMap.has(this.currentWordCard?.getId() || 0)) {        
-        await this.process();
-      } 
-      // 反面，显示反面
-      else {
-        this.currentWordCard?.pass();
-        this.reportWikiShow();
-        this.notify();
-      }
-    }
+  public async continueFromDetail(expectedQuestionId?: string): Promise<void> {
+    if (!this.currentWordCard?.showAnswer) return;
+    await this.pass(undefined, expectedQuestionId);
   }
 
-  public async fail(optionId: number): Promise<boolean> {
-    if (!this.currentWordCard) {
-      return false;
-    }
+  public async pass(choiceTopicId?: number, expectedQuestionId?: string): Promise<void> {
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || !this.currentWordCard || this.answerInProgress || this.killInProgress
+      || (expectedQuestionId !== undefined && expectedQuestionId !== this.question?.questionId)) return;
+    this.answerInProgress = true;
+    try {
+      if (this.currentWordCard.showAnswer) {
+        if (choiceTopicId !== undefined) return;
+        if (this.currentWordCard.attemptCount === 0) {
+          this.currentWordCard.showAnswer = false;
+          this.beginQuestion();
+          this.notify();
+        } else await this.process();
+        return;
+      }
+      if (!this.question) this.beginQuestion();
+      if (this.question?.committed) return;
+      const before = this.exportState();
+      if (choiceTopicId !== undefined) {
+        void studyService.reportEvent('choose_in_recite_click', JSON.stringify({
+          topic_id: this.currentWordCard.getId(), strategy_id: this.getCurrentStrategyId(),
+          choice_topic_id: choiceTopicId, is_right: 1, plan_type: this.context.planType,
+        }), 'study-detail-common').catch(console.error);
+      }
+      const skipDetail = this.currentWordCard.stage !== 'recognition'
+        && !this.failMap.has(this.currentWordCard.getId());
+      if (!skipDetail) this.currentWordCard.pass();
+      await this.commitAnswer(before);
+      if (skipDetail) await this.process();
+      else { this.reportWikiShow(); this.notify(); }
+    } finally { this.answerInProgress = false; }
+  }
 
-    // Report event: choose_in_recite_click (wrong)
-    studyService.reportEvent(
-      'choose_in_recite_click',
-      JSON.stringify({
-        topic_id: this.currentWordCard.getId(),
-        strategy_id: this.getCurrentStrategyId(),
-        choice_topic_id: optionId,
-        is_right: 0,
-        plan_type: this.context.planType
-      }),
-      'study-detail-common'
-    ).catch(console.error);
-
-    const failedTimes = this.failMap.get(this.currentWordCard.getId()) || 0;
-    this.failMap.set(this.currentWordCard?.getId(), failedTimes + 1);
-    this.processIterator.putback(this.currentWordCard.uiModel);
-    const result = this.currentWordCard?.fail(optionId);
-    if (result) {
-      this.reportWikiShow();
-    }
-    this.notify();
-    return result;
+  public async fail(optionId: number, expectedQuestionId?: string): Promise<boolean> {
+    if (this.accountVersion !== accountSession.getVersion() || accountSession.isSwitching()
+      || !this.currentWordCard || this.currentWordCard.showAnswer || this.question?.committed
+      || this.answerInProgress || this.killInProgress
+      || (expectedQuestionId !== undefined && expectedQuestionId !== this.question?.questionId)) return false;
+    if (this.currentWordCard.clickedOptionIds.has(optionId)) return false;
+    this.answerInProgress = true;
+    try {
+      if (!this.question) this.beginQuestion();
+      const before = this.exportState();
+      void studyService.reportEvent('choose_in_recite_click', JSON.stringify({
+        topic_id: this.currentWordCard.getId(), strategy_id: this.getCurrentStrategyId(),
+        choice_topic_id: optionId, is_right: 0, plan_type: this.context.planType,
+      }), 'study-detail-common').catch(console.error);
+      const topicId = this.currentWordCard.getId();
+      this.failMap.set(topicId, (this.failMap.get(topicId) ?? 0) + 1);
+      if (this.question) this.question.hadWrong = true;
+      this.processIterator.putback(this.currentWordCard.uiModel);
+      const result = this.currentWordCard.fail(optionId);
+      if (result) { await this.commitAnswer(before); this.reportWikiShow(); }
+      this.notify();
+      return result;
+    } finally { this.answerInProgress = false; }
   }
 
   public getProgress(): number {
@@ -399,6 +473,8 @@ export class Study {
 
   public exportState(): LearnSessionState {
     return {
+      sessionId: this.sessionId,
+      question: this.question ? { ...this.question, elapsedTime: this.questionElapsed() } : undefined,
       wordTopicIds: this.words.map((word) => word.topic_id),
       process: this.processIterator.exportState(),
       currentCard: this.currentWordCard?.exportState() ?? null,
@@ -412,7 +488,17 @@ export class Study {
     };
   }
   
-  public async complete(): Promise<void> {
+  public complete(): Promise<void> {
+    if (!this.completionTask) {
+      this.completionTask = this.finishComplete().catch((error) => {
+        this.completionTask = undefined;
+        throw error;
+      });
+    }
+    return this.completionTask;
+  }
+
+  private async finishComplete(): Promise<void> {
     if (this.accountVersion !== accountSession.getVersion()) {
       return;
     }
@@ -421,18 +507,12 @@ export class Study {
       return;
     }
 
-    // 先把正式记录和待同步队列可靠地写入本地，再清除进行中草稿。
-    const updatedRecords = this.writeStudyRecordsToLocal();
-    studyRecordStore.queuePendingDoneRecords(
-      this.context.bookId,
-      updatedRecords.map((record) => toPendingDoneRecord(record)),
-    );
-    studySessionStore.clear('learn', this.context.bookId);
+    await studySessionStore.clear('learn', this.context.bookId);
 
     const studyStatistics: StudyStatistcs = {
       failMap: Object.fromEntries(this.failMap),
       usedTimeMap: Object.fromEntries(this.useTimeMap),
-      totalTime: Date.now() - this.startTime,
+      totalTime: Array.from(this.useTimeMap.values()).reduce((sum, time) => sum + time, 0),
       words: this.processIterator.getWordBriefInfos(),
       updateTime: Date.now(),
       killedTopicIds: Array.from(this.killedTopicIds),
@@ -463,7 +543,7 @@ export class Study {
 
     // XMode 打卡逻辑
     try {
-      const date = new Date().toISOString().split('T')[0];
+      const date = getLocalPlanDate();
       const finalStats = useStudyStore.getState().lastStudyStatistics;
       const totalCount = finalStats?.words.length || 0;
       
@@ -497,53 +577,15 @@ export class Study {
     this.notify();
 
     // 正式记录已经在本地持久化；远端失败由 pending 队列负责后续补传。
-    void useStudyStore.getState().syncCurrentBookState(this.context.bookId);
+    void useStudyStore.getState().syncCurrentBookState(this.context.bookId).then((result) => {
+      if (result?.upload === 'synced') this.reportFinishDailyPlan();
+    }).catch(console.error);
 
     if (this.onUpload) {
       await this.onUpload(this);
-      this.reportFinishDailyPlan();
       return;
     }
 
-    this.reportFinishDailyPlan();
-  }
-
-  private writeStudyRecordsToLocal() {
-    if (!this.words.length) {
-      return [];
-    }
-
-    const now = Date.now();
-    const updatedRecords = this.words
-      .filter((word) => !this.killedTopicIds.has(word.topic_id))
-      .map((word) => {
-      const existingRecord = studyRecordStore.getRecord(
-        this.context.bookId,
-        word.topic_id,
-      );
-      const wrongTimes = this.failMap.get(word.topic_id) || 0;
-      const usedTime = this.useTimeMap.get(word.topic_id) || 0;
-
-      return applyStudyCorrect(existingRecord, {
-        bookId: this.context.bookId,
-        topicId: word.topic_id,
-        tagId: word.tag_id,
-        usedTime,
-        doNumDelta: 1,
-        errNumDelta: wrongTimes,
-        now,
-        isFirstDoAtToday: true,
-        nextScore: Math.max(existingRecord?.topicScore ?? 0, 0),
-        nextSpanDays: existingRecord?.topicDay ?? 0,
-        nextReviewRound: existingRecord?.reviewRound ?? 0,
-      });
-    });
-
-    studyRecordStore.upsertRecords(this.context.bookId, updatedRecords);
-    const store = useStudyStore.getState();
-    store.loadLocalLearnRecords(this.context.bookId);
-    store.recomputeHomeState(this.context.bookId);
-    return updatedRecords;
   }
 
   private reportFinishDailyPlan(): void {

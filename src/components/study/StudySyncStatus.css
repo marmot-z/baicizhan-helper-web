@@ -1,0 +1,7 @@
+.study-sync-status { margin: 0 auto; padding: 10px 16px; max-width: 1100px; color: #64748b; font-size: 12px; }
+.study-sync-status__line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.study-sync-status button { color: #267a57; text-decoration: underline; cursor: pointer; }
+.study-sync-status button:disabled { opacity: .5; cursor: wait; }
+.study-sync-status p { margin: 6px 0; }
+.dark .study-sync-status { color: #cbd5e1; }
+.dark .study-sync-status button { color: #80cfaa; }

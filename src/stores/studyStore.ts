@@ -4,7 +4,7 @@ import { accountSession, AccountSessionChangedError } from '../services/accountS
 import type { UserBookBasicInfo, SelectBookPlanInfo, UserRoadMapElementV2 } from '../types';
 import { studyService } from '../services/studyService';
 import type { StudyStatistcs } from '../services/study/types';
-import { applyDayTransition } from '../services/study/recordReducers';
+import { syncLearningRecords, waitForLearningSyncs, type StudySyncResult, type StudySyncOptions } from '../services/study/syncEngine';
 import { calculateHomeState } from '../services/study/homeStateCalculator';
 import { studyRecordStore } from '../services/study/recordStore';
 import {
@@ -14,7 +14,7 @@ import {
   type TopicLearnRecordMap,
 } from '../types/studyRecord';
 
-const inflightBookSyncs = new Map<number, Promise<unknown[]>>();
+const inflightBookSyncs = new Map<number, Promise<StudySyncResult>>();
 const STUDY_STORAGE_KEY = 'study-storage';
 const STUDY_STORAGE_VERSION = 1;
 
@@ -29,6 +29,7 @@ type PersistedStudyStateV1 = Pick<
 
 export async function waitForStudySyncs(): Promise<void> {
   await Promise.allSettled([...inflightBookSyncs.values()]);
+  await waitForLearningSyncs();
 }
 
 interface StudyState {
@@ -40,7 +41,9 @@ interface StudyState {
   learnRecords: TopicLearnRecordMap;
   homeState: StudyHomeState;
   syncingBookId: number | null;
-  syncedBookId: number | null;
+  preparedBookId: number | null;
+  planLoadError: string | null;
+  studyStateError: string | null;
   lastStudyStatistics: StudyStatistcs | null;
   lastReviewStatistics: StudyStatistcs | null;
   setCurrentBook: (book: UserBookBasicInfo) => void;
@@ -50,7 +53,8 @@ interface StudyState {
   setLastReviewStatistics: (statistics: StudyStatistcs) => void;
   loadLocalLearnRecords: (bookId: number) => TopicLearnRecordMap;
   recomputeHomeState: (bookId: number) => StudyHomeState;
-  syncCurrentBookState: (bookId?: number) => Promise<void>;
+  syncCurrentBookState: (bookId?: number, options?: StudySyncOptions) => Promise<StudySyncResult | undefined>;
+  syncResults: Record<number, StudySyncResult>;
   fetchStudyData: () => Promise<void>;
   refreshStudyPlans: () => Promise<SelectBookPlanInfo[]>;
   switchStudyBook: (plan: SelectBookPlanInfo) => Promise<void>;
@@ -225,154 +229,65 @@ async function syncBookState(
   set: StudyStoreSet,
   get: StudyStoreGet,
   bookId: number,
-  requireSuccessfulSync = false,
-): Promise<void> {
-  if (accountSession.isSwitching()) {
-    if (requireSuccessfulSync) {
-      throw new AccountSessionChangedError();
-    }
-    return;
+  options: StudySyncOptions = {},
+): Promise<StudySyncResult | undefined> {
+  if (accountSession.isSwitching() && !options.allowDuringAccountSwitch) {
+    throw new AccountSessionChangedError();
   }
-
   const version = accountSession.getVersion();
-  const existingTask = inflightBookSyncs.get(bookId);
-  if (existingTask) {
-    const errors = await existingTask;
+  const apply = (result: StudySyncResult) => {
     accountSession.assertCurrent(version);
-    if (requireSuccessfulSync && errors.length) {
-      set({ syncedBookId: null });
-      throw errors[0];
-    }
-    return;
-  }
-
-  const task = (async () => {
-    const errors: unknown[] = [];
-    set({ syncingBookId: bookId });
-
-    const localRecords = studyRecordStore.getAllRecords(bookId);
-    const transitionedRecords = localRecords.map((record) =>
-      applyDayTransition(record),
-    );
-    const hasDayTransitionChanges = transitionedRecords.some(
-      (record, index) => record !== localRecords[index],
-    );
-
-    if (hasDayTransitionChanges) {
-      studyRecordStore.upsertRecords(bookId, transitionedRecords);
-    }
-
-    const effectiveLocalRecords = hasDayTransitionChanges
-      ? transitionedRecords
-      : localRecords;
-    let nextRecordMap = createRecordMap(effectiveLocalRecords);
-    set({ learnRecords: nextRecordMap });
-
-    let roadmap = get().wordList;
-    if (get().wordListBookId !== bookId || roadmap.length === 0) {
-      roadmap = await studyService.getRoadmap(bookId);
-      accountSession.assertCurrent(version);
-      set({ wordList: roadmap, wordListBookId: bookId });
-    }
-
-    let pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
-    while (pendingDoneRecords.length > 0) {
-      studyRecordStore.updateSyncMeta(bookId, {
-        lastUploadAttemptAt: Date.now(),
-        lastUploadError: null,
-      });
-
-      try {
-        const uploadResult = await studyService.updateDoneData(
-          pendingDoneRecords.map((item) => item.doneRecord),
-          bookId,
-        );
-        accountSession.assertCurrent(version);
-
-        if (uploadResult.resultCode < 0) {
-          throw new Error(`updateDoneData returned ${uploadResult.resultCode}`);
-        }
-
-        studyRecordStore.clearPendingDoneRecords(
-          bookId,
-          pendingDoneRecords.map((item) => item.requestKey),
-        );
-        studyRecordStore.updateSyncMeta(bookId, {
-          localSyncVer: uploadResult.syncVersion,
-          lastSuccessfulSyncAt: Date.now(),
-          lastUploadError: null,
-        });
-      } catch (error) {
-        accountSession.assertCurrent(version);
-        const message = error instanceof Error ? error.message : String(error);
-        studyRecordStore.updateSyncMeta(bookId, {
-          lastUploadError: message,
-        });
-        errors.push(error);
-        console.error(`Failed to upload pending done data for book ${bookId}:`, error);
-        break;
-      }
-
-      // 上传过程中可能产生新的斩词/取消斩词记录，继续排空最新队列。
-      pendingDoneRecords = studyRecordStore.getPendingDoneRecords(bookId);
-    }
-
-    try {
-      const syncMeta = await studyService.getStudySyncMeta(bookId);
-      accountSession.assertCurrent(version);
-      const localSyncMeta = studyRecordStore.getSyncMeta(bookId);
-      studyRecordStore.updateSyncMeta(bookId, {
-        remoteSyncVer: syncMeta.remoteSyncVer,
-      });
-
-      if (syncMeta.remoteSyncVer > localSyncMeta.localSyncVer) {
-        const remoteLearnedWords = await studyService.getLearnedWords(bookId);
-        accountSession.assertCurrent(version);
-        studyRecordStore.mergeRemoteLearnedWords(bookId, remoteLearnedWords);
-        studyRecordStore.updateSyncMeta(bookId, {
-          localSyncVer: syncMeta.remoteSyncVer,
-          remoteSyncVer: syncMeta.remoteSyncVer,
-        });
-      }
-
-      nextRecordMap = createRecordMap(studyRecordStore.getAllRecords(bookId));
-    } catch (error) {
-      accountSession.assertCurrent(version);
-      errors.push(error);
-      console.error(`Failed to sync remote learned words for book ${bookId}:`, error);
-    }
-
-    const currentPlan = get().studyPlan?.book_id === bookId ? get().studyPlan : null;
-    const homeState = calculateHomeState({
-      records: nextRecordMap,
-      roadmap,
-      learnPlanCount: currentPlan?.daily_plan_count ?? 0,
-      reviewPlanCount: currentPlan?.review_plan_count ?? 0,
-      increasedCount: 0,
-    });
-
+    const records = createRecordMap(studyRecordStore.getAllRecords(bookId));
+    const state = get();
+    const active = (state.studyPlan?.book_id ?? state.currentBook?.id) === bookId;
+    const ready = studyRecordStore.getSyncMeta(bookId).lastPulledAt > 0 || Object.keys(records).length > 0;
+    const preparationError = ready ? null : '学习进度获取失败，请检查网络后重试';
     set({
-      learnRecords: nextRecordMap,
-      homeState,
-      syncedBookId: bookId,
+      syncResults: { ...state.syncResults, [bookId]: result },
+      ...(active ? {
+        learnRecords: records,
+        homeState: ready ? calculateHomeState({
+          records,
+          roadmap: state.wordListBookId === bookId ? state.wordList : [],
+          learnPlanCount: state.studyPlan?.daily_plan_count ?? 0,
+          reviewPlanCount: state.studyPlan?.review_plan_count ?? 0,
+          increasedCount: 0,
+        }) : createEmptyHomeState(),
+        preparedBookId: ready ? bookId : null,
+        studyStateError: preparationError,
+      } : {}),
     });
-    return errors;
+    if (!ready) throw new Error(preparationError!);
+    return result;
+  };
+  const existing = inflightBookSyncs.get(bookId);
+  if (existing) return apply(await existing);
+  const task = (async () => {
+    set({ syncingBookId: bookId });
+    await studyRecordStore.initialize();
+    accountSession.assertCurrent(version);
+    if ((get().studyPlan?.book_id ?? get().currentBook?.id) === bookId && get().wordListBookId !== bookId) {
+      const roadmap = await studyService.getRoadmap(bookId);
+      accountSession.assertCurrent(version);
+      // Background retrying a different book must not replace the active book.
+      if ((get().studyPlan?.book_id ?? get().currentBook?.id) === bookId) {
+        set({ wordList: roadmap, wordListBookId: bookId });
+      }
+    }
+    return syncLearningRecords(bookId, options);
   })().finally(() => {
-    if (inflightBookSyncs.get(bookId) === task) {
-      inflightBookSyncs.delete(bookId);
-    }
-
-    if (version === accountSession.getVersion() && get().syncingBookId === bookId) {
-      set({ syncingBookId: null });
-    }
+    if (inflightBookSyncs.get(bookId) === task) inflightBookSyncs.delete(bookId);
+    if (version === accountSession.getVersion() && get().syncingBookId === bookId) set({ syncingBookId: null });
   });
-
   inflightBookSyncs.set(bookId, task);
-  const errors = await task;
-  accountSession.assertCurrent(version);
-  if (requireSuccessfulSync && errors.length) {
-    set({ syncedBookId: null });
-    throw errors[0];
+  try {
+    return apply(await task);
+  } catch (error) {
+    accountSession.assertCurrent(version);
+    if ((get().studyPlan?.book_id ?? get().currentBook?.id) === bookId) {
+      set({ studyStateError: error instanceof Error ? error.message : String(error) });
+    }
+    throw error;
   }
 }
 
@@ -401,7 +316,7 @@ async function hydrateStudyPlanForKnownBook(
   const roadmapData = await studyService.getRoadmap(userPlan.book_id);
   accountSession.assertCurrent(version);
   set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
-  await syncBookState(set, get, userPlan.book_id, true);
+  await syncBookState(set, get, userPlan.book_id);
   accountSession.assertCurrent(version);
 }
 
@@ -429,7 +344,7 @@ async function hydrateStudyPlan(
   const roadmapData = await studyService.getRoadmap(plan.book_id);
   accountSession.assertCurrent(version);
   set({ wordList: roadmapData, wordListBookId: plan.book_id });
-  await syncBookState(set, get, plan.book_id, true);
+  await syncBookState(set, get, plan.book_id);
   accountSession.assertCurrent(version);
 }
 
@@ -444,18 +359,21 @@ export const useStudyStore = create<StudyState>()(
       learnRecords: {},
       homeState: createEmptyHomeState(),
       syncingBookId: null,
-      syncedBookId: null,
+      preparedBookId: null,
+      planLoadError: null,
+      studyStateError: null,
+      syncResults: {},
       lastStudyStatistics: null,
       lastReviewStatistics: null,
 
       setCurrentBook: (book: UserBookBasicInfo) => {
-        set({ currentBook: book });
-        void get().syncCurrentBookState(book.id);
+        set({ currentBook: book, preparedBookId: get().preparedBookId === book.id ? book.id : null, studyStateError: null });
+        void get().syncCurrentBookState(book.id).catch(() => {});
       },
 
       setStudyPlan: (plan: SelectBookPlanInfo) => {
-        set({ studyPlan: plan });
-        void get().syncCurrentBookState(plan.book_id);
+        set({ studyPlan: plan, preparedBookId: get().preparedBookId === plan.book_id ? plan.book_id : null, studyStateError: null });
+        void get().syncCurrentBookState(plan.book_id).catch(() => {});
       },
 
       setWordList: (words: UserRoadMapElementV2[]) => {
@@ -493,89 +411,52 @@ export const useStudyStore = create<StudyState>()(
         return homeState;
       },
 
-      syncCurrentBookState: async (bookId?: number) => {
-        const version = accountSession.getVersion();
-        const targetBookId =
-          bookId ?? get().studyPlan?.book_id ?? get().currentBook?.id;
-        if (!targetBookId) {
-          return;
-        }
-
-        const joinedExistingSync = inflightBookSyncs.has(targetBookId);
-        await syncBookState(set, get, targetBookId);
-        accountSession.assertCurrent(version);
-
-        // 如果本次调用加入的是旧同步任务，任务执行期间可能又写入了新状态；
-        // 再启动一轮即可排空，当前调用自身失败时则保留 pending 等下次重试。
-        if (
-          joinedExistingSync &&
-          studyRecordStore.getPendingDoneRecords(targetBookId).length > 0
-        ) {
-          await syncBookState(set, get, targetBookId);
-          accountSession.assertCurrent(version);
-        }
+      syncCurrentBookState: async (bookId?: number, options?: StudySyncOptions) => {
+        const targetBookId = bookId ?? get().studyPlan?.book_id ?? get().currentBook?.id;
+        if (!targetBookId) return;
+        return syncBookState(set, get, targetBookId, options);
       },
 
       fetchStudyData: async () => {
         const version = accountSession.getVersion();
+        set({ planLoadError: null });
+        let bookId: number;
         try {
-          // 获取用户学习计划
-          const planData = await studyService.getBookPlanInfo();
+          const plans = await studyService.getBookPlanInfo();
           accountSession.assertCurrent(version);
-          set({ studyPlans: planData ?? [] });
-          if (planData && planData.length > 0) {
-            const userPlan = planData[0];
-            set({ studyPlan: userPlan });
-            
-            const { currentBook } = get();
-            
-            // 检查缓存的单词书ID是否与当前学习计划的book_id匹配
-            if (currentBook && currentBook.id === userPlan.book_id) {
-              const { wordList } =  get();
-
-              // 无单词列表则拉取
-              if (
-                !wordList ||
-                !wordList.length ||
-                get().wordListBookId !== userPlan.book_id
-              ) {
-                const roadmapData = await studyService.getRoadmap(userPlan.book_id);
-                accountSession.assertCurrent(version);
-                set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
-              }
-
-              await get().syncCurrentBookState(userPlan.book_id);
-              accountSession.assertCurrent(version);
-              return;
-            } else {
-              // 不匹配或无缓存，重新拉取单词书信息
-              const booksData = await studyService.getAllBooks();
-              accountSession.assertCurrent(version);
-              const matchedBook = booksData.books.find(book => book.id === userPlan.book_id);
-              if (matchedBook) {
-                set({ currentBook: matchedBook });
-                
-                // 获取单词列表
-                const roadmapData = await studyService.getRoadmap(userPlan.book_id);
-                accountSession.assertCurrent(version);
-                set({ wordList: roadmapData, wordListBookId: userPlan.book_id });
-              }
-            }
-
-            await get().syncCurrentBookState(userPlan.book_id);
+          if (!Array.isArray(plans)) throw new Error('学习计划响应格式异常');
+          set({ studyPlans: plans });
+          const plan = plans[0];
+          if (!plan) {
+            set({ studyPlan: null, currentBook: null, wordList: [], wordListBookId: null,
+              learnRecords: {}, homeState: createEmptyHomeState(), preparedBookId: null, studyStateError: null });
+            return;
+          }
+          bookId = plan.book_id;
+          if (get().studyPlan?.book_id !== bookId) {
+            set({ preparedBookId: null, learnRecords: {}, homeState: createEmptyHomeState(), studyStateError: null });
+          }
+          set({ studyPlan: plan });
+          if (get().currentBook?.id !== bookId) {
+            const catalog = await studyService.getAllBooks();
             accountSession.assertCurrent(version);
-          } else {
-            set({
-              studyPlan: null,
-              currentBook: null,
-              wordList: [],
-              wordListBookId: null,
-              homeState: createEmptyHomeState(),
-            });
+            const book = catalog.books.find(item => item.id === bookId);
+            if (!book) throw new Error('当前词书信息暂时不可用，请重试');
+            set({ currentBook: book });
+          }
+          if (get().wordListBookId !== bookId) {
+            const roadmap = await studyService.getRoadmap(bookId);
+            accountSession.assertCurrent(version);
+            set({ wordList: roadmap, wordListBookId: bookId });
           }
         } catch (error) {
-          console.error('Failed to fetch study data:', error);
+          accountSession.assertCurrent(version);
+          set({ planLoadError: error instanceof Error ? error.message : String(error) });
+          throw error;
         }
+        // Catalog and roadmap remain usable when learning progress needs a retry.
+        await get().syncCurrentBookState(bookId).catch(() => {});
+        accountSession.assertCurrent(version);
       },
 
       refreshStudyPlans: async () => {
@@ -588,6 +469,9 @@ export const useStudyStore = create<StudyState>()(
 
       switchStudyBook: async (plan: SelectBookPlanInfo) => {
         const version = accountSession.getVersion();
+        const previousBookId = get().studyPlan?.book_id;
+        if (previousBookId && previousBookId !== plan.book_id) await syncLearningRecords(previousBookId);
+        accountSession.assertCurrent(version);
         await studyService.switchSelectedBookPlan(plan);
         accountSession.assertCurrent(version);
         const [planData, booksData] = await Promise.all([
@@ -617,7 +501,10 @@ export const useStudyStore = create<StudyState>()(
           learnRecords: {},
           homeState: createEmptyHomeState(),
           syncingBookId: null,
-          syncedBookId: null,
+          preparedBookId: null,
+          planLoadError: null,
+          studyStateError: null,
+          syncResults: {},
           lastStudyStatistics: null,
           lastReviewStatistics: null,
         });
@@ -629,7 +516,6 @@ export const useStudyStore = create<StudyState>()(
       storage: createJSONStorage<PersistedStudyStateV1>(() =>
         createResilientStudyStorage(),
       ),
-      migrate: (persistedState) => normalizePersistedStudyState(persistedState),
       merge: (persistedState, currentState) => {
         const persisted = normalizePersistedStudyState(persistedState);
         return {

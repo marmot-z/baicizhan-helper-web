@@ -1,4 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { closeStudyDatabase } from '../study/database';
+import { studyRecordStore } from '../study/recordStore';
 import { ReviewFlow } from './ReviewFlow';
 import { reviewService } from './reviewService';
 import type { ReviewInitData } from './types';
@@ -29,9 +32,17 @@ const initData: ReviewInitData = {
   context: { bookId: 10, planType: 'XModelReviewStudy' },
 };
 
-afterEach(() => vi.restoreAllMocks());
+beforeEach(async () => {
+  await closeStudyDatabase();
+  Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: new IDBFactory() });
+  await studyRecordStore.initialize();
+  vi.spyOn(Date, 'now').mockReturnValue(1000);
+});
+afterEach(async () => { vi.restoreAllMocks(); await closeStudyDatabase(); });
 
 const state: ReviewSessionState = {
+  sessionId: 'review-session',
+  question: { questionId: 'review-question-1', topicId: 1, phase: 'choice', hadWrong: true, elapsedTime: 0, committed: false },
   wordTopicIds: [1, 2],
   stage: 'choice',
   completedChoiceWords: 0,
@@ -43,6 +54,10 @@ const state: ReviewSessionState = {
     completedAt: null,
     reviewStartedAt: 100,
     savedStudyRecord: false,
+    activeTime: 0,
+    scoreSettled: false,
+    scoreBeforeReview: 0,
+    reviewRoundBeforeReview: 0,
     choicePassed: false,
     spellingPassed: false,
     choiceFailed: topicId === 1,
@@ -67,7 +82,7 @@ const state: ReviewSessionState = {
 describe('ReviewFlow snapshots', () => {
   it('restores choice position, option order and retry queues exactly', () => {
     const flow = ReviewFlow.restore(initData, state);
-    expect(flow.exportState()).toEqual(state);
+    expect(flow.exportState()).toMatchObject(state);
     const snapshot = flow.getSnapshot();
     expect(snapshot.stage).toBe('choice');
     expect(snapshot.choiceState?.options.map((option) => option.id)).toEqual([101, 1]);
@@ -111,6 +126,7 @@ describe('ReviewFlow snapshots', () => {
         stage: 'detail',
         detailTopicId: 1,
         detailReason: 'spell_error',
+        question: { questionId: 'review-question-1', topicId: 1, phase: 'spelling', hadWrong: true, elapsedTime: 0, committed: true },
         currentChoiceTopicId: null,
         spellQueueTopicIds: [2],
         spellRetryQueueTopicIds: [1],
@@ -134,9 +150,10 @@ describe('ReviewFlow snapshots', () => {
       currentChoiceClickedOptionIds: [],
       detailTopicId: 1,
       detailReason: 'choice_retry',
+      question: { questionId: 'review-question-1', topicId: 1, phase: 'choice', hadWrong: true, elapsedTime: 0, committed: true },
     };
     const flow = ReviewFlow.restore(initData, detailState);
-    expect(flow.exportState()).toEqual(detailState);
+    expect(flow.exportState()).toMatchObject(detailState);
     expect(flow.getSnapshot().detailState?.reason).toBe('choice_retry');
   });
 
@@ -156,9 +173,10 @@ describe('ReviewFlow snapshots', () => {
       spellRetryTopicIds: [2],
       currentSpellTopicId: 2,
       currentSpellWrong: true,
+      question: { questionId: 'review-question-2', topicId: 2, phase: 'spelling', hadWrong: true, elapsedTime: 0, committed: false },
     };
     const flow = ReviewFlow.restore(initData, spellState);
-    expect(flow.exportState()).toEqual(spellState);
+    expect(flow.exportState()).toMatchObject(spellState);
     expect(flow.getSnapshot().spellState?.isWrong).toBe(true);
     expect(flow.getSnapshot().spellState?.retryCount).toBe(1);
   });

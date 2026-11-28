@@ -17,10 +17,10 @@ import styles from './review.module.css';
 import studyStyles from '../StudyView.module.css';
 import KillWordConfirmModal from '../../components/study/KillWordConfirmModal';
 import {
-  createStudySessionId,
   getLocalPlanDate,
   studySessionStore,
 } from '../../services/study/sessionStore';
+import { studyRecordStore } from '../../services/study/recordStore';
 import type { ReviewSessionState } from '../../services/study/sessionTypes';
 import {
   formatShortcutCode,
@@ -59,6 +59,7 @@ const ReviewPage: React.FC = () => {
     currentBook,
     studyPlan,
     wordList,
+    wordListBookId,
     fetchStudyData,
     setLastReviewStatistics,
   } = useStudyStore();
@@ -70,6 +71,8 @@ const ReviewPage: React.FC = () => {
   const [spellInput, setSpellInput] = useState('');
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [metadataReady, setMetadataReady] = useState(false);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
@@ -79,13 +82,38 @@ const ReviewPage: React.FC = () => {
   const shortcuts = useSettingsStore((state) => state.shortcuts);
 
   useEffect(() => {
-    if (!studyPlan || !currentBook || !wordList.length) {
-      fetchStudyData().catch(console.error);
-    }
-  }, [studyPlan, currentBook, wordList.length, fetchStudyData]);
+    let isActive = true;
+    setMetadataReady(false);
+    setMetadataError(null);
+    const hasPreparedResources = () => {
+      const state = useStudyStore.getState();
+      const bookId = state.studyPlan?.book_id;
+      return bookId !== undefined && state.currentBook?.id === bookId
+        && state.wordListBookId === bookId && state.preparedBookId === bookId;
+    };
+
+    const prepare = async () => {
+      try {
+        await fetchStudyData();
+        if (!isActive) return;
+        const state = useStudyStore.getState();
+        if (state.studyPlan && !hasPreparedResources()) {
+          throw new Error(state.studyStateError || '复习计划或单词书加载失败，请重试');
+        }
+        setMetadataReady(true);
+      } catch (error) {
+        if (!isActive) return;
+        // 已准备好的词书仍可复习，后台请求失败不撤销本地可用状态。
+        if (hasPreparedResources()) setMetadataReady(true);
+        else setMetadataError(error instanceof Error ? error.message : '复习计划加载失败，请重试');
+      }
+    };
+    void prepare();
+    return () => { isActive = false; };
+  }, [fetchStudyData, retryKey]);
 
   useEffect(() => {
-    if (!studyPlan || !currentBook || !wordList.length) {
+    if (!metadataReady || !studyPlan || !currentBook || wordListBookId !== studyPlan.book_id) {
       return;
     }
 
@@ -94,8 +122,9 @@ const ReviewPage: React.FC = () => {
 
     const startReview = async () => {
       try {
+        await studyRecordStore.initialize();
         const planDate = getLocalPlanDate();
-        studySessionStore.removeExpired(planDate);
+        await studySessionStore.removeExpired(planDate);
         const savedDraft = studySessionStore.load('review', studyPlan.book_id);
         const resumeTopicIds = savedDraft?.state.wordTopicIds.length ? savedDraft.state.wordTopicIds : undefined;
         let initData = await reviewService.initializeReviewWords(studyPlan.book_id, studyPlan.review_plan_count, resumeTopicIds);
@@ -111,14 +140,15 @@ const ReviewPage: React.FC = () => {
           bookId: studyPlan.book_id,
           planDate,
           createdAt: Date.now(),
-          sessionId: createStudySessionId(),
         };
-        const persistCheckpoint = (state: ReviewSessionState) => {
-          const saved = studySessionStore.save({
+        const persistCheckpoint = async (state: ReviewSessionState) => {
+          if (!isActive) return;
+          const saved = await studySessionStore.save({
             ...(restored && savedDraft ? savedDraft : newDraft),
+            sessionId: state.sessionId,
             updatedAt: Date.now(),
             state,
-          });
+          }, () => isActive);
           if (isActive) setDraftSaveFailed(!saved);
         };
 
@@ -156,6 +186,7 @@ const ReviewPage: React.FC = () => {
           }
         });
 
+        flow.setPaused(document.visibilityState === 'hidden');
         if (restored) {
           await flow.resume();
         } else {
@@ -194,30 +225,31 @@ const ReviewPage: React.FC = () => {
       reviewWordsRef.current = [];
       unsubscribe?.();
     };
-  }, [studyPlan, currentBook, wordList, retryKey]);
+  }, [metadataReady, studyPlan, currentBook, wordList, wordListBookId, retryKey]);
 
   useEffect(() => {
-    const checkpoint = () => flowRef.current?.checkpoint();
+    const checkpoint = () => { flowRef.current?.setPaused(true); flowRef.current?.checkpoint(); };
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        checkpoint();
-      }
+      flowRef.current?.setPaused(document.visibilityState === 'hidden');
     };
+    window.addEventListener('pagehide', checkpoint);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      checkpoint();
+      window.removeEventListener('pagehide', checkpoint);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (draftSaveFailed) {
         event.preventDefault();
         event.returnValue = '复习进度保存失败，退出后可能丢失当前进度';
       }
     };
-    window.addEventListener('pagehide', checkpoint);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      checkpoint();
-      window.removeEventListener('pagehide', checkpoint);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [draftSaveFailed]);
 
   const activeWord = useMemo(() => {
@@ -378,7 +410,7 @@ const ReviewPage: React.FC = () => {
             return;
           }
 
-          flowRef.current?.chooseOption(option.id).catch(console.error);
+          flowRef.current?.chooseOption(option.id, flowRef.current.getCurrentQuestionId()).catch(() => toast.error('保存作答失败，请重试'));
         }
         return;
       }
@@ -389,7 +421,7 @@ const ReviewPage: React.FC = () => {
         shortcutMatches(event, shortcuts.next)
       ) {
         event.preventDefault();
-        flowRef.current?.continueFromDetail().catch(console.error);
+        flowRef.current?.continueFromDetail().catch(() => toast.error('保存进度失败，请重试'));
       }
     };
 
@@ -436,12 +468,56 @@ const ReviewPage: React.FC = () => {
     });
   }, [snapshot.stage, snapshot.summaryState, navigate, setLastReviewStatistics, location.pathname]);
 
-  if (!studyPlan || !currentBook) {
+  const pageError = metadataError || (snapshot.stage === 'error'
+    ? snapshot.errorMessage || '复习页面加载失败' : null);
+  if (pageError) {
+    return (
+      <div className={styles.placeholderPage}>
+        <div className={styles.placeholderCard}>
+          <p>{pageError}</p>
+          <div className={styles.summaryActions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => {
+                setSnapshot(createLoadingSnapshot());
+                setRetryKey((current) => current + 1);
+              }}
+            >
+              重新加载
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => navigate(ROUTES.ALL_BOOKS)}
+            >
+              浏览词书
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!metadataReady) {
     return (
       <StudyLoadingState
         title="正在加载复习计划..."
-        subtitle={`正在同步今日计划和单词书信息，请稍候。\n可使用 ${formatShortcutCode(shortcuts.option1)}–${formatShortcutCode(shortcuts.option4)} 选择选项，答题后按 ${formatShortcutCode(shortcuts.next)} 进入下一步。`}
+        subtitle={`正在获取今日计划和单词书信息，请稍候。\n可使用 ${formatShortcutCode(shortcuts.option1)}–${formatShortcutCode(shortcuts.option4)} 选择选项，答题后按 ${formatShortcutCode(shortcuts.next)} 进入下一步。`}
       />
+    );
+  }
+
+  if (!studyPlan || !currentBook) {
+    return (
+      <div className={styles.placeholderPage}>
+        <div className={styles.placeholderCard}>
+          <p>还没有学习计划，请先选择词书。</p>
+          <button type="button" className={styles.primaryButton} onClick={() => navigate(ROUTES.ALL_BOOKS)}>
+            选择词书
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -471,35 +547,6 @@ const ReviewPage: React.FC = () => {
     );
   }
 
-  if (snapshot.stage === 'error') {
-    return (
-      <div className={styles.placeholderPage}>
-        <div className={styles.placeholderCard}>
-          <p>{snapshot.errorMessage || '复习页面加载失败'}</p>
-          <div className={styles.summaryActions}>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => {
-                setSnapshot(createLoadingSnapshot());
-                setRetryKey((current) => current + 1);
-              }}
-            >
-              重新加载
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => navigate(ROUTES.DASHBOARD)}
-            >
-              返回首页
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (snapshot.stage === 'choice' && snapshot.choiceState) {
     return renderActiveStage(
       <ReviewChoiceCard
@@ -515,7 +562,7 @@ const ReviewPage: React.FC = () => {
         ]}
         onChoose={(optionId) => {
           if (killConfirmOpen || killSubmitting) return;
-          flowRef.current?.chooseOption(optionId).catch(console.error);
+          flowRef.current?.chooseOption(optionId, flowRef.current.getCurrentQuestionId()).catch(() => toast.error('保存作答失败，请重试'));
         }}
         wordAction={renderKillButton(studyStyles.cardKillButton)}
       />
@@ -529,7 +576,7 @@ const ReviewPage: React.FC = () => {
         nextShortcut={formatShortcutCode(shortcuts.next)}
         onNext={() => {
           if (killConfirmOpen || killSubmitting) return;
-          flowRef.current?.continueFromDetail().catch(console.error);
+          flowRef.current?.continueFromDetail().catch(() => toast.error('保存进度失败，请重试'));
         }}
         wordAction={renderKillButton(studyStyles.cardKillButton)}
       />
@@ -554,7 +601,7 @@ const ReviewPage: React.FC = () => {
         }}
         onSubmit={() => {
           if (killConfirmOpen || killSubmitting) return;
-          flowRef.current?.submitSpell(spellInput).catch(console.error);
+          flowRef.current?.submitSpell(spellInput, flowRef.current.getCurrentQuestionId()).catch(() => toast.error('保存作答失败，请重试'));
         }}
         wordAction={renderKillButton(studyStyles.cardKillButton)}
       />

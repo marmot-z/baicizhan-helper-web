@@ -30,6 +30,8 @@ export interface TopicLearnRecord extends TopicLearnExtraScores {
   totalTime: number;
   createdAt: number;
   updatedAt: number;
+  /** Local calendar date on which topicDay was last normalized. */
+  normalizedDate: string;
 }
 
 export interface StudyHomeState {
@@ -92,26 +94,38 @@ export interface PendingDoneRecord {
 }
 
 export interface StudySyncMeta {
-  localSyncVer: number;
+  lastUploadedVersion: number;
+  lastPulledVersion: number;
+  lastPulledAt: number;
+  needsFullPull: boolean;
+  lastDownloadError: string | null;
   remoteSyncVer: number;
   lastSuccessfulSyncAt: number;
   lastUploadAttemptAt: number;
   lastUploadError: string | null;
 }
 
+export interface StudyUploadBatch {
+  batchId: string;
+  createdAt: number;
+  records: PendingDoneRecord[];
+}
+
+export interface StudyUploadLease {
+  owner: string;
+  expiresAt: number;
+}
+
 export interface StudyBookStateSnapshot {
   totalRecords: TopicLearnRecordMap;
   pendingDoneQueue: PendingDoneRecord[];
   syncMeta: StudySyncMeta;
-}
-
-export interface StudyRecordStoreSnapshotV1 {
-  version: 1;
-  books: Record<number, TopicLearnRecordMap>;
+  inflightBatch: StudyUploadBatch | null;
+  lease: StudyUploadLease | null;
 }
 
 export interface StudyRecordStoreSnapshot {
-  version: 2;
+  version: 1;
   books: Record<number, StudyBookStateSnapshot>;
 }
 
@@ -152,6 +166,7 @@ export function createTopicLearnRecord(
     totalTime: input.totalTime ?? 0,
     createdAt: input.createdAt ?? now,
     updatedAt: now,
+    normalizedDate: input.normalizedDate ?? localDate(now),
     tagId: input.tagId,
     spellScore: input.spellScore ?? 0,
     listeningScore: input.listeningScore ?? 0,
@@ -172,7 +187,11 @@ export function createEmptySyncMeta(
   overrides: Partial<StudySyncMeta> = {},
 ): StudySyncMeta {
   return {
-    localSyncVer: 0,
+    lastUploadedVersion: 0,
+    lastPulledVersion: 0,
+    lastPulledAt: 0,
+    needsFullPull: true,
+    lastDownloadError: null,
     remoteSyncVer: 0,
     lastSuccessfulSyncAt: 0,
     lastUploadAttemptAt: 0,
@@ -188,6 +207,8 @@ export function createEmptyBookStateSnapshot(
     totalRecords: {},
     pendingDoneQueue: [],
     syncMeta: createEmptySyncMeta(),
+    inflightBatch: null,
+    lease: null,
     ...overrides,
   };
 }
@@ -241,17 +262,23 @@ export function createRecordFromLearnedWordInfo(
     bookId,
     topicId: learnedWord.topic_id,
     topicScore: learnedWord.score,
-    topicDay: learnedWord.span_days,
-    isTodayNew: false,
+    topicDay: Number.isFinite(learnedWord.update_days) ? Math.max(0, learnedWord.update_days) : 0,
+    isTodayNew: learnedWord.span_days === 0,
     errNum: learnedWord.wrong_times,
     reviewRound: learnedWord.review_round,
-    lastDoTime: learnedWord.created_at,
+    // The API provides a day age, not a precise last-answer timestamp.
+    lastDoTime: 0,
     doNum: learnedWord.done_times,
     totalTime: learnedWord.used_time,
-    createdAt: learnedWord.created_at || now,
+    createdAt: learnedWord.created_at > 0 ? learnedWord.created_at * 1000 : now,
     updatedAt: now,
     spellScore: learnedWord.spell_score,
     listeningScore: learnedWord.listening_score,
     chnScore: learnedWord.chn_score,
   });
+}
+
+export function localDate(timestamp = Date.now()): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

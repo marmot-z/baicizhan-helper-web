@@ -9,7 +9,6 @@ import type {
   UserRoadMapElementV2,
   UserLearnedWordInfo,
   UserDoneWordRecord,
-  CreditStatus,
   XModeWordDetail,
   UserBookCategory,
   UserSelectedBookInfo,
@@ -23,6 +22,7 @@ export interface AllBooksResponse {
 export interface StudySyncMetaResponse {
   bookId: number;
   remoteSyncVer: number;
+  versionKnown?: boolean;
 }
 
 export interface UpdateDoneDataResponse {
@@ -34,6 +34,8 @@ export interface XModeWordDetailsResult {
   words: StudyUIModel[];
   missingTopicIds: number[];
 }
+
+const skippedDetailEvents = new Set(['strategy_study_enter', 'choose_in_recite_click', 'topic_wiki_show']);
 
 export const studyService = {
   // 获取用户学习计划信息
@@ -145,17 +147,6 @@ export const studyService = {
     return response.data;
   },
 
-  // 获取配置
-  async getSettings(): Promise<void> {
-    await ApiService.get('/study/settings');
-  },
-
-  // 获取信用状态
-  async getCreditStatus(): Promise<CreditStatus> {
-    const response = await ApiService.get<CreditStatus>('/creditStatus');
-    return response.data;
-  },
-
   // 上报完成当日计划事件
   async reportFinishDailyPlan(
     bookId: number,
@@ -174,6 +165,7 @@ export const studyService = {
 
   // 报告系统事件
   async reportEvent(eventId: string, extraInfo: string, statGroup: string): Promise<void> {
+    if (skippedDetailEvents.has(eventId)) return;
     const params = new URLSearchParams();
     params.append('eventId', eventId);
     params.append('extraInfo', extraInfo);
@@ -202,17 +194,6 @@ export const studyService = {
     }
 
     await ApiService.post(`/saveStudyRecord?${params.toString()}`);
-  },
-
-  // 获取学习记录
-  async getStudyRecord(bookId: number, topicIds: number[]): Promise<void> {
-    const params = new URLSearchParams();
-    params.append('bookId', bookId.toString());
-    
-    // 处理数组参数，以逗号连接
-    params.append('topicIds', topicIds.join(','));
-
-    await ApiService.get(`/studyRecord?${params.toString()}`);
   },
 
   // x模式打卡

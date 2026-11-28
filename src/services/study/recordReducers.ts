@@ -2,6 +2,7 @@ import {
   UNLEARNED_SCORE,
   createTopicLearnRecord,
   isKilledRecord,
+  localDate,
   toKilledScore,
   toUnkilledScore,
   type StudyDayTransitionInput,
@@ -26,16 +27,16 @@ function isSameDay(timestampA: number, timestampB: number): boolean {
 function getDayDiff(timestampA: number, timestampB: number): number {
   const dateA = new Date(timestampA);
   const dateB = new Date(timestampB);
-  const startOfDayA = new Date(
+  const startOfDayA = Date.UTC(
     dateA.getFullYear(),
     dateA.getMonth(),
     dateA.getDate(),
-  ).getTime();
-  const startOfDayB = new Date(
+  );
+  const startOfDayB = Date.UTC(
     dateB.getFullYear(),
     dateB.getMonth(),
     dateB.getDate(),
-  ).getTime();
+  );
 
   return Math.max(0, Math.floor((startOfDayB - startOfDayA) / 86400000));
 }
@@ -59,6 +60,7 @@ function createBaseRecord(input: TopicLearnRecordUpdateInput): TopicLearnRecord 
     topicId: input.topicId,
     tagId: input.tagId,
     lastDoTime: now,
+    normalizedDate: localDate(now),
     createdAt: now,
     updatedAt: now,
   });
@@ -80,6 +82,7 @@ function applyCommonMutation(
     ...baseRecord,
     updatedAt: now,
     lastDoTime: now,
+    normalizedDate: localDate(now),
     totalTime: baseRecord.totalTime + usedTime,
     doNum: baseRecord.doNum + doNumDelta,
     errNum: baseRecord.errNum + errNumDelta,
@@ -179,16 +182,20 @@ export function applyDayTransition(
   input: StudyDayTransitionInput = {},
 ): TopicLearnRecord {
   const now = getNow(input.now);
-  if (!record.lastDoTime || isSameDay(record.lastDoTime, now)) {
+  const date = record.normalizedDate;
+  const [year, month, day] = date.split('-').map(Number);
+  const days = getDayDiff(new Date(year, month - 1, day).getTime(), now);
+  if (!days) {
     return record;
   }
 
   const advancedTopicDay =
-    input.nextSpanDays ?? record.topicDay + getDayDiff(record.lastDoTime, now);
+    input.nextSpanDays ?? record.topicDay + days;
   if (isKilledRecord(record)) {
     return {
       ...record,
       updatedAt: now,
+      normalizedDate: localDate(now),
       isTodayNew: false,
       topicDay: advancedTopicDay,
     };
@@ -200,6 +207,7 @@ export function applyDayTransition(
   return {
     ...record,
     updatedAt: now,
+    normalizedDate: localDate(now),
     isTodayNew: false,
     topicDay: advancedTopicDay,
     topicScore: fixedTopicScore,

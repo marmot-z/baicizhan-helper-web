@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { UserBindInfo } from '../types';
 
@@ -37,7 +38,6 @@ async function setup() {
   const { useStudyStore } = await import('./studyStore');
   const { useWordBookStore } = await import('./wordBookStore');
   const { createTopicLearnRecord } = await import('../types/studyRecord');
-  const { toPendingDoneRecord } = await import('../services/study/uploadAdapter');
   const requests: InternalAxiosRequestConfig[] = [];
   const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
     requests.push(config);
@@ -54,16 +54,21 @@ async function setup() {
       return response(config, { resultCode: 0, syncVersion: 1 });
     }
 
-    if (config.url === '/studySyncMeta') {
-      return response(config, { remoteSyncVer: 0 });
+    if (config.url?.startsWith('/studySyncMeta?')) {
+      return response(config, { bookId: 10, remoteSyncVer: 1, versionKnown: true });
     }
+    if (config.url?.startsWith('/learnedWords?')) return response(config, []);
 
     throw new Error('Unexpected request: ' + config.url);
   });
   client.defaults.adapter = adapter;
-  const seedPending = (bookId = 10) => {
-    const record = createTopicLearnRecord({ bookId, topicId: 1, topicScore: -1 });
-    studyRecordStore.upsertAndQueue(bookId, [record], [toPendingDoneRecord(record)]);
+  const seedPending = async (bookId = 10) => {
+    await studyRecordStore.initialize();
+    await studyRecordStore.commitMutation({
+      bookId, topicId: 1, eventId: `pending-${bookId}`,
+      mutate: () => createTopicLearnRecord({ bookId, topicId: 1, topicScore: -1 }),
+      delta: { doneTimes: 0, wrongTimes: 0, usedTime: 0 },
+    });
   };
   return { ...auth, client, accountSession, studyRecordStore, studySessionStore, useStudyStore, useWordBookStore, adapter, requests, seedPending };
 }
@@ -71,6 +76,7 @@ async function setup() {
 beforeEach(() => {
   vi.resetModules();
   vi.restoreAllMocks();
+  Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: new IDBFactory() });
   const storage = new MemoryStorage();
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
   Object.defineProperty(globalThis, 'window', {
@@ -80,7 +86,7 @@ beforeEach(() => {
 });
 
 function signIn(store: Awaited<ReturnType<typeof setup>>['useAuthStore']) {
-  store.setState({ user: [binding()], token: 'old-token', loginMethod: 'phone', isAuthenticated: true });
+  store.setState({ user: [binding()], token: 'old-token', loginMethod: 'phone', isAuthenticated: true, accountStorageId: 'old-account' });
 }
 
 describe('Weixin account switching', () => {
@@ -115,7 +121,7 @@ describe('Weixin account switching', () => {
   it('syncs with the original token before login, then clears all account caches', async () => {
     const ctx = await setup();
     signIn(ctx.useAuthStore);
-    ctx.seedPending();
+    await ctx.seedPending();
     ctx.useWordBookStore.setState({ wordBooks: { '10': { words: [], timestamp: Date.now() } } });
     localStorage.setItem('study-session-store', 'old-draft');
     expect(await ctx.useAuthStore.getState().loginWithWeixin()).toBe(false);
@@ -130,7 +136,7 @@ describe('Weixin account switching', () => {
   it('switches even after sync failure and reports the discarded records', async () => {
     const ctx = await setup();
     signIn(ctx.useAuthStore);
-    ctx.seedPending();
+    await ctx.seedPending();
     ctx.adapter.mockImplementationOnce(async (config) => response(config, null, 500));
     expect(await ctx.useAuthStore.getState().loginWithWeixin()).toBe(true);
     expect(ctx.studyRecordStore.getSnapshot().books).toEqual({});
@@ -140,7 +146,7 @@ describe('Weixin account switching', () => {
   it('keeps the original account and unsynced records if login fails', async () => {
     const ctx = await setup();
     signIn(ctx.useAuthStore);
-    ctx.seedPending();
+    await ctx.seedPending();
     ctx.adapter.mockImplementation(async (config) => response(config, null, 500));
     await expect(ctx.useAuthStore.getState().loginWithWeixin()).rejects.toThrow();
     expect(ctx.useAuthStore.getState()).toMatchObject({ token: 'old-token', user: [binding()], loginMethod: 'phone', isSwitchingAccount: false });
@@ -207,15 +213,19 @@ describe('Weixin account switching', () => {
   it('waits for an existing upload before invoking Weixin login', async () => {
     const ctx = await setup();
     signIn(ctx.useAuthStore);
-    ctx.seedPending();
+    await ctx.seedPending();
     ctx.useStudyStore.setState({ wordListBookId: 10, wordList: [{ topic_id: 1, word_level_id: 10, tag_id: 1, options: [] }] });
     const pending = deferred<void>();
-    ctx.adapter.mockImplementationOnce(async (config) => { await pending.promise; return response(config, { resultCode: 0, syncVersion: 1 }); });
+    const defaultAdapter = ctx.adapter.getMockImplementation()!;
+    ctx.adapter.mockImplementation(async (config) => {
+      if (config.url === '/updateDoneData') await pending.promise;
+      return defaultAdapter(config);
+    });
     const sync = ctx.useStudyStore.getState().syncCurrentBookState(10);
-    await vi.waitFor(() => expect(ctx.adapter).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(ctx.adapter.mock.calls.some(([request]) => request.url === '/updateDoneData')).toBe(true));
     const switching = ctx.useAuthStore.getState().loginWithWeixin();
     await Promise.resolve();
-    expect(ctx.adapter).toHaveBeenCalledTimes(1);
+    expect(ctx.adapter.mock.calls.filter(([request]) => request.url?.startsWith('/login/'))).toHaveLength(0);
     pending.resolve();
     await Promise.all([sync, switching]);
     expect(ctx.adapter.mock.calls.filter(([request]) => request.url === '/updateDoneData')).toHaveLength(1);
@@ -225,13 +235,17 @@ describe('Weixin account switching', () => {
   it('drops late learning sync writes after logout', async () => {
     const ctx = await setup();
     signIn(ctx.useAuthStore);
-    ctx.seedPending();
+    await ctx.seedPending();
     ctx.useStudyStore.setState({ wordListBookId: 10, wordList: [{ topic_id: 1, word_level_id: 10, tag_id: 1, options: [] }] });
     const pending = deferred<void>();
-    ctx.adapter.mockImplementationOnce(async (config) => { await pending.promise; return response(config, { resultCode: 0, syncVersion: 1 }); });
+    const defaultAdapter = ctx.adapter.getMockImplementation()!;
+    ctx.adapter.mockImplementation(async (config) => {
+      if (config.url === '/updateDoneData') await pending.promise;
+      return defaultAdapter(config);
+    });
     const sync = ctx.useStudyStore.getState().syncCurrentBookState(10);
     const rejected = expect(sync).rejects.toThrow('账号会话');
-    await vi.waitFor(() => expect(ctx.adapter).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(ctx.adapter.mock.calls.some(([request]) => request.url === '/updateDoneData')).toBe(true));
     await ctx.useAuthStore.getState().logout();
     pending.resolve();
     await rejected;
@@ -251,6 +265,44 @@ describe('Weixin account switching', () => {
     await study.complete();
     expect(checkpoint).toHaveBeenCalledTimes(1);
     expect(ctx.studyRecordStore.getSnapshot().books).toEqual({});
+  });
+
+  it('rejects stale-tab API requests and record writes before the storage event is handled', async () => {
+    const ctx = await setup();
+    signIn(ctx.useAuthStore);
+    await ctx.seedPending();
+    const originalKey = ctx.accountSession.getStorageKey();
+    const { createTopicLearnRecord } = await import('../types/studyRecord');
+    const original = ctx.studyRecordStore.getRecord(10, 1);
+    localStorage.setItem('auth-storage', JSON.stringify({ state: {
+      token: 'another-account-token', accountStorageId: 'another-account', isAuthenticated: true,
+    } }));
+
+    await expect(ctx.client.get('/userInfo')).rejects.toThrow('账号会话');
+    await expect(ctx.studyRecordStore.commitMutation({
+      bookId: 10, topicId: 1, eventId: 'stale-status',
+      mutate: () => createTopicLearnRecord({ bookId: 10, topicId: 1, topicScore: 5 }),
+      delta: { doneTimes: 0, wrongTimes: 0, usedTime: 0 },
+    }))
+      .rejects.toThrow('账号会话');
+    expect(ctx.accountSession.getStorageKey()).toBe(originalKey);
+    expect(ctx.studyRecordStore.getRecord(10, 1)).toEqual(original);
+    expect(ctx.adapter).not.toHaveBeenCalled();
+  });
+
+  it('does not overwrite another tab’s account when a stale tab starts logout or switching', async () => {
+    const ctx = await setup();
+    signIn(ctx.useAuthStore);
+    await ctx.seedPending();
+    const persisted = JSON.stringify({ state: {
+      token: 'another-account-token', accountStorageId: 'another-account', isAuthenticated: true,
+    } });
+    localStorage.setItem('auth-storage', persisted);
+
+    await expect(ctx.useAuthStore.getState().logout()).rejects.toThrow('账号会话');
+    await expect(ctx.useAuthStore.getState().loginWithWeixin()).rejects.toThrow('账号会话');
+    expect(localStorage.getItem('auth-storage')).toBe(persisted);
+    expect(ctx.adapter).not.toHaveBeenCalled();
   });
 
 });

@@ -76,10 +76,11 @@ apiClient.interceptors.request.use(
       throw new AccountSessionChangedError();
     }
 
+    const token = useAuthStore.getState().token;
+    accountSession.assertPersistedSession(token);
     config.accountVersion = accountSession.getVersion();
     config.finishAccountRequest = accountSession.trackRequest();
     // 按照技术设计文档要求，添加access_token字段
-    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.access_token = token;
     }
@@ -90,7 +91,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-const rejectApiResponse = (response: AxiosResponse, code: number) => {
+const rejectApiResponse = async (response: AxiosResponse, code: number) => {
   const fallback = code === 401 ? '请重新登录'
     : code === 403 ? '权限不足'
     : code >= 500 ? '服务器处理请求失败' : '请求失败';
@@ -100,8 +101,8 @@ const rejectApiResponse = (response: AxiosResponse, code: number) => {
     const authState = useAuthStore.getState();
     // 旧请求的迟到响应不能清除刚重新登录的账号。
     if (authState.token && response.config.headers?.access_token === authState.token) {
-      void authState.logout();
-      window.location.href = '/page/login';
+      try { await authState.logout(); }
+      finally { window.location.href = '/page/login'; }
     }
   }
 

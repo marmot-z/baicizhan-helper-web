@@ -3,6 +3,15 @@ import type { StudyStage } from './types';
 
 export type StudySessionMode = 'learn' | 'review';
 
+export interface StudyQuestionState {
+  questionId: string;
+  topicId: number;
+  phase: string;
+  hadWrong: boolean;
+  elapsedTime: number;
+  committed: boolean;
+}
+
 export interface LearnWordCardState {
   topicId: number;
   stage: StudyStage;
@@ -17,6 +26,8 @@ export interface LearnProcessState {
 }
 
 export interface LearnSessionState {
+  sessionId: string;
+  question?: StudyQuestionState;
   wordTopicIds: number[];
   process: LearnProcessState;
   currentCard: LearnWordCardState | null;
@@ -28,6 +39,8 @@ export interface LearnSessionState {
 }
 
 export interface ReviewSessionState {
+  sessionId: string;
+  question?: StudyQuestionState;
   wordTopicIds: number[];
   killedTopicIds?: number[];
   stage: ReviewStage;
@@ -59,23 +72,25 @@ interface StudySessionDraftBase {
   sessionId: string;
 }
 
-export interface LearnSessionDraftV1 extends StudySessionDraftBase {
+export interface LearnSessionDraft extends StudySessionDraftBase {
   mode: 'learn';
   state: LearnSessionState;
 }
 
-export interface ReviewSessionDraftV1 extends StudySessionDraftBase {
+export interface ReviewSessionDraft extends StudySessionDraftBase {
   mode: 'review';
   state: ReviewSessionState;
 }
 
-export type StudySessionDraftV1 = LearnSessionDraftV1 | ReviewSessionDraftV1;
+export type StudySessionDraft = LearnSessionDraft | ReviewSessionDraft;
 
 export interface StudySessionStore {
-  load(mode: 'learn', bookId: number): LearnSessionDraftV1 | null;
-  load(mode: 'review', bookId: number): ReviewSessionDraftV1 | null;
-  save(draft: StudySessionDraftV1): boolean;
-  clear(mode: StudySessionMode, bookId: number): void;
-  clearAll(): void;
-  removeExpired(currentPlanDate: string): void;
+  buildCheckpoint(mode: 'learn', bookId: number, state: LearnSessionState): LearnSessionDraft;
+  buildCheckpoint(mode: 'review', bookId: number, state: ReviewSessionState): ReviewSessionDraft;
+  load(mode: 'learn', bookId: number): LearnSessionDraft | null;
+  load(mode: 'review', bookId: number): ReviewSessionDraft | null;
+  save(draft: StudySessionDraft, canWrite?: () => boolean): Promise<boolean>;
+  clear(mode: StudySessionMode, bookId: number): Promise<void>;
+  clearAll(): Promise<void>;
+  removeExpired(currentPlanDate: string): Promise<void>;
 }

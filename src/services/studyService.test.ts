@@ -11,6 +11,28 @@ const plan = (bookId: number): SelectBookPlanInfo => ({
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('request reduction', () => {
+  it('skips the three detail events for all 20 choice and spelling questions', async () => {
+    const post = vi.spyOn(ApiService, 'post').mockResolvedValue({ code: 200, success: true, data: null });
+    for (let word = 0; word < 20; word++) {
+      for (const phase of ['q2', 'q4']) {
+        await studyService.reportEvent('strategy_study_enter', phase, 'study-detail-common');
+        await studyService.reportEvent('choose_in_recite_click', phase, 'study-detail-common');
+      }
+      await studyService.reportEvent('topic_wiki_show', String(word), 'study-detail-common');
+    }
+    expect(post).not.toHaveBeenCalled();
+    await studyService.reportEvent('finish-normal-plan', '{}', 'main-study');
+    await studyService.saveStudyRecord(10, 1, 100);
+    await studyService.xModeDaka(20, '2026-11-28');
+    await studyService.reportFinishDailyPlan(10, 20, 0, false);
+    await studyService.updateDoneData([], 10);
+    expect(post.mock.calls.map(([url]) => url.split('?')[0])).toEqual([
+      '/reportEvent', '/saveStudyRecord', '/xmode/daka', '/study/reportFinishDailyPlan', '/updateDoneData',
+    ]);
+  });
+});
+
 describe('import learned words', () => {
   it('submits distinct source books, excluding the target and invalid ids', async () => {
     vi.spyOn(studyService, 'getBookPlanInfo').mockResolvedValue([plan(410), plan(575), plan(5), plan(575), plan(0)]);

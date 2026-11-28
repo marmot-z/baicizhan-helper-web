@@ -33,6 +33,10 @@ export default function CurrentBookWordList() {
     wordListBookId,
     learnRecords,
     syncingBookId,
+    preparedBookId,
+    planLoadError,
+    studyStateError,
+    syncCurrentBookState,
     fetchStudyData,
   } = useStudyStore();
   const [initializing, setInitializing] = useState(true);
@@ -70,7 +74,7 @@ export default function CurrentBookWordList() {
   useEffect(() => {
     let active = true;
 
-    void fetchStudyData().finally(() => {
+    void fetchStudyData().catch(() => {}).finally(() => {
       if (active) {
         setInitializing(false);
       }
@@ -122,7 +126,7 @@ export default function CurrentBookWordList() {
     }));
 
     void bookService
-      .getWordListWordMeta(topicKeys)
+      .getWordListWordMeta(topicKeys, { force: retryVersion > 0 })
       .then((result) => {
         if (active) {
           setMetadata(result);
@@ -153,9 +157,10 @@ export default function CurrentBookWordList() {
     () => categorizeCurrentBookWords(wordList, learnRecords, metadataByTopicId),
     [learnRecords, metadataByTopicId, wordList]
   );
+  const classificationReady = preparedBookId === plannedBookId && plannedBookId !== null;
   const visibleWords = useMemo(
-    () => sortCurrentBookWords(categorizedWords[activeTab], sortOrder),
-    [activeTab, categorizedWords, sortOrder]
+    () => sortCurrentBookWords(classificationReady ? categorizedWords[activeTab] : Object.values(categorizedWords).flat(), sortOrder),
+    [activeTab, categorizedWords, sortOrder, classificationReady]
   );
   const missingMetadataCount = useMemo(
     () =>
@@ -187,14 +192,14 @@ export default function CurrentBookWordList() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const handleUnkill = (topicId: number) => {
+  const handleUnkill = async (topicId: number) => {
     if (!plannedBookId || restoringTopicId !== null) {
       return;
     }
 
     setRestoringTopicId(topicId);
     try {
-      wordStatusService.unkillWord(plannedBookId, topicId);
+      await wordStatusService.unkillWord(plannedBookId, topicId);
       toast.success('已取消斩词，记录正在同步');
     } catch (error) {
       console.error('取消斩词失败:', error);
@@ -208,6 +213,17 @@ export default function CurrentBookWordList() {
 
   if (studyDataLoading && !hasCurrentRoadmap) {
     return <PageSkeleton />;
+  }
+
+  if (planLoadError && !hasCurrentRoadmap) {
+    return <div className={styles.page}><section className={styles.errorState} role="alert">
+      <h1>学习计划或词书加载失败</h1><p>{planLoadError}</p>
+      <button type="button" className={styles.primaryButton} onClick={() => {
+        setInitializing(true);
+        void fetchStudyData().catch(() => {}).finally(() => setInitializing(false));
+      }}>重新加载</button>
+      <button type="button" className={styles.secondaryButton} onClick={() => navigate(ROUTES.ALL_BOOKS)}>查看词书目录</button>
+    </section></div>;
   }
 
   if (!hasValidPlan) {
@@ -264,7 +280,13 @@ export default function CurrentBookWordList() {
       </section>
 
       <section className={styles.wordPanel} aria-label="当前词书单词">
-        <div className={styles.tabs} role="tablist" aria-label="单词学习状态">
+        {!classificationReady && <div className={styles.errorState} role={studyStateError ? 'alert' : 'status'}>
+          <strong>{studyStateError ? '学习分类暂时无法加载' : '正在获取学习分类…'}</strong>
+          <p>{studyStateError ?? '词书单词仍可正常查看。'}</p>
+          <button type="button" className={styles.primaryButton} disabled={syncingBookId === plannedBookId}
+            onClick={() => { void syncCurrentBookState(plannedBookId ?? undefined, { forcePull: true }).catch(() => {}); }}>重试学习分类</button>
+        </div>}
+        {classificationReady ? <div className={styles.tabs} role="tablist" aria-label="单词学习状态">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -282,10 +304,10 @@ export default function CurrentBookWordList() {
               </span>
             </button>
           ))}
-        </div>
+        </div> : <h2>全部单词</h2>}
 
         <div className={styles.toolbar}>
-          <span>单词数：{categorizedWords[activeTab].length}</span>
+          <span>单词数：{visibleWords.length}</span>
           <div
             className={styles.sortControl}
             role="group"
@@ -334,7 +356,7 @@ export default function CurrentBookWordList() {
             <div
               id="current-book-word-list"
               role="tabpanel"
-              aria-labelledby={`word-list-tab-${activeTab}`}
+              aria-label={classificationReady ? TABS.find(tab => tab.id === activeTab)?.label : '全部单词'}
               className={styles.wordList}
             >
               {visibleWords.length === 0 ? (
@@ -347,7 +369,7 @@ export default function CurrentBookWordList() {
                     entry.metadata?.word.trim() || `单词 #${topicId}`;
                   const meaning = entry.metadata?.mean_cn.trim() || '暂无释义';
 
-                  const canUnkill = activeTab === 'killed';
+                  const canUnkill = classificationReady && activeTab === 'killed';
 
                   return (
                     <div

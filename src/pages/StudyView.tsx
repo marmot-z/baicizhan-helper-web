@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import type { SelectBookPlanInfo } from '../types';
@@ -14,6 +14,7 @@ import statusStyles from './review/review.module.css';
 import StudyLoadingState from '../components/study/StudyLoadingState';
 import { useStudyStrategy } from '../hooks/useStudyStrategy';
 import { useStudyState } from '../hooks/useStudyState';
+import { useStudyStore } from '../stores/studyStore';
 import { AudioSequencePlayer } from '../utils/audio';
 import { feedbackSoundPlayer } from '../utils/feedbackSound';
 import { studyRecordStore } from '../services/study';
@@ -43,15 +44,17 @@ const StudyView: React.FC = () => {
   const [retryKey, setRetryKey] = useState(0);
   const [planError, setPlanError] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
+  const [noPlan, setNoPlan] = useState(false);
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
   const [killSubmitting, setKillSubmitting] = useState(false);
   const [killAnimating, setKillAnimating] = useState(false);
+  const answering = useRef(false);
   const showMedia = useSettingsStore((state) => state.showMedia);
   const studyReviewAutoPronounce = useSettingsStore((state) => state.studyReviewAutoPronounce);
   const pronunciationPreference = useSettingsStore((state) => state.pronunciationPreference);
   const shortcuts = useSettingsStore((state) => state.shortcuts);
   
-  const { studyInstance, loading, error, restored, draftSaveFailed, skippedWordCount, init } = useStudyStrategy();
+  const { studyInstance, loading, error, restored, draftSaveFailed, skippedWordCount, init, cancelInit } = useStudyStrategy();
 
   // Create UI Model from current word card
   const uiModel: StudyUIModel | null = useMemo(() => {
@@ -87,21 +90,29 @@ const StudyView: React.FC = () => {
   const shuffledOptions = orderStudyOptions(liveOptions, shuffledOptionIds);
 
   const handleNext = useCallback(async () => {
-    await study?.pass();
+    try { await study?.continueFromDetail(study.getCurrentQuestionId()); }
+    catch { toast.error('保存进度失败，请重试'); }
   }, [study]);
 
   const handleOptionClick = useCallback(async (id: number, isCorrect: boolean) => {
+    if (!study || answering.current) return;
+    answering.current = true;
+    const questionId = study.getCurrentQuestionId();
     setSelectedOptionIds(prev => [...prev, id]);
-
+    try {
     if (isCorrect) {
       feedbackSoundPlayer.playCorrect();
       // 延迟 300ms 以展示绿色正确反馈
       await new Promise(resolve => setTimeout(resolve, 300));
-      await study?.pass(id);
+      await study.pass(id, questionId);
     } else {
       feedbackSoundPlayer.playIncorrect();
-      await study?.fail(id);
+      await study.fail(id, questionId);
     }
+    } catch {
+      setSelectedOptionIds([]);
+      toast.error('保存作答失败，请重试');
+    } finally { answering.current = false; }
   }, [study]);
 
   const handleKillConfirm = async () => {
@@ -142,15 +153,19 @@ const StudyView: React.FC = () => {
     const startStudy = async () => {
       setLoadingPlan(true);
       setPlanError(null);
+      setNoPlan(false);
 
       try {
         const studyPlans = await studyService.getBookPlanInfo();
         if (!isActive) return;
 
-        if (!studyPlans?.length) {
-          throw new Error('学习计划未就绪');
+        if (!Array.isArray(studyPlans)) throw new Error('学习计划响应格式异常');
+        if (!studyPlans.length) {
+          setNoPlan(true);
+          return;
         }
 
+        useStudyStore.getState().setStudyPlan(studyPlans[0]);
         setStudyPlan(studyPlans[0]);
         await init(mode, studyPlans);
       } catch (err) {
@@ -165,8 +180,9 @@ const StudyView: React.FC = () => {
     void startStudy();
     return () => {
       isActive = false;
+      cancelInit();
     };
-  }, [mode, init, study, retryKey]);
+  }, [mode, init, cancelInit, study, retryKey]);
 
   // 监听策略Hook返回的实例
   useEffect(() => {
@@ -202,11 +218,10 @@ const StudyView: React.FC = () => {
   }, [isCompleted, draftSaveFailed]);
 
   useEffect(() => {
-    const checkpoint = () => study?.checkpoint();
+    study?.setPaused(document.visibilityState === 'hidden');
+    const checkpoint = () => { study?.setPaused(true); study?.checkpoint(); };
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        checkpoint();
-      }
+      study?.setPaused(document.visibilityState === 'hidden');
     };
     window.addEventListener('pagehide', checkpoint);
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -226,6 +241,8 @@ const StudyView: React.FC = () => {
       const hasPending = bookId ? studyRecordStore.getPendingDoneRecords(bookId).length > 0 : false;
       if (hasPending || syncMeta?.lastUploadError) {
         toast.success('学习完成，记录已保存到本地，等待同步');
+      } else if (syncMeta?.needsFullPull) {
+        toast.success('学习完成，记录已保存到本地，等待远端对账');
       } else {
         toast.success('学习完成，学习记录已同步！');
       }
@@ -298,6 +315,13 @@ const StudyView: React.FC = () => {
       player.stop();
     };
   }, [wordCard, uiModel, studyReviewAutoPronounce, pronunciationPreference]);
+
+  if (!loadingPlan && noPlan) {
+    return <div className={statusStyles.placeholderPage}><div className={statusStyles.placeholderCard}>
+      <p>还没有学习计划，请先选择词书。</p>
+      <button type="button" className={statusStyles.primaryButton} onClick={() => navigate(ROUTES.ALL_BOOKS)}>选择词书</button>
+    </div></div>;
+  }
 
   const initializationError = planError ?? error?.message;
   if (!loadingPlan && !loading && initializationError) {
